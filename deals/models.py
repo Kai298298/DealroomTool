@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 import os
+from django.conf import settings
 
 User = get_user_model()
 
@@ -31,6 +32,7 @@ class Deal(models.Model):
     # Grundlegende Informationen
     title = models.CharField(
         max_length=200,
+        unique=True,
         verbose_name=_('Titel')
     )
     
@@ -318,6 +320,10 @@ class Deal(models.Model):
     def get_data_files(self):
         """Gibt alle Daten-Dateien zurück"""
         return self.get_assigned_files(role='data')
+    
+    def get_file_size_display(self):
+        """Gibt die Dateigröße in einem benutzerfreundlichen Format zurück"""
+        return self.get_file_size()
 
 
 # Signal-Handler für automatische Website-Generierung
@@ -326,6 +332,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 import threading
 import time
+from django.conf import settings
 
 @receiver(post_save, sender=Deal)
 def auto_generate_website(sender, instance, created, **kwargs):
@@ -344,6 +351,7 @@ def auto_generate_website(sender, instance, created, **kwargs):
     if instance.status == 'active':
         try:
             from generator.renderer import DealroomGenerator
+            import os
             
             # Asynchrone Ausführung um Performance zu optimieren
             def delayed_generation():
@@ -352,11 +360,31 @@ def auto_generate_website(sender, instance, created, **kwargs):
                 try:
                     print(f"🔄 Starte automatische Website-Generierung für '{instance.title}'...")
                     
-                    # Generator initialisieren und Website erstellen
+                    # Generator initialisieren
                     generator = DealroomGenerator(instance)
-                    website_url = generator.generate_website()
                     
-                    print(f"✅ Website für '{instance.title}' automatisch generiert: {website_url}")
+                    # Website-Verzeichnis erstellen
+                    output_dir = os.path.join(settings.BASE_DIR, 'generated_pages', f'dealroom-{instance.id}')
+                    output_path = os.path.join(output_dir, 'index.html')
+                    
+                    # Website speichern
+                    success = generator.save_website(output_path)
+                    
+                    if success:
+                        # URL im Model speichern
+                        website_url = f"/generated_pages/dealroom-{instance.id}/"
+                        instance.local_website_url = website_url
+                        instance.website_status = 'generated'
+                        instance.last_generation = timezone.now()
+                        instance.generation_error = None
+                        instance.save(update_fields=['local_website_url', 'website_status', 'last_generation', 'generation_error'])
+                        
+                        print(f"✅ Website für '{instance.title}' automatisch generiert: {website_url}")
+                    else:
+                        instance.website_status = 'failed'
+                        instance.generation_error = 'Fehler beim Speichern der Website'
+                        instance.save(update_fields=['website_status', 'generation_error'])
+                        print(f"❌ Fehler beim Speichern der Website für '{instance.title}'")
                     
                 except Exception as e:
                     print(f"❌ Fehler bei automatischer Website-Generierung für '{instance.title}': {e}")
@@ -415,6 +443,7 @@ def regenerate_website_on_file_change(sender, instance, created, **kwargs):
         # Nur für aktive Dealrooms
         if instance.deal.status == 'active':
             from generator.renderer import DealroomGenerator
+            import os
             
             def delayed_regeneration():
                 """Verzögerte Regenerierung um Race Conditions zu vermeiden"""
@@ -422,34 +451,62 @@ def regenerate_website_on_file_change(sender, instance, created, **kwargs):
                 try:
                     print(f"🔄 Regeneriere Website für '{instance.deal.title}' nach Datei-Änderung...")
                     
-                    # Generator initialisieren und Website neu generieren
+                    # Generator initialisieren
                     generator = DealroomGenerator(instance.deal)
-                    website_url = generator.regenerate_website()
                     
-                    print(f"✅ Website für '{instance.deal.title}' nach Datei-Änderung regeneriert: {website_url}")
+                    # Website-Verzeichnis erstellen
+                    output_dir = os.path.join(settings.BASE_DIR, 'generated_pages', f'dealroom-{instance.deal.id}')
+                    output_path = os.path.join(output_dir, 'index.html')
+                    
+                    # Website speichern
+                    success = generator.save_website(output_path)
+                    
+                    if success:
+                        # URL im Model speichern
+                        website_url = f"/generated_pages/dealroom-{instance.deal.id}/"
+                        instance.deal.local_website_url = website_url
+                        instance.deal.website_status = 'generated'
+                        instance.deal.last_generation = timezone.now()
+                        instance.deal.generation_error = None
+                        instance.deal.save(update_fields=['local_website_url', 'website_status', 'last_generation', 'generation_error'])
+                        
+                        print(f"✅ Website für '{instance.deal.title}' nach Datei-Änderung regeneriert: {website_url}")
+                    else:
+                        instance.deal.website_status = 'failed'
+                        instance.deal.generation_error = 'Fehler beim Speichern der Website nach Datei-Änderung'
+                        instance.deal.save(update_fields=['website_status', 'generation_error'])
+                        print(f"❌ Fehler beim Speichern der Website für '{instance.deal.title}' nach Datei-Änderung")
                     
                 except Exception as e:
-                    print(f"❌ Fehler bei Website-Regenerierung nach Datei-Änderung: {e}")
+                    print(f"❌ Fehler bei Website-Regenerierung für '{instance.deal.title}' nach Datei-Änderung: {e}")
+                    instance.deal.website_status = 'failed'
+                    instance.deal.generation_error = str(e)
+                    instance.deal.save(update_fields=['website_status', 'generation_error'])
             
             # Thread für asynchrone Ausführung starten
             thread = threading.Thread(target=delayed_regeneration)
             thread.daemon = True
             thread.start()
             
+    except ImportError:
+        print("⚠️ Generator-Modul nicht verfügbar - Website-Regenerierung übersprungen")
     except Exception as e:
         print(f"❌ Fehler beim Starten der Website-Regenerierung nach Datei-Änderung: {e}")
 
-# Signal für Datei-Löschungen
 @receiver(post_delete, sender='deals.DealFile')
 def regenerate_website_on_file_delete(sender, instance, **kwargs):
     """
     Regeneriert Website wenn Dateien gelöscht werden
+    
+    Diese Funktion wird automatisch ausgelöst wenn:
+    - Dateien von einem Dealroom gelöscht werden
     """
     
     try:
         # Nur für aktive Dealrooms
         if instance.deal.status == 'active':
             from generator.renderer import DealroomGenerator
+            import os
             
             def delayed_regeneration():
                 """Verzögerte Regenerierung um Race Conditions zu vermeiden"""
@@ -457,20 +514,45 @@ def regenerate_website_on_file_delete(sender, instance, **kwargs):
                 try:
                     print(f"🔄 Regeneriere Website für '{instance.deal.title}' nach Datei-Löschung...")
                     
-                    # Generator initialisieren und Website neu generieren
+                    # Generator initialisieren
                     generator = DealroomGenerator(instance.deal)
-                    website_url = generator.regenerate_website()
                     
-                    print(f"✅ Website für '{instance.deal.title}' nach Datei-Löschung regeneriert: {website_url}")
+                    # Website-Verzeichnis erstellen
+                    output_dir = os.path.join(settings.BASE_DIR, 'generated_pages', f'dealroom-{instance.deal.id}')
+                    output_path = os.path.join(output_dir, 'index.html')
+                    
+                    # Website speichern
+                    success = generator.save_website(output_path)
+                    
+                    if success:
+                        # URL im Model speichern
+                        website_url = f"/generated_pages/dealroom-{instance.deal.id}/"
+                        instance.deal.local_website_url = website_url
+                        instance.deal.website_status = 'generated'
+                        instance.deal.last_generation = timezone.now()
+                        instance.deal.generation_error = None
+                        instance.deal.save(update_fields=['local_website_url', 'website_status', 'last_generation', 'generation_error'])
+                        
+                        print(f"✅ Website für '{instance.deal.title}' nach Datei-Löschung regeneriert: {website_url}")
+                    else:
+                        instance.deal.website_status = 'failed'
+                        instance.deal.generation_error = 'Fehler beim Speichern der Website nach Datei-Löschung'
+                        instance.deal.save(update_fields=['website_status', 'generation_error'])
+                        print(f"❌ Fehler beim Speichern der Website für '{instance.deal.title}' nach Datei-Löschung")
                     
                 except Exception as e:
-                    print(f"❌ Fehler bei Website-Regenerierung nach Datei-Löschung: {e}")
+                    print(f"❌ Fehler bei Website-Regenerierung für '{instance.deal.title}' nach Datei-Löschung: {e}")
+                    instance.deal.website_status = 'failed'
+                    instance.deal.generation_error = str(e)
+                    instance.deal.save(update_fields=['website_status', 'generation_error'])
             
             # Thread für asynchrone Ausführung starten
             thread = threading.Thread(target=delayed_regeneration)
             thread.daemon = True
             thread.start()
             
+    except ImportError:
+        print("⚠️ Generator-Modul nicht verfügbar - Website-Regenerierung übersprungen")
     except Exception as e:
         print(f"❌ Fehler beim Starten der Website-Regenerierung nach Datei-Löschung: {e}")
 
@@ -630,6 +712,10 @@ class DealFile(models.Model):
         elif self.file_source == self.FileSource.GLOBAL_ASSIGNED and self.global_file:
             return self.global_file.file.url if self.global_file.file else None
         return None
+    
+    def get_file_size_display(self):
+        """Gibt die Dateigröße in einem benutzerfreundlichen Format zurück"""
+        return self.get_file_size()
 
 
 class DealFileAssignment(models.Model):

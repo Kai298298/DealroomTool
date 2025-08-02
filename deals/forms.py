@@ -41,6 +41,42 @@ class DealForm(forms.ModelForm):
                 field.widget.attrs.update({'class': 'form-control'})
             elif isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs.update({'class': 'form-check-input'})
+    
+    def clean_title(self):
+        """Validiert den Titel auf Eindeutigkeit"""
+        title = self.cleaned_data.get('title')
+        if not title:
+            return title
+        
+        # Prüfe ob Titel bereits existiert (außer bei Bearbeitung)
+        existing_deal = Deal.objects.filter(title=title)
+        if self.instance and self.instance.pk:
+            existing_deal = existing_deal.exclude(pk=self.instance.pk)
+        
+        if existing_deal.exists():
+            raise forms.ValidationError(
+                _('Ein Dealroom mit diesem Titel existiert bereits. Bitte wählen Sie einen anderen Titel.')
+            )
+        
+        return title
+    
+    def clean_slug(self):
+        """Validiert den Slug auf Eindeutigkeit"""
+        slug = self.cleaned_data.get('slug')
+        if not slug:
+            return slug
+        
+        # Prüfe ob Slug bereits existiert (außer bei Bearbeitung)
+        existing_deal = Deal.objects.filter(slug=slug)
+        if self.instance and self.instance.pk:
+            existing_deal = existing_deal.exclude(pk=self.instance.pk)
+        
+        if existing_deal.exists():
+            raise forms.ValidationError(
+                _('Ein Dealroom mit diesem Slug existiert bereits. Bitte wählen Sie einen anderen Slug.')
+            )
+        
+        return slug
 
 
 class DealFileForm(forms.ModelForm):

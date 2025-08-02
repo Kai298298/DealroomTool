@@ -867,6 +867,55 @@ class DealFileAssignmentViewsTest(TestCase):
         self.assertIn('btn-download', html_content)
         self.assertIn(self.global_file.title, html_content)
         self.assertIn('Herunterladen', html_content)
+    
+    def test_parallel_title_conflict_prevention(self):
+        """Test: Parallele Namenskonflikte werden verhindert"""
+        from django.db import IntegrityError
+        
+        # Ersten Dealroom erstellen
+        deal1 = Deal.objects.create(
+            title='Unique Test Dealroom',
+            slug='unique-test-dealroom',
+            created_by=self.user,
+            status=Deal.DealStatus.DRAFT
+        )
+        
+        # Prüfen ob der erste Dealroom existiert
+        self.assertEqual(Deal.objects.filter(title='Unique Test Dealroom').count(), 1)
+        
+        # Versuch, zweiten Dealroom mit gleichem Titel zu erstellen
+        # Das sollte einen IntegrityError auslösen
+        with self.assertRaises(IntegrityError):
+            Deal.objects.create(
+                title='Unique Test Dealroom',  # Gleicher Titel
+                slug='unique-test-dealroom-2',
+                created_by=self.user,
+                status=Deal.DealStatus.DRAFT
+            )
+    
+    def test_form_title_validation(self):
+        """Test: Form-Validierung verhindert Titel-Duplikate"""
+        # Ersten Dealroom erstellen
+        deal1 = Deal.objects.create(
+            title='Test Dealroom',
+            slug='test-dealroom',
+            created_by=self.user,
+            status=Deal.DealStatus.DRAFT
+        )
+        
+        # Form mit gleichem Titel testen
+        from .forms import DealForm
+        form_data = {
+            'title': 'Test Dealroom',  # Gleicher Titel
+            'slug': 'test-dealroom-2',
+            'status': Deal.DealStatus.DRAFT,
+            'template_type': Deal.TemplateType.MODERN
+        }
+        
+        form = DealForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('title', form.errors)
+        self.assertIn('existiert bereits', str(form.errors['title']))
 
 
 class DealFileAssignmentIntegrationTest(TestCase):

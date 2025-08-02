@@ -14,6 +14,7 @@ from django.http import HttpResponse, Http404, HttpResponseRedirect, JsonRespons
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 from django.db import transaction
+from django.core.exceptions import ValidationError
 from .models import Deal, DealFile, DealFileAssignment
 from .forms import DealForm, DealFileForm
 from files.models import GlobalFile
@@ -22,6 +23,8 @@ from .utils import (
     log_file_assignment, log_file_unassignment,
     log_website_generation, log_website_deletion
 )
+from django.utils import timezone
+from django.utils import timezone as django_timezone
 
 
 # Dealroom Views
@@ -91,19 +94,52 @@ class DealCreateView(LoginRequiredMixin, CreateView):
     template_name = 'deals/deal_form.html'
     success_url = reverse_lazy('core:dashboard')
     
+    @transaction.atomic
     def form_valid(self, form):
-        form.instance.created_by = self.request.user
-        response = super().form_valid(form)
-        
-        # Log erstellen
-        log_deal_creation(self.object, self.request.user)
-        
-        # Logo-Upload verarbeiten
+        """Speichert den Dealroom mit atomarer Transaktion"""
+        try:
+            # Zusätzliche Validierung für parallele Konflikte
+            title = form.cleaned_data.get('title')
+            slug = form.cleaned_data.get('slug')
+            
+            # Prüfe ob Titel/Slug bereits existiert (mit SELECT FOR UPDATE)
+            if Deal.objects.select_for_update().filter(title=title).exists():
+                form.add_error('title', 'Ein Dealroom mit diesem Titel existiert bereits.')
+                return self.form_invalid(form)
+            
+            if Deal.objects.select_for_update().filter(slug=slug).exists():
+                form.add_error('slug', 'Ein Dealroom mit diesem Slug existiert bereits.')
+                return self.form_invalid(form)
+            
+            # Dealroom erstellen
+            dealroom = form.save(commit=False)
+            dealroom.created_by = self.request.user
+            dealroom.save()
+            
+            # Dateien verarbeiten
+            self._process_files(dealroom)
+            
+            messages.success(
+                self.request,
+                f"Dealroom '{dealroom.title}' erfolgreich erstellt."
+            )
+            
+            return super().form_valid(form)
+            
+        except ValidationError as e:
+            form.add_error(None, str(e))
+            return self.form_invalid(form)
+        except Exception as e:
+            form.add_error(None, f"Fehler beim Erstellen des Dealrooms: {str(e)}")
+            return self.form_invalid(form)
+    
+    def _process_files(self, dealroom):
+        """Verarbeitet Dateien (Logo, Globale Dateien, Direkte Uploads)"""
         logo_file = self.request.FILES.get('logo_upload')
         if logo_file:
             deal_file = DealFile.objects.create(
-                deal=self.object,
-                title=f"Logo - {self.object.title}",
+                deal=dealroom,
+                title=f"Logo - {dealroom.title}",
                 description="Logo für diesen Dealroom",
                 file=logo_file,
                 file_type='logo',
@@ -117,7 +153,7 @@ class DealCreateView(LoginRequiredMixin, CreateView):
             try:
                 global_file = GlobalFile.objects.get(id=global_file_id)
                 DealFileAssignment.objects.create(
-                    deal=self.object,
+                    deal=dealroom,
                     global_file=global_file,
                     role='other',
                     assigned_by=self.request.user
@@ -133,16 +169,13 @@ class DealCreateView(LoginRequiredMixin, CreateView):
             file_type = self.request.POST.get('file_type', 'other')
             
             DealFile.objects.create(
-                deal=self.object,
+                deal=dealroom,
                 title=file_title,
                 description=file_description,
                 file=uploaded_file,
                 file_type=file_type,
                 uploaded_by=self.request.user
             )
-        
-        messages.success(self.request, f'Dealroom "{self.object.title}" wurde erfolgreich erstellt.')
-        return response
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -245,23 +278,52 @@ class DealUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         deal = self.get_object()
         return self.request.user.can_edit_deals() or deal.created_by == self.request.user
     
+    @transaction.atomic
     def form_valid(self, form):
-        old_status = self.object.status
-        response = super().form_valid(form)
-        
-        # Log erstellen
-        log_deal_update(self.object, self.request.user)
-        
-        # Status-Änderung loggen
-        if old_status != self.object.status:
-            log_status_change(self.object, self.request.user, old_status, self.object.status)
-        
-        # Logo-Upload verarbeiten
+        """Speichert den Dealroom mit atomarer Transaktion"""
+        try:
+            # Zusätzliche Validierung für parallele Konflikte
+            title = form.cleaned_data.get('title')
+            slug = form.cleaned_data.get('slug')
+            
+            # Prüfe ob Titel/Slug bereits existiert (außer diesem Dealroom)
+            if Deal.objects.select_for_update().filter(title=title).exclude(pk=self.object.pk).exists():
+                form.add_error('title', 'Ein Dealroom mit diesem Titel existiert bereits.')
+                return self.form_invalid(form)
+            
+            if Deal.objects.select_for_update().filter(slug=slug).exclude(pk=self.object.pk).exists():
+                form.add_error('slug', 'Ein Dealroom mit diesem Slug existiert bereits.')
+                return self.form_invalid(form)
+            
+            # Dealroom aktualisieren
+            dealroom = form.save(commit=False)
+            dealroom.updated_by = self.request.user
+            dealroom.save()
+            
+            # Dateien verarbeiten
+            self._process_files(dealroom)
+            
+            messages.success(
+                self.request,
+                f"Dealroom '{dealroom.title}' erfolgreich aktualisiert."
+            )
+            
+            return super().form_valid(form)
+            
+        except ValidationError as e:
+            form.add_error(None, str(e))
+            return self.form_invalid(form)
+        except Exception as e:
+            form.add_error(None, f"Fehler beim Aktualisieren des Dealrooms: {str(e)}")
+            return self.form_invalid(form)
+    
+    def _process_files(self, dealroom):
+        """Verarbeitet Dateien (Logo, Globale Dateien, Direkte Uploads)"""
         logo_file = self.request.FILES.get('logo_upload')
         if logo_file:
             deal_file = DealFile.objects.create(
-                deal=self.object,
-                title=f"Logo - {self.object.title}",
+                deal=dealroom,
+                title=f"Logo - {dealroom.title}",
                 description="Logo für diesen Dealroom",
                 file=logo_file,
                 file_type='logo',
@@ -509,18 +571,43 @@ class RegenerateWebsiteView(LoginRequiredMixin, View):
             
             # Generator initialisieren
             from generator.renderer import DealroomGenerator
+            import os
+            from django.conf import settings
+            
             generator = DealroomGenerator(dealroom)
             
-            # Website regenerieren
-            website_url = generator.regenerate_website()
+            # Website-Verzeichnis erstellen
+            output_dir = os.path.join(settings.BASE_DIR, 'generated_pages', f'dealroom-{dealroom.id}')
+            output_path = os.path.join(output_dir, 'index.html')
             
-            # Änderung protokollieren
-            log_website_generation(dealroom, request.user)
+            # Website speichern
+            success = generator.save_website(output_path)
             
-            messages.success(
-                request,
-                f"Website für '{dealroom.title}' erfolgreich regeneriert: {website_url}"
-            )
+            if success:
+                # URL im Model speichern
+                website_url = f"/generated_pages/dealroom-{dealroom.id}/"
+                dealroom.local_website_url = website_url
+                dealroom.website_status = 'generated'
+                dealroom.last_generation = timezone.now()
+                dealroom.generation_error = None
+                dealroom.save(update_fields=['local_website_url', 'website_status', 'last_generation', 'generation_error'])
+                
+                # Änderung protokollieren
+                log_website_generation(dealroom, request.user)
+                
+                messages.success(
+                    request,
+                    f"Website für '{dealroom.title}' erfolgreich regeneriert: {website_url}"
+                )
+            else:
+                dealroom.website_status = 'failed'
+                dealroom.generation_error = 'Fehler beim Speichern der Website'
+                dealroom.save(update_fields=['website_status', 'generation_error'])
+                
+                messages.error(
+                    request,
+                    f"Fehler beim Speichern der Website für '{dealroom.title}'"
+                )
             
         except Deal.DoesNotExist:
             messages.error(request, "Dealroom nicht gefunden.")

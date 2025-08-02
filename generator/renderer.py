@@ -11,6 +11,7 @@ from .css_generator import CSSGenerator
 from .video_processor import VideoProcessor
 from .image_processor import ImageProcessor
 from .utils import create_directory, sanitize_filename
+from django.conf import settings
 
 
 class DealroomGenerator:
@@ -258,7 +259,7 @@ class DealroomGenerator:
         elif self.dealroom.public_url:
             return self.dealroom.public_url
         else:
-            return f"/generated_pages/{self.dealroom.slug}/index.html"
+            return f"/generated_pages/dealroom-{self.dealroom.id}/index.html"
     
     def delete_website(self) -> bool:
         """
@@ -268,9 +269,20 @@ class DealroomGenerator:
             bool: True wenn erfolgreich gelöscht
         """
         try:
-            # Hier würde die tatsächliche Löschung implementiert
-            # Für jetzt geben wir nur True zurück
-            return True
+            # Website-Verzeichnis-Pfad erstellen
+            website_dir = os.path.join(settings.BASE_DIR, 'generated_pages', f'dealroom-{self.dealroom.id}')
+            
+            # Prüfen ob Verzeichnis existiert
+            if os.path.exists(website_dir):
+                # Verzeichnis und alle Inhalte löschen
+                import shutil
+                shutil.rmtree(website_dir)
+                print(f"🗑️ Website-Verzeichnis gelöscht: {website_dir}")
+                return True
+            else:
+                print(f"ℹ️ Website-Verzeichnis existiert nicht: {website_dir}")
+                return True  # Als erfolgreich betrachten wenn nichts zu löschen ist
+                
         except Exception as e:
-            print(f"Fehler beim Löschen der Website: {e}")
+            print(f"❌ Fehler beim Löschen der Website: {e}")
             return False 
