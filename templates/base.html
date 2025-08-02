@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Dealroom Dashboard{% endblock %}</title>
+            <title>DealShare{% block title %}{% endblock %}</title>
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -18,29 +18,25 @@
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'core:dashboard' %}">
-                <i class="bi bi-building"></i> Dealroom Dashboard
-            </a>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">🚀 DealShare</a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'core:dashboard' %}">
-                            <i class="bi bi-speedometer2"></i> Dashboard
-                        </a>
+                        <a class="nav-link" href="{% url 'core:home' %}">🏠 Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'files:global_file_list' %}">
-                            <i class="bi bi-folder2-open"></i> Dateien
-                        </a>
+                        <a class="nav-link" href="{% url 'deals:dealroom_list' %}">🎯 Dealrooms</a>
                     </li>
-
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'deals:content_library' %}">📚 Content-Bibliothek</a>
+                    </li>
                 </ul>
                 
                 <ul class="navbar-nav">
@@ -53,6 +49,14 @@
                             <li><a class="dropdown-item" href="{% url 'users:profile' %}">
                                 <i class="bi bi-person"></i> Profil
                             </a></li>
+                            <li><a class="dropdown-item" href="{% url 'users:pricing' %}">
+                                <i class="bi bi-credit-card"></i> 💎 Pricing
+                            </a></li>
+                            {% if user.is_authenticated %}
+                            <li><a class="dropdown-item" href="{% url 'users:upgrade' %}">
+                                <i class="bi bi-arrow-up-circle"></i> 🚀 Upgrade
+                            </a></li>
+                            {% endif %}
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'users:logout' %}">
                                 <i class="bi bi-box-arrow-right"></i> Abmelden
@@ -94,20 +98,9 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-light mt-5 py-4">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <p class="text-muted mb-0">
-                        &copy; {% now "Y" %} Dealroom Dashboard. Alle Rechte vorbehalten.
-                    </p>
-                </div>
-                <div class="col-md-6 text-end">
-                    <a href="{% url 'core:about' %}" class="text-muted text-decoration-none me-3">Über</a>
-                    <a href="{% url 'core:help' %}" class="text-muted text-decoration-none me-3">Hilfe</a>
-                    <a href="{% url 'core:impressum' %}" class="text-muted text-decoration-none">Impressum</a>
-                </div>
-            </div>
+    <footer class="footer mt-auto py-3 bg-light">
+        <div class="container text-center">
+            <span class="text-muted">&copy; 2024 DealShare. Alle Rechte vorbehalten.</span>
         </div>
     </footer>
 

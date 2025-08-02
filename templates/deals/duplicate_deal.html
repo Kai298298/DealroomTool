@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dealroom duplizieren - {{ deal.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .duplicate-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .duplicate-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .duplicate-header h1 {
+        margin: 0 0 1rem 0;
+        font-size: 2rem;
+    }
+    
+    .duplicate-header p {
+        margin: 0;
+        opacity: 0.9;
+    }
+    
+    .duplicate-form {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .form-section {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .form-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+    
+    .form-section h3 {
+        margin: 0 0 1rem 0;
+        color: #333;
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+        width: auto;
+        margin: 0;
+    }
+    
+    .checkbox-group label {
+        margin: 0;
+        font-weight: normal;
+    }
+    
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .deal-info {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .deal-info h4 {
+        margin: 0 0 1rem 0;
+        color: #333;
+    }
+    
+    .deal-info ul {
+        margin: 0;
+        padding-left: 1.5rem;
+        color: #666;
+    }
+    
+    .deal-info li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .warning-box {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        color: #856404;
+    }
+    
+    .warning-box h4 {
+        margin: 0 0 0.5rem 0;
+        color: #856404;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="duplicate-container">
+    <!-- Header -->
+    <div class="duplicate-header">
+        <h1>🔄 Dealroom duplizieren</h1>
+        <p>Erstellen Sie eine Kopie von "{{ deal.title }}" mit angepassten Einstellungen</p>
+    </div>
+    
+    <!-- Deal-Informationen -->
+    <div class="deal-info">
+        <h4>📋 Original-Deal Informationen</h4>
+        <ul>
+            <li><strong>Titel:</strong> {{ deal.title }}</li>
+            <li><strong>Status:</strong> {{ deal.get_status_display }}</li>
+            <li><strong>Template:</strong> {{ deal.get_template_type_display }}</li>
+            <li><strong>Theme:</strong> {{ deal.get_theme_type_display }}</li>
+            <li><strong>Dateien:</strong> {{ deal.files.count }} Dateien</li>
+            <li><strong>Erstellt:</strong> {{ deal.created_at|date:"d.m.Y H:i" }}</li>
+        </ul>
+    </div>
+    
+    <!-- Duplizierungs-Formular -->
+    <div class="duplicate-form">
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- Grundinformationen -->
+            <div class="form-section">
+                <h3>📝 Grundinformationen</h3>
+                
+                <div class="form-group">
+                    <label for="new_title">Neuer Titel *</label>
+                    <input type="text" id="new_title" name="new_title" class="form-control" 
+                           value="{{ deal.title }} (Kopie)" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="new_slug">Neuer Slug (URL)</label>
+                    <input type="text" id="new_slug" name="new_slug" class="form-control" 
+                           placeholder="Wird automatisch generiert">
+                    <small style="color: #666;">Leer lassen für automatische Generierung</small>
+                </div>
+            </div>
+            
+            <!-- Duplizierungs-Optionen -->
+            <div class="form-section">
+                <h3>⚙️ Duplizierungs-Optionen</h3>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="include_files" name="include_files" checked>
+                    <label for="include_files">📁 Dateien mit duplizieren</label>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="include_content" name="include_content" checked>
+                    <label for="include_content">📝 Content mit duplizieren (Texte, Aufgaben, FAQ)</label>
+                </div>
+            </div>
+            
+            <!-- Reset-Optionen -->
+            <div class="form-section">
+                <h3>🔄 Reset-Optionen</h3>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="reset_status" name="reset_status" checked>
+                    <label for="reset_status">📊 Status auf "Entwurf" zurücksetzen</label>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="reset_progress" name="reset_progress" checked>
+                    <label for="reset_progress">📈 Fortschritt auf 0% zurücksetzen</label>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="reset_password_protection" name="reset_password_protection" checked>
+                    <label for="reset_password_protection">🔒 Passwortschutz deaktivieren</label>
+                </div>
+            </div>
+            
+            <!-- Warnung -->
+            <div class="warning-box">
+                <h4>⚠️ Wichtige Hinweise</h4>
+                <ul style="margin: 0; padding-left: 1.5rem;">
+                    <li>Der neue Dealroom wird als "Entwurf" erstellt</li>
+                    <li>Passwortschutz wird automatisch deaktiviert</li>
+                    <li>Website-Generierung erfolgt automatisch nach der Duplizierung</li>
+                    <li>Alle Einstellungen und Inhalte werden kopiert (je nach Auswahl)</li>
+                </ul>
+            </div>
+            
+            <!-- Buttons -->
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <button type="submit" class="btn btn-primary">
+                    🔄 Dealroom duplizieren
+                </button>
+                <a href="{% url 'admin:deals_deal_change' deal.id %}" class="btn btn-secondary">
+                    ❌ Abbrechen
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Auto-generate slug from title
+    document.getElementById('new_title').addEventListener('input', function() {
+        const title = this.value;
+        const slug = title.toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .trim('-');
+        document.getElementById('new_slug').value = slug;
+    });
+    
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const title = document.getElementById('new_title').value.trim();
+        if (!title) {
+            e.preventDefault();
+            alert('Bitte geben Sie einen Titel ein!');
+            return false;
+        }
+    });
+</script>
+{% endblock %} 

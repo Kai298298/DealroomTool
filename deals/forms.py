@@ -222,3 +222,78 @@ class DealFileAssignmentForm(forms.Form):
                 field.widget.attrs.update({'class': 'form-control'})
             elif isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs.update({'class': 'form-check-input'}) 
+
+
+class ModernDealForm(forms.ModelForm):
+    """
+    Vereinfachtes Formular für moderne Dealroom-Erstellung
+    """
+    class Meta:
+        model = Deal
+        fields = [
+            'title', 'slug', 'recipient_name', 'recipient_email', 'company_name',
+            'description', 'template_type', 'theme_type', 'primary_color', 'secondary_color'
+        ]
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'primary_color': forms.TextInput(attrs={'type': 'color', 'class': 'form-control form-control-color'}),
+            'secondary_color': forms.TextInput(attrs={'type': 'color', 'class': 'form-control form-control-color'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Bootstrap-Klassen hinzufügen
+        for field in self.fields.values():
+            if isinstance(field.widget, (forms.TextInput, forms.EmailInput, forms.URLInput, forms.Select)):
+                field.widget.attrs.update({'class': 'form-control'})
+            elif isinstance(field.widget, forms.Textarea):
+                field.widget.attrs.update({'class': 'form-control'})
+        
+        # Standardwerte setzen
+        self.fields['theme_type'].initial = 'light'
+        self.fields['primary_color'].initial = '#667eea'
+        self.fields['secondary_color'].initial = '#764ba2'
+        self.fields['template_type'].initial = 'modern'
+        
+        # Slug automatisch aus Titel generieren
+        if 'title' in self.data:
+            title = self.data['title']
+            if title and not self.data.get('slug'):
+                from django.utils.text import slugify
+                self.initial['slug'] = slugify(title)
+    
+    def clean_title(self):
+        """Validiert den Titel auf Eindeutigkeit"""
+        title = self.cleaned_data.get('title')
+        if not title:
+            return title
+        
+        # Prüfe ob Titel bereits existiert (außer bei Bearbeitung)
+        existing_deal = Deal.objects.filter(title=title)
+        if self.instance and self.instance.pk:
+            existing_deal = existing_deal.exclude(pk=self.instance.pk)
+        
+        if existing_deal.exists():
+            raise forms.ValidationError(
+                _('Ein Dealroom mit diesem Titel existiert bereits. Bitte wählen Sie einen anderen Titel.')
+            )
+        
+        return title
+    
+    def clean_slug(self):
+        """Validiert den Slug auf Eindeutigkeit"""
+        slug = self.cleaned_data.get('slug')
+        if not slug:
+            return slug
+        
+        # Prüfe ob Slug bereits existiert (außer bei Bearbeitung)
+        existing_deal = Deal.objects.filter(slug=slug)
+        if self.instance and self.instance.pk:
+            existing_deal = existing_deal.exclude(pk=self.instance.pk)
+        
+        if existing_deal.exists():
+            raise forms.ValidationError(
+                _('Ein Dealroom mit diesem Slug existiert bereits. Bitte wählen Sie einen anderen Slug.')
+            )
+        
+        return slug 

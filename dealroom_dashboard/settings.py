@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'corsheaders',
     'core',
     'users',
     'deals',
@@ -41,6 +42,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -156,4 +158,45 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20
+}
+
+# CORS Settings for GrapesJS
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+# GrapesJS Settings
+GRAPESJS_CONFIG = {
+    'container': '#gjs',
+    'height': '100vh',
+    'storageManager': {
+        'type': 'remote',
+        'autosave': True,
+        'stepsBeforeSave': 1,
+    },
+    'assetManager': {
+        'embedAsBase64': False,
+        'upload': '/api/grapesjs/upload-asset/',
+        'uploadName': 'files',
+    },
+    'panels': {
+        'defaults': [
+            {
+                'id': 'basic-actions',
+                'el': '.panel__basic-actions',
+                'buttons': [
+                    {
+                        'id': 'visibility',
+                        'active': True,
+                        'className': 'btn-toggle-borders',
+                        'label': '<u>B</u>',
+                        'command': 'sw-visibility',
+                    },
+                ],
+            },
+        ],
+    },
 }

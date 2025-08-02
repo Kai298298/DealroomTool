@@ -1,0 +1,488 @@
+{% extends 'base.html' %}
+
+{% block title %}HTML-Editor - {{ deal.title }}{% endblock %}
+
+{% block extra_head %}
+<!-- CodeMirror für Syntax-Highlighting -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+
+<style>
+.editor-container {
+    display: flex;
+    height: 80vh;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.editor-panel {
+    flex: 1;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.editor-header {
+    background: #f8f9fa;
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+    font-weight: bold;
+}
+
+.editor-content {
+    height: calc(100% - 50px);
+}
+
+.CodeMirror {
+    height: 100%;
+    font-size: 14px;
+}
+
+.preview-panel {
+    flex: 1;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.preview-header {
+    background: #f8f9fa;
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.preview-content {
+    height: calc(100% - 50px);
+    overflow: auto;
+    background: white;
+}
+
+.preview-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.tab-container {
+    margin-bottom: 20px;
+}
+
+.tab-buttons {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    border: none;
+    background: #f8f9fa;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.tab-button.active {
+    background: white;
+    border-bottom-color: #007bff;
+    color: #007bff;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.mode-selector {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.control-buttons {
+    margin: 20px 0;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.btn-save {
+    background: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-preview {
+    background: #17a2b8;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-reset {
+    background: #6c757d;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.status-info {
+    padding: 10px;
+    background: #e9ecef;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1>🔧 HTML-Editor - {{ deal.title }}</h1>
+            
+            <!-- Status-Info -->
+            <div class="status-info">
+                <strong>📊 Status:</strong> 
+                Website-Status: <span class="badge badge-{{ deal.website_status }}">{{ deal.get_website_status_display }}</span>
+                | HTML-Modus: <span class="badge badge-info">{{ deal.get_html_editor_mode_display }}</span>
+                | Bearbeitungen: <span class="badge badge-secondary">{{ deal.html_edit_count }}</span>
+                {% if deal.last_html_edit %}
+                | Letzte Bearbeitung: {{ deal.last_html_edit|date:"d.m.Y H:i" }}
+                {% endif %}
+            </div>
+            
+            <!-- HTML-Editor-Modus -->
+            <div class="mode-selector">
+                <h5>🎛️ HTML-Editor-Modus</h5>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="html_editor_mode" id="mode_auto" value="auto" 
+                           {% if deal.html_editor_mode == 'auto' %}checked{% endif %}>
+                    <label class="form-check-label" for="mode_auto">
+                        <strong>Automatisch generiert</strong> - HTML wird automatisch aus den Deal-Daten generiert
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="html_editor_mode" id="mode_manual" value="manual" 
+                           {% if deal.html_editor_mode == 'manual' %}checked{% endif %}>
+                    <label class="form-check-label" for="mode_manual">
+                        <strong>Manuell bearbeitet</strong> - Nur benutzerdefinierter HTML-Code wird verwendet
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="html_editor_mode" id="mode_hybrid" value="hybrid" 
+                           {% if deal.html_editor_mode == 'hybrid' %}checked{% endif %}>
+                    <label class="form-check-label" for="mode_hybrid">
+                        <strong>Hybrid</strong> - Automatisch generiert + benutzerdefinierte Anpassungen
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Tab-Navigation -->
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-button active" onclick="showTab('html')">📄 HTML-Code</button>
+                    <button class="tab-button" onclick="showTab('css')">🎨 CSS</button>
+                    <button class="tab-button" onclick="showTab('js')">⚡ JavaScript</button>
+                    <button class="tab-button" onclick="showTab('current')">📋 Aktueller Code</button>
+                </div>
+                
+                <!-- HTML-Tab -->
+                <div id="html-tab" class="tab-content active">
+                    <div class="editor-container">
+                        <div class="editor-panel">
+                            <div class="editor-header">HTML-Header (Meta-Tags, CSS, etc.)</div>
+                            <div class="editor-content">
+                                <textarea id="custom_html_header" name="custom_html_header">{{ deal.custom_html_header|default:'' }}</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-panel">
+                            <div class="preview-header">
+                                <span>Vorschau</span>
+                                <button class="btn btn-sm btn-outline-primary" onclick="refreshPreview()">🔄 Aktualisieren</button>
+                            </div>
+                            <div class="preview-content">
+                                <iframe id="preview-iframe" class="preview-iframe" src="{% url 'deals:html_preview' deal.id %}"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="editor-container">
+                        <div class="editor-panel">
+                            <div class="editor-header">HTML-Body-Start (Navigation, etc.)</div>
+                            <div class="editor-content">
+                                <textarea id="custom_html_body_start" name="custom_html_body_start">{{ deal.custom_html_body_start|default:'' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="editor-container">
+                        <div class="editor-panel">
+                            <div class="editor-header">HTML-Content (Hauptinhalt)</div>
+                            <div class="editor-content">
+                                <textarea id="custom_html_content" name="custom_html_content">{{ deal.custom_html_content|default:'' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="editor-container">
+                        <div class="editor-panel">
+                            <div class="editor-header">HTML-Body-End (Footer, Scripts)</div>
+                            <div class="editor-content">
+                                <textarea id="custom_html_body_end" name="custom_html_body_end">{{ deal.custom_html_body_end|default:'' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- CSS-Tab -->
+                <div id="css-tab" class="tab-content">
+                    <div class="editor-container">
+                        <div class="editor-panel">
+                            <div class="editor-header">Benutzerdefiniertes CSS</div>
+                            <div class="editor-content">
+                                <textarea id="custom_css" name="custom_css">{{ deal.custom_css|default:'' }}</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-panel">
+                            <div class="preview-header">
+                                <span>CSS-Vorschau</span>
+                                <button class="btn btn-sm btn-outline-primary" onclick="refreshPreview()">🔄 Aktualisieren</button>
+                            </div>
+                            <div class="preview-content">
+                                <iframe id="preview-iframe-css" class="preview-iframe" src="{% url 'deals:html_preview' deal.id %}"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- JavaScript-Tab -->
+                <div id="js-tab" class="tab-content">
+                    <div class="editor-container">
+                        <div class="editor-panel">
+                            <div class="editor-header">Benutzerdefiniertes JavaScript</div>
+                            <div class="editor-content">
+                                <textarea id="custom_javascript" name="custom_javascript">{{ deal.custom_javascript|default:'' }}</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-panel">
+                            <div class="preview-header">
+                                <span>JavaScript-Vorschau</span>
+                                <button class="btn btn-sm btn-outline-primary" onclick="refreshPreview()">🔄 Aktualisieren</button>
+                            </div>
+                            <div class="preview-content">
+                                <iframe id="preview-iframe-js" class="preview-iframe" src="{% url 'deals:html_preview' deal.id %}"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Aktueller Code-Tab -->
+                <div id="current-tab" class="tab-content">
+                    <div class="editor-container">
+                        <div class="editor-panel">
+                            <div class="editor-header">Aktueller HTML-Code der Website</div>
+                            <div class="editor-content">
+                                <textarea id="current_html" readonly>{{ current_html }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Control Buttons -->
+            <div class="control-buttons">
+                <button class="btn-save" onclick="saveHTML()">💾 Speichern & Regenerieren</button>
+                <button class="btn-preview" onclick="refreshPreview()">👁️ Vorschau aktualisieren</button>
+                <button class="btn-reset" onclick="resetHTML()">🔄 Zurücksetzen</button>
+                <a href="{% url 'admin:deals_deal_change' deal.id %}" class="btn btn-secondary">← Zurück zum Admin</a>
+                {% if deal.local_website_url %}
+                <a href="{{ deal.local_website_url }}" target="_blank" class="btn btn-primary">🌐 Website anzeigen</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// CodeMirror Editoren initialisieren
+let editors = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    // HTML-Header Editor
+    editors.header = CodeMirror.fromTextArea(document.getElementById('custom_html_header'), {
+        mode: 'htmlmixed',
+        theme: 'monokai',
+        lineNumbers: true,
+        autoCloseTags: true,
+        lineWrapping: true
+    });
+    
+    // HTML-Body-Start Editor
+    editors.bodyStart = CodeMirror.fromTextArea(document.getElementById('custom_html_body_start'), {
+        mode: 'htmlmixed',
+        theme: 'monokai',
+        lineNumbers: true,
+        autoCloseTags: true,
+        lineWrapping: true
+    });
+    
+    // HTML-Content Editor
+    editors.content = CodeMirror.fromTextArea(document.getElementById('custom_html_content'), {
+        mode: 'htmlmixed',
+        theme: 'monokai',
+        lineNumbers: true,
+        autoCloseTags: true,
+        lineWrapping: true
+    });
+    
+    // HTML-Body-End Editor
+    editors.bodyEnd = CodeMirror.fromTextArea(document.getElementById('custom_html_body_end'), {
+        mode: 'htmlmixed',
+        theme: 'monokai',
+        lineNumbers: true,
+        autoCloseTags: true,
+        lineWrapping: true
+    });
+    
+    // CSS Editor
+    editors.css = CodeMirror.fromTextArea(document.getElementById('custom_css'), {
+        mode: 'css',
+        theme: 'monokai',
+        lineNumbers: true,
+        lineWrapping: true
+    });
+    
+    // JavaScript Editor
+    editors.js = CodeMirror.fromTextArea(document.getElementById('custom_javascript'), {
+        mode: 'javascript',
+        theme: 'monokai',
+        lineNumbers: true,
+        lineWrapping: true
+    });
+    
+    // Current HTML Editor (readonly)
+    editors.current = CodeMirror.fromTextArea(document.getElementById('current_html'), {
+        mode: 'htmlmixed',
+        theme: 'monokai',
+        lineNumbers: true,
+        lineWrapping: true,
+        readOnly: true
+    });
+});
+
+// Tab-Funktionalität
+function showTab(tabName) {
+    // Alle Tabs ausblenden
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('active');
+    });
+    
+    // Gewählten Tab anzeigen
+    document.getElementById(tabName + '-tab').classList.add('active');
+    event.target.classList.add('active');
+    
+    // CodeMirror neu rendern
+    setTimeout(() => {
+        Object.values(editors).forEach(editor => {
+            editor.refresh();
+        });
+    }, 100);
+}
+
+// HTML speichern
+function saveHTML() {
+    const formData = new FormData();
+    
+    // HTML-Editor-Modus
+    const mode = document.querySelector('input[name="html_editor_mode"]:checked').value;
+    formData.append('html_editor_mode', mode);
+    
+    // HTML-Code aus CodeMirror Editoren
+    formData.append('custom_html_header', editors.header.getValue());
+    formData.append('custom_html_body_start', editors.bodyStart.getValue());
+    formData.append('custom_html_content', editors.content.getValue());
+    formData.append('custom_html_body_end', editors.bodyEnd.getValue());
+    formData.append('custom_css', editors.css.getValue());
+    formData.append('custom_javascript', editors.js.getValue());
+    
+    // CSRF-Token
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    // AJAX-Request
+    fetch('{% url "deals:html_editor" deal.id %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.text())
+    .then(data => {
+        // Erfolgsmeldung anzeigen
+        alert('HTML-Code wurde erfolgreich gespeichert und die Website wurde regeneriert!');
+        location.reload();
+    })
+    .catch(error => {
+        alert('Fehler beim Speichern: ' + error);
+    });
+}
+
+// Vorschau aktualisieren
+function refreshPreview() {
+    const iframes = document.querySelectorAll('.preview-iframe');
+    iframes.forEach(iframe => {
+        iframe.src = iframe.src;
+    });
+}
+
+// HTML zurücksetzen
+function resetHTML() {
+    if (confirm('Möchten Sie wirklich alle HTML-Änderungen zurücksetzen?')) {
+        // Alle Editoren zurücksetzen
+        editors.header.setValue('');
+        editors.bodyStart.setValue('');
+        editors.content.setValue('');
+        editors.bodyEnd.setValue('');
+        editors.css.setValue('');
+        editors.js.setValue('');
+        
+        // Modus auf Auto setzen
+        document.getElementById('mode_auto').checked = true;
+        
+        alert('HTML-Code wurde zurückgesetzt!');
+    }
+}
+
+// Auto-Save alle 30 Sekunden
+setInterval(() => {
+    // Nur speichern wenn Änderungen vorhanden
+    const hasChanges = Object.values(editors).some(editor => 
+        editor.getValue() !== editor.getTextArea().defaultValue
+    );
+    
+    if (hasChanges) {
+        console.log('Auto-Save...');
+        // Hier könnte Auto-Save implementiert werden
+    }
+}, 30000);
+</script>
+{% endblock %} 

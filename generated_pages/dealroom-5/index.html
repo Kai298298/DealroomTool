@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erweiterter Dealroom mit Produkt</title>
+    <meta name="description" content="">
+    <meta name="keywords" content="Dealroom, Erweiterter Dealroom mit Produkt, Business">
+    <meta name="author" content="testuser">
+    <meta property="og:title" content="Erweiterter Dealroom mit Produkt">
+    <meta property="og:description" content="">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="/generated_pages/dealroom-5/index.html">
+    <link rel="canonical" href="/generated_pages/dealroom-5/index.html">
+</head>
+<style>
+
+/* CSS Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+
+
+
+/* CSS Variables - Dark Theme */
+:root {
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --text-color: #ffffff;
+    --bg-color: #1a1a1a;
+    --card-bg: #2d2d2d;
+    --light-gray: #3a3a3a;
+    --border-color: #4a4a4a;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+
+
+/* Base Styles */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-1px);
+}
+
+.card {
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 15px 0;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+}
+
+.section {
+    margin: 40px 0;
+}
+
+.section h2 {
+    color: var(--text-color);
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+
+
+/* Header Styles */
+.header {
+    background-color: var(--card-bg);
+    box-shadow: var(--shadow);
+    padding: 1rem 0;
+}
+
+.nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+
+
+/* Hero Section */
+.hero {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 4rem 0;
+    text-align: center;
+}
+
+.hero h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.hero p {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+}
+
+.hero-image {
+    margin: 2rem 0;
+    text-align: center;
+}
+
+.hero-img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+.hero-video {
+    margin: 2rem 0;
+    text-align: center;
+}
+
+.video-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.video-container iframe {
+    width: 100%;
+    height: 400px;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+
+
+/* Content Styles */
+.content {
+    padding: 3rem 0;
+}
+
+/* Welcome Section */
+.welcome-section .card {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: none;
+}
+
+.welcome-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.welcome-logo {
+    flex-shrink: 0;
+}
+
+.logo-img {
+    max-width: 100px;
+    height: auto;
+}
+
+.welcome-content h1 {
+    margin-bottom: 10px;
+    font-size: 2rem;
+}
+
+.welcome-message {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+}
+
+.customer-name {
+    font-weight: 600;
+    font-size: 1.2rem;
+}
+
+/* Deal Status */
+.deal-status {
+    text-align: center;
+}
+
+.status-info h3 {
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background-color: var(--light-gray);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 15px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* Tasks */
+.tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.task-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 15px;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.task-item.completed {
+    opacity: 0.7;
+    background-color: var(--light-gray);
+}
+
+.task-checkbox {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.task-content h4 {
+    margin-bottom: 5px;
+    color: var(--text-color);
+}
+
+.task-content p {
+    color: var(--text-color);
+    opacity: 0.8;
+    margin-bottom: 5px;
+}
+
+.task-due {
+    font-size: 0.9rem;
+    color: var(--secondary-color);
+    font-weight: 600;
+}
+
+/* Communication */
+.contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.contact-person {
+    padding: 20px;
+    background-color: var(--light-gray);
+    border-radius: 8px;
+}
+
+.contact-person h3 {
+    margin-bottom: 15px;
+    color: var(--primary-color);
+}
+
+.chat-section h3 {
+    margin-bottom: 15px;
+    color: var(--primary-color);
+}
+
+.chat-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chat-input {
+    width: 100%;
+    min-height: 100px;
+    padding: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    resize: vertical;
+}
+
+/* Team */
+.team-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.team-column h3 {
+    margin-bottom: 20px;
+    color: var(--primary-color);
+}
+
+.team-member {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background-color: var(--light-gray);
+    border-radius: 8px;
+}
+
+.member-avatar {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.member-info h4 {
+    margin-bottom: 5px;
+    color: var(--text-color);
+}
+
+.member-info p {
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+/* Timeline */
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--primary-color);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+    padding-left: 30px;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 5px;
+    width: 16px;
+    height: 16px;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+}
+
+.timeline-date {
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 5px;
+}
+
+.timeline-content h4 {
+    margin-bottom: 5px;
+    color: var(--text-color);
+}
+
+.timeline-content p {
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+/* FAQ */
+.faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.faq-item {
+    padding: 20px;
+    background-color: var(--light-gray);
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.faq-question {
+    margin-bottom: 10px;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.faq-answer {
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+/* Produktbeschreibung */
+.product-details {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.product-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.product-header h3 {
+    margin: 0;
+    color: var(--text-color);
+    font-size: 1.5rem;
+}
+
+.product-price {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    background-color: var(--light-gray);
+    padding: 8px 16px;
+    border-radius: 20px;
+}
+
+.product-description {
+    line-height: 1.6;
+    color: var(--text-color);
+}
+
+.product-features {
+    margin-top: 20px;
+}
+
+.product-features h4 {
+    margin-bottom: 15px;
+    color: var(--text-color);
+}
+
+.features-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background-color: var(--light-gray);
+    border-radius: 8px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.feature-icon {
+    color: var(--primary-color);
+    font-weight: bold;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.feature-text {
+    color: var(--text-color);
+    line-height: 1.4;
+}
+
+/* Erweiterte Dokumentenverwaltung */
+.documents-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.document-category {
+    background-color: var(--light-gray);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.document-category h3 {
+    margin-bottom: 15px;
+    color: var(--text-color);
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 8px;
+}
+
+.document-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.document-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.document-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.document-info h4 {
+    margin-bottom: 5px;
+    color: var(--text-color);
+}
+
+.document-meta {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+.badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge.public {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge.customer {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.badge.internal {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge.confidential {
+    background-color: #dc3545;
+    color: white;
+}
+
+.badge.signature {
+    background-color: #6f42c1;
+    color: white;
+}
+
+/* CTA */
+.cta-card {
+    text-align: center;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+}
+
+.cta-card h2 {
+    color: white;
+}
+
+.cta-card p {
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+}
+
+.cta-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.btn-primary {
+    background-color: white;
+    color: var(--primary-color);
+    font-weight: 600;
+    padding: 15px 30px;
+    font-size: 1.1rem;
+}
+
+.btn-primary:hover {
+    background-color: var(--light-gray);
+    transform: translateY(-2px);
+}
+
+/* File Download Section */
+.files-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.file-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.file-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.file-icon {
+    flex-shrink: 0;
+    width: 50px;
+    height: 50px;
+    background: var(--light-gray);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.file-icon::before {
+    content: "📄";
+}
+
+.file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.file-info h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    color: var(--text-color);
+}
+
+.file-info p {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.8;
+    line-height: 1.4;
+}
+
+.file-size {
+    font-size: 0.8rem;
+    color: var(--secondary-color);
+    font-weight: 500;
+}
+
+.file-actions {
+    flex-shrink: 0;
+}
+
+.btn-download {
+    background: var(--primary-color);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.2s;
+}
+
+.btn-download:hover {
+    background: var(--secondary-color);
+}
+
+/* Image Gallery */
+.image-gallery {
+    margin: 2rem 0;
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.gallery-item {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.gallery-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+}
+
+/* Contact Info */
+.contact-info {
+    background-color: var(--light-gray);
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.contact-info p {
+    margin: 10px 0;
+}
+
+.contact-info a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.contact-info a:hover {
+    text-decoration: underline;
+}
+
+
+
+/* Footer Styles */
+.footer {
+    background-color: var(--card-bg);
+    border-top: 1px solid var(--border-color);
+    padding: 2rem 0;
+    text-align: center;
+    color: var(--text-color);
+}
+
+
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 10px;
+    }
+    
+    .hero h1 {
+        font-size: 2rem;
+    }
+    
+    .hero p {
+        font-size: 1rem;
+    }
+    
+    .welcome-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .contact-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .team-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .gallery-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.5rem;
+    }
+    
+    .gallery-item img {
+        height: 150px;
+    }
+    
+    .video-container {
+        max-width: 100%;
+    }
+    
+    .file-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .file-icon {
+        margin-bottom: 1rem;
+    }
+    
+    .cta-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+</style>
+<body>
+
+        <header class="header">
+            <div class="container">
+                <nav class="nav">
+                    <div class="logo">Erweiterter Dealroom mit Produkt</div>
+                </nav>
+            </div>
+        </header>
+
+        <section class="hero">
+            <div class="container">
+                <h1>Erweiterter Dealroom mit Produkt</h1>
+                <p></p>
+            </div>
+        </section>
+
+        <main class="content">
+            <div class="container">
+            <section class="section welcome-section">
+                <div class="card">
+                    <div class="welcome-header">
+                        <div class="welcome-logo">
+                            <img src="https://via.placeholder.com/100x50/007bff/ffffff?text=LOGO" alt="Logo" class="logo-img">
+                        </div>
+                        <div class="welcome-content">
+                            <h1>Willkommen im Dealroom</h1><p class="welcome-message">Willkommen in Ihrem persönlichen Dealroom!</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="section">
+                <div class="card">
+                    <h2>Produktbeschreibung</h2>
+                    <div class="product-details">
+                        <div class="product-header">
+                            <h3>Premium Software Lösung</h3><div class="product-price">€ 2,999.99</div>
+                        </div>
+                        <div class="product-description">
+                            <p>Eine umfassende Software-Lösung für Ihr Unternehmen mit modernster Technologie und benutzerfreundlicher Oberfläche.</p>
+                        </div>
+                        <div class="product-features">
+                            <h4>Produktfeatures</h4>
+                            <ul class="features-list">
+                                <li class="feature-item">
+                                    <span class="feature-icon">☁️</span>
+                                    <span class="feature-text">Cloud-basiert</span>
+                                </li>
+                                <li class="feature-item">
+                                    <span class="feature-icon">🛟</span>
+                                    <span class="feature-text">24/7 Support</span>
+                                </li>
+                                <li class="feature-item">
+                                    <span class="feature-icon">🔄</span>
+                                    <span class="feature-text">Automatische Updates</span>
+                                </li>
+                                <li class="feature-item">
+                                    <span class="feature-icon">🔒</span>
+                                    <span class="feature-text">DSGVO-konform</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="section">
+                <div class="card">
+                    <h2>Deal-Status</h2>
+                    <div class="deal-status">
+                        <div class="status-info">
+                            <h3>Angebot in Prüfung</h3>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 65%"></div>
+                            </div>
+                            <p class="progress-text">65% abgeschlossen</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="section">
+                <div class="card">
+                    <h2>Wichtige Dokumente</h2>
+                    <div class="documents-grid">
+                        <div class="document-category">
+                            <h3>Angebote</h3>
+                            <div class="document-list">
+                                <div class="document-item">
+                                    <div class="document-info">
+                                        <h4>Angebot Premium Software</h4>
+                                        <p class="document-meta">
+                                            Unbekannt <span class="badge customer">Nur Kunde</span> <span class="badge signature">Unterschrift erforderlich</span>
+                                        </p>
+                                    </div>
+                                    <a href="None" class="btn btn-primary" download>
+                                        <i class="icon-download"></i> Download
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="section">
+                <div class="card">
+                    <h2>Ihre Aufgaben</h2>
+                    <div class="tasks-list">
+                        <div class="task-item ">
+                            <div class="task-checkbox">
+                                <input type="checkbox"  disabled>
+                            </div>
+                            <div class="task-content">
+                                <h4>Angebot prüfen</h4>
+                                <p>Bitte prüfen Sie das Angebot sorgfältig</p><span class="task-due">Fällig: 2024-01-20</span>
+                            </div>
+                        </div>
+                        <div class="task-item ">
+                            <div class="task-checkbox">
+                                <input type="checkbox"  disabled>
+                            </div>
+                            <div class="task-content">
+                                <h4>Dokumente signieren</h4>
+                                <p>Unterschreiben Sie die bereitgestellten Dokumente</p><span class="task-due">Fällig: 2024-01-25</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="section">
+                <div class="card">
+                    <h2>Kontakt & Kommunikation</h2>
+                    <div class="contact-grid">
+                        <div class="contact-person">
+                            <h3>Ihr Ansprechpartner</h3>
+                            <p><strong>Max Mustermann</strong></p><p><a href="mailto:max@example.com">max@example.com</a></p><p><a href="tel:+49 123 456789">+49 123 456789</a></p>
+                        </div>
+                        <div class="chat-section">
+                            <h3>Direkte Nachricht</h3>
+                            <div class="chat-box">
+                                <textarea placeholder="Ihre Nachricht..." class="chat-input"></textarea>
+                                <button class="btn">Nachricht senden</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="section">
+                <div class="card">
+                    <h2>Team & Stakeholder</h2>
+                    <div class="team-grid">
+                        <div class="team-column">
+                            <h3>Ihr Team</h3>
+                            <div class="team-member">
+                                <div class="member-avatar">👤</div>
+                                <div class="member-info">
+                                    <h4>Ihr Name</h4>
+                                    <p>Kunde</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="team-column">
+                            <h3>Unser Team</h3>
+                            <div class="team-member">
+                                <div class="member-avatar">👨‍💼</div>
+                                <div class="member-info">
+                                    <h4>Berater</h4>
+                                    <p>Ansprechpartner</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="section">
+                <div class="card">
+                    <h2>Aktivitäten & Timeline</h2>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-date">2024-01-15</div>
+                            <div class="timeline-content">
+                                <h4>Dealroom erstellt</h4>
+                                <p>Ihr persönlicher Dealroom wurde angelegt</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-date">2024-01-16</div>
+                            <div class="timeline-content">
+                                <h4>Angebot erstellt</h4>
+                                <p>Ihr individuelles Angebot wurde erstellt</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-date">2024-01-17</div>
+                            <div class="timeline-content">
+                                <h4>Dokumente hochgeladen</h4>
+                                <p>Alle relevanten Unterlagen wurden bereitgestellt</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="section">
+                <div class="card">
+                    <h2>Häufige Fragen</h2>
+                    <div class="faq-list">
+                        <div class="faq-item">
+                            <h4 class="faq-question">Wie funktioniert die Software?</h4>
+                            <p class="faq-answer">Die Software ist cloud-basiert und kann über jeden Browser genutzt werden.</p>
+                        </div>
+                        <div class="faq-item">
+                            <h4 class="faq-question">Gibt es Support?</h4>
+                            <p class="faq-answer">Ja, wir bieten 24/7 Support für alle Kunden.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="section">
+                <div class="card cta-card">
+                    <h2>Nächster Schritt</h2>
+                    <p>Bereit für den nächsten Schritt? Klicken Sie auf den Button unten.</p>
+                    <div class="cta-buttons"><button class="btn btn-primary">Angebot annehmen</button>
+                    </div>
+                </div>
+            </section>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="container">
+                <p>&copy; 2024 Erweiterter Dealroom mit Produkt. Alle Rechte vorbehalten.</p>
+            </div>
+        </footer>
+
+        <script>
+        // Interaktive Funktionen
+        document.addEventListener('DOMContentLoaded', function() {
+            // Smooth Scrolling für Anker-Links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+            
+            // Lazy Loading für Bilder
+            const images = document.querySelectorAll('img[loading="lazy"]');
+            if ('IntersectionObserver' in window) {
+                const imageObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            img.src = img.dataset.src || img.src;
+                            img.classList.remove('lazy');
+                            imageObserver.unobserve(img);
+                        }
+                    });
+                });
+                
+                images.forEach(img => imageObserver.observe(img));
+            }
+            
+            // Download-Tracking
+            document.querySelectorAll('.btn-download').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    console.log('Download gestartet:', this.href);
+                });
+            });
+        });
+        </script>
+        </body>
+        </html>

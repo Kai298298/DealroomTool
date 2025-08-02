@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p class="text-muted mb-0">Dealroom: {{ deal.title }}</p>
                 </div>
                 <div>
-                    <a href="{% url 'dealrooms:dealroom_files' deal.pk %}" class="btn btn-outline-secondary">
+                    <a href="{% url 'deals:dealroom_files' deal.pk %}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-2"></i>Zurück zu Dateien
                     </a>
                 </div>
@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             <button type="submit" class="btn btn-primary">
                                                 <i class="bi bi-upload me-2"></i>Datei hinzufügen
                                             </button>
-                                            <a href="{% url 'dealrooms:dealroom_files' deal.pk %}" class="btn btn-outline-secondary">
+                                            <a href="{% url 'deals:dealroom_files' deal.pk %}" class="btn btn-outline-secondary">
                                                 <i class="bi bi-x me-2"></i>Abbrechen
                                             </a>
                                         </div>

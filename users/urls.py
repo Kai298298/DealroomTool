@@ -20,7 +20,11 @@ urlpatterns = [
         template_name='users/password_change_done.html'
     ), name='password_change_done'),
     
-    # Benutzerprofil
+    # Verkaufs-Seiten
+    path('upgrade/', views.UpgradeView.as_view(), name='upgrade'),
+    path('pricing/', views.PricingView.as_view(), name='pricing'),
+    
+    # Profil
     path('profile/', views.ProfileView.as_view(), name='profile'),
     path('profile/edit/', views.ProfileEditView.as_view(), name='profile_edit'),
 ] 

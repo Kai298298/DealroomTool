@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}GrapesJS Editor - {{ deal.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* GrapesJS Editor Styles */
+    .grapesjs-container {
+        height: 100vh;
+        width: 100%;
+        position: relative;
+    }
+    
+    .editor-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+    }
+    
+    .editor-header h1 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+    
+    .editor-actions {
+        display: flex;
+        gap: 1rem;
+    }
+    
+    .btn-save {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    
+    .btn-preview {
+        background: #17a2b8;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    
+    /* GrapesJS Custom Styles */
+    .gjs-cv-canvas {
+        top: 60px !important;
+    }
+    
+    .gjs-pn-panel {
+        top: 60px !important;
+    }
+    
+    .gjs-pn-views-container {
+        top: 60px !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="grapesjs-container">
+    <!-- Editor Header -->
+    <div class="editor-header">
+        <h1>🎨 GrapesJS Editor - {{ deal.title }}</h1>
+        <div class="editor-actions">
+            <button class="btn-save" onclick="saveContent()">
+                <i class="bi bi-save"></i> Speichern
+            </button>
+            <button class="btn-preview" onclick="previewContent()">
+                <i class="bi bi-eye"></i> Vorschau
+            </button>
+            <a href="{% url 'deals:dealroom_detail' deal.pk %}" class="btn-back">
+                <i class="bi bi-arrow-left"></i> Zurück
+            </a>
+        </div>
+    </div>
+    
+    <!-- GrapesJS Editor Container -->
+    <div id="gjs"></div>
+</div>
+
+<!-- GrapesJS CDN -->
+<script src="https://unpkg.com/grapesjs@0.21.2/dist/grapes.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/grapesjs@0.21.2/dist/css/grapes.min.css">
+
+<!-- Custom GrapesJS Configuration -->
+<script>
+// Initial HTML Content
+const initialHTML = `{{ initial_html|escapejs }}`;
+
+// GrapesJS Editor Initialization
+const editor = grapesjs.init({
+    container: '#gjs',
+    height: '100vh',
+    width: 'auto',
+    storageManager: {
+        type: 'remote',
+        autosave: true,
+        stepsBeforeSave: 1,
+        urlStore: '{% url "deals:grapesjs_editor" deal.pk %}',
+        urlLoad: '{% url "deals:grapesjs_editor" deal.pk %}',
+        params: {
+            csrf_token: '{{ csrf_token }}'
+        },
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    },
+    assetManager: {
+        embedAsBase64: false,
+        upload: '{% url "deals:grapesjs_upload" %}',
+        uploadName: 'files',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    },
+    panels: {
+        defaults: [
+            {
+                id: 'basic-actions',
+                el: '.panel__basic-actions',
+                buttons: [
+                    {
+                        id: 'visibility',
+                        active: true,
+                        className: 'btn-toggle-borders',
+                        label: '<u>B</u>',
+                        command: 'sw-visibility',
+                    },
+                ],
+            },
+        ],
+    },
+    deviceManager: {
+        devices: [
+            {
+                name: 'Desktop',
+                width: '',
+            },
+            {
+                name: 'Tablet',
+                width: '768px',
+                widthMedia: '992px',
+            },
+            {
+                name: 'Mobile',
+                width: '320px',
+                widthMedia: '480px',
+            },
+        ],
+    },
+    plugins: [
+        'gjs-preset-webpage',
+        'gjs-plugin-export',
+        'gjs-plugin-code-editor'
+    ],
+    pluginsOpts: {
+        'gjs-preset-webpage': {
+            modalImportTitle: 'Template importieren',
+            modalImportLabel: 'HTML, CSS oder JSON',
+            modalImportContent: '',
+            textCleanCanvas: 'Sind Sie sicher, dass Sie den Canvas leeren möchten?',
+        }
+    }
+});
+
+// Set initial content
+editor.setComponents(initialHTML);
+
+// Save function
+function saveContent() {
+    const html = editor.getHtml();
+    const css = editor.getCss();
+    
+    fetch('{% url "deals:grapesjs_editor" deal.pk %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            html: html,
+            css: css
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Inhalt erfolgreich gespeichert!');
+        } else {
+            alert('Fehler beim Speichern: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Fehler beim Speichern');
+    });
+}
+
+// Preview function
+function previewContent() {
+    const html = editor.getHtml();
+    const css = editor.getCss();
+    
+    const previewWindow = window.open('', '_blank');
+    previewWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>{{ deal.title }} - Vorschau</title>
+            <style>${css}</style>
+        </head>
+        <body>
+            ${html}
+        </body>
+        </html>
+    `);
+    previewWindow.document.close();
+}
+
+// Auto-save every 30 seconds
+setInterval(saveContent, 30000);
+</script>
+{% endblock %} 

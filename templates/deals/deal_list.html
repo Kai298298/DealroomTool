@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Dealrooms - Dealroom Dashboard{% endblock %}
+{% block title %}Dealrooms - DealShare{% endblock %}
 
 {% block page_title %}Dealrooms{% endblock %}
 
@@ -30,10 +30,10 @@
     <div class="col-md-4 text-end">
         {% if user.can_edit_deals %}
         <div class="btn-group" role="group">
-            <a href="{% url 'dealrooms:dealroom_create' %}" class="btn btn-success">
-                <i class="bi bi-plus"></i> Neuen Dealroom erstellen
-            </a>
-            <a href="{% url 'dealrooms:dealroom_batch_create' %}" class="btn btn-info">
+                            <a href="{% url 'deals:dealroom_create' %}" class="btn btn-success">
+                    <i class="bi bi-magic"></i> Neuen Dealroom mit Designer erstellen
+                </a>
+            <a href="{% url 'deals:dealroom_batch_create' %}" class="btn btn-info">
                 <i class="bi bi-upload"></i> Batch Import
             </a>
         </div>
@@ -54,16 +54,22 @@
                         <th>Template-Typ</th>
                         <th>Erstellt von</th>
                         <th>Datum</th>
-                        <th>Aktionen</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for deal in deals %}
                     <tr>
                         <td>
-                            <a href="{% url 'dealrooms:dealroom_detail' deal.pk %}" class="text-decoration-none">
-                                {{ deal.title }}
-                            </a>
+                            <div class="d-flex align-items-center">
+                                <a href="{% url 'deals:dealroom_detail' deal.pk %}" class="text-decoration-none me-2">
+                                    {{ deal.title }}
+                                </a>
+                                {% if user.can_edit_deals %}
+                                <a href="{% url 'deals:dealroom_delete' deal.pk %}" class="btn btn-sm btn-outline-danger btn-delete" title="Löschen" style="padding: 0.125rem 0.25rem;">
+                                    <i class="bi bi-trash" style="font-size: 0.75rem;"></i>
+                                </a>
+                                {% endif %}
+                            </div>
                         </td>
                         <td>{{ deal.company_name|default:"-" }}</td>
                         <td>
@@ -74,21 +80,6 @@
                         <td>{{ deal.get_template_type_display }}</td>
                         <td>{{ deal.created_by.get_full_name|default:deal.created_by.username }}</td>
                         <td>{{ deal.created_at|date:"d.m.Y" }}</td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <a href="{% url 'dealrooms:dealroom_detail' deal.pk %}" class="btn btn-outline-primary" title="Anzeigen">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                {% if user.can_edit_deals %}
-                                <a href="{% url 'dealrooms:dealroom_edit' deal.pk %}" class="btn btn-outline-warning" title="Bearbeiten">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <a href="{% url 'dealrooms:dealroom_delete' deal.pk %}" class="btn btn-outline-danger btn-delete" title="Löschen">
-                                    <i class="bi bi-trash"></i>
-                                </a>
-                                {% endif %}
-                            </div>
-                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -141,7 +132,7 @@
     <i class="bi bi-info-circle me-2"></i>
     Noch keine Dealrooms vorhanden. 
     {% if user.can_edit_deals %}
-    <a href="{% url 'dealrooms:dealroom_create' %}" class="alert-link">Erstellen Sie den ersten Dealroom</a>.
+    <a href="{% url 'deals:dealroom_create' %}" class="alert-link">Erstellen Sie den ersten Dealroom mit Designer</a>.
     {% endif %}
 </div>
 {% endif %}
@@ -154,6 +145,15 @@
 document.querySelectorAll('.btn-delete').forEach(function(button) {
     button.addEventListener('click', function(e) {
         if (!confirm('Sind Sie sicher, dass Sie diesen Dealroom löschen möchten?')) {
+            e.preventDefault();
+        }
+    });
+});
+
+// Bestätigung für Duplizieren
+document.querySelectorAll('.btn-duplicate').forEach(function(button) {
+    button.addEventListener('click', function(e) {
+        if (!confirm('Möchten Sie diesen Dealroom wirklich duplizieren?')) {
             e.preventDefault();
         }
     });

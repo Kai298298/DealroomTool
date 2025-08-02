@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Dashboard - Dealroom Dashboard{% endblock %}
+{% block title %}Dashboard - DealShare{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -12,13 +12,13 @@
                     <h2 class="mb-1">
                         <i class="bi bi-speedometer2 me-2"></i>Dashboard
                     </h2>
-                    <p class="text-muted mb-0">Willkommen zurück, {{ user.get_full_name|default:user.username }}!</p>
+                    <p class="text-muted mb-0">Willkommen bei DealShare!</p>
                 </div>
                 <div class="d-flex gap-2">
                     <a href="{% url 'core:csv_export' %}" class="btn btn-outline-success">
                         <i class="bi bi-download me-2"></i>CSV Export
                     </a>
-                    <a href="{% url 'dealrooms:dealroom_create' %}" class="btn btn-primary">
+                    <a href="{% url 'deals:dealroom_create' %}" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-2"></i>Neuen Dealroom erstellen
                     </a>
                 </div>
@@ -108,16 +108,22 @@
                                     <th>Website-Status</th>
                                     <th>Erstellt von</th>
                                     <th>Erstellt am</th>
-                                    <th class="text-end">Aktionen</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for dealroom in dealrooms %}
                                 <tr>
                                     <td>
-                                        <a href="{% url 'dealrooms:dealroom_detail' dealroom.pk %}" class="text-decoration-none fw-bold">
-                                            {{ dealroom.title }}
-                                        </a>
+                                        <div class="d-flex align-items-center">
+                                            <a href="{% url 'deals:dealroom_detail' dealroom.pk %}" class="text-decoration-none fw-bold me-2">
+                                                {{ dealroom.title }}
+                                            </a>
+                                            {% if user.can_edit_deals %}
+                                            <a href="{% url 'deals:dealroom_delete' dealroom.pk %}" class="btn btn-sm btn-outline-danger btn-delete" title="Löschen" style="padding: 0.125rem 0.25rem;">
+                                                <i class="bi bi-trash" style="font-size: 0.75rem;"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
                                     </td>
                                     <td>{{ dealroom.recipient_name }}</td>
                                     <td>
@@ -137,21 +143,6 @@
                                     </td>
                                     <td>{{ dealroom.created_by.get_full_name|default:dealroom.created_by.username }}</td>
                                     <td>{{ dealroom.created_at|date:"d.m.Y" }}</td>
-                                    <td class="text-end">
-                                        <div class="btn-group" role="group">
-                                            <a href="{% url 'dealrooms:dealroom_detail' dealroom.pk %}" class="btn btn-outline-primary btn-sm" title="Anzeigen">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                            {% if user.can_edit_deals %}
-                                            <a href="{% url 'dealrooms:dealroom_edit' dealroom.pk %}" class="btn btn-outline-warning btn-sm" title="Bearbeiten">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                            <a href="{% url 'dealrooms:dealroom_delete' dealroom.pk %}" class="btn btn-outline-danger btn-sm" title="Löschen">
-                                                <i class="bi bi-trash"></i>
-                                            </a>
-                                            {% endif %}
-                                        </div>
-                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -232,7 +223,7 @@
                     {% endif %}
                 </div>
                 <div class="card-footer bg-white text-center">
-                    <a href="{% url 'dealrooms:dealroom_create' %}" class="btn btn-primary btn-lg">
+                    <a href="{% url 'deals:dealroom_create' %}" class="btn btn-primary btn-lg">
                         <i class="bi bi-plus-circle me-2"></i> Neuen Dealroom erstellen
                     </a>
                 </div>
@@ -300,7 +291,7 @@
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div>
                                             <h6 class="mb-1">
-                                                <a href="{% url 'dealrooms:dealroom_detail' log.deal.pk %}" class="text-decoration-none">
+                                                <a href="{% url 'deals:dealroom_detail' log.deal.pk %}" class="text-decoration-none">
                                                     {{ log.deal.title }}
                                                 </a>
                                             </h6>
@@ -330,4 +321,26 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Bestätigung für Löschen
+document.querySelectorAll('.btn-delete').forEach(function(button) {
+    button.addEventListener('click', function(e) {
+        if (!confirm('Sind Sie sicher, dass Sie diesen Dealroom löschen möchten?')) {
+            e.preventDefault();
+        }
+    });
+});
+
+// Bestätigung für Duplizieren
+document.querySelectorAll('.btn-duplicate').forEach(function(button) {
+    button.addEventListener('click', function(e) {
+        if (!confirm('Möchten Sie diesen Dealroom wirklich duplizieren?')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
 {% endblock %} 

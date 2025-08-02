@@ -1,0 +1,81 @@
+{% extends 'admin/change_list.html' %}
+{% block content %}
+<h1>📊 DealShare Analytics Dashboard</h1>
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Gesamte Deals</h5>
+                <p class="display-4">{{ total_deals }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Analytics-Events</h5>
+                <p class="display-4">{{ total_events }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Top-User (Deals)</h5>
+                <ul class="list-unstyled mb-0">
+                    {% for user in top_users %}
+                    <li>{{ user.created_by__username|default:'(unbekannt)' }}: <strong>{{ user.count }}</strong></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Events nach Typ</h5>
+                <ul class="list-unstyled mb-0">
+                    {% for event in events_by_type %}
+                    <li>{{ event.event_type }}: <strong>{{ event.count }}</strong></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Deals pro Tag (letzte 30 Tage)</h5>
+        <canvas id="dealsPerDayChart" height="80"></canvas>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('dealsPerDayChart').getContext('2d');
+    const labels = [{% for day, count in deals_per_day %}'{{ day|date:"d.m." }}',{% endfor %}];
+    const data = [{% for day, count in deals_per_day %}{{ count }},{% endfor %}];
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Deals pro Tag',
+                data: data,
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102,126,234,0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+</script>
+{% endblock %}

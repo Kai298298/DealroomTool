@@ -1,0 +1,429 @@
+{% extends 'base.html' %}
+
+{% block title %}Pricing - DealShare{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pricing-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 4rem 0;
+        text-align: center;
+    }
+    
+    .pricing-hero h1 {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .pricing-hero p {
+        font-size: 1.2rem;
+        opacity: 0.9;
+    }
+    
+    .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 2rem;
+        margin: 3rem 0;
+    }
+    
+    .pricing-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        position: relative;
+        transition: transform 0.3s ease;
+    }
+    
+    .pricing-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .pricing-card.highlight {
+        border: 3px solid #667eea;
+        transform: scale(1.05);
+    }
+    
+    .pricing-card.highlight::before {
+        content: '⭐ Beliebt';
+        position: absolute;
+        top: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #667eea;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: bold;
+    }
+    
+    .plan-name {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 1rem;
+    }
+    
+    .plan-description {
+        color: #666;
+        margin-bottom: 1.5rem;
+        font-size: 1rem;
+    }
+    
+    .plan-price {
+        font-size: 3rem;
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 0.5rem;
+    }
+    
+    .plan-period {
+        color: #666;
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .features-table {
+        width: 100%;
+        margin: 2rem 0;
+    }
+    
+    .features-table th {
+        text-align: left;
+        padding: 0.5rem 0;
+        font-weight: bold;
+        color: #333;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .features-table td {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .feature-check {
+        color: #28a745;
+        font-weight: bold;
+    }
+    
+    .feature-cross {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    
+    .btn-pricing {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-top: 1rem;
+    }
+    
+    .btn-pricing:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .btn-outline {
+        background: transparent;
+        color: #667eea;
+        border: 2px solid #667eea;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-top: 1rem;
+    }
+    
+    .btn-outline:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .faq-section {
+        background: #f8f9fa;
+        padding: 4rem 0;
+        margin: 3rem 0;
+    }
+    
+    .faq-item {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .faq-question {
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+    
+    .faq-answer {
+        color: #666;
+        line-height: 1.6;
+    }
+    
+    .testimonials-section {
+        background: white;
+        padding: 4rem 0;
+    }
+    
+    .testimonials-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin: 3rem 0;
+    }
+    
+    .testimonial-card {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+    }
+    
+    .testimonial-text {
+        font-style: italic;
+        margin-bottom: 1rem;
+        color: #333;
+    }
+    
+    .testimonial-author {
+        font-weight: bold;
+        color: #667eea;
+    }
+    
+    .testimonial-company {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .guarantee-section {
+        background: #e8f5e8;
+        border-radius: 12px;
+        padding: 2rem;
+        margin: 2rem 0;
+        text-align: center;
+    }
+    
+    .guarantee-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="pricing-hero">
+    <div class="container">
+        <h1>💎 Transparente Preise für DealShare</h1>
+        <p>Wählen Sie den Plan, der zu Ihren Bedürfnissen passt. Keine versteckten Kosten.</p>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Pricing Cards -->
+    <div class="pricing-grid">
+        {% for plan in pricing_matrix.plans %}
+        <div class="pricing-card {% if plan.highlight %}highlight{% endif %}">
+            <div class="plan-name">{{ plan.name }}</div>
+            <div class="plan-description">{{ plan.description }}</div>
+            <div class="plan-price">{{ plan.currency }}{{ plan.price }}</div>
+            <div class="plan-period">/{{ plan.period }}</div>
+            
+            <table class="features-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Inklusive</th>
+                </tr>
+                <tr>
+                    <td>Dealrooms</td>
+                    <td class="{% if plan.features.dealrooms == 'Unbegrenzte Dealrooms' %}feature-check{% else %}feature-cross{% endif %}">
+                        {{ plan.features.dealrooms }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Templates</td>
+                    <td class="feature-check">{{ plan.features.templates }}</td>
+                </tr>
+                <tr>
+                    <td>Support</td>
+                    <td class="feature-check">{{ plan.features.support }}</td>
+                </tr>
+                <tr>
+                    <td>Analytics</td>
+                    <td class="feature-check">{{ plan.features.analytics }}</td>
+                </tr>
+                <tr>
+                    <td>Branding</td>
+                    <td class="{% if 'White-Label' in plan.features.branding %}feature-check{% else %}feature-cross{% endif %}">
+                        {{ plan.features.branding }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>API-Zugang</td>
+                    <td class="{% if plan.features.api != 'Kein API-Zugang' %}feature-check{% else %}feature-cross{% endif %}">
+                        {{ plan.features.api }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>White-Label</td>
+                    <td class="{% if plan.features.white_label != 'Kein White-Label' %}feature-check{% else %}feature-cross{% endif %}">
+                        {{ plan.features.white_label }}
+                    </td>
+                </tr>
+            </table>
+            
+            {% if plan.name == 'Starter' %}
+                <button class="btn btn-outline">{{ plan.cta }}</button>
+            {% else %}
+                <button class="btn btn-pricing">{{ plan.cta }}</button>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Guarantee Section -->
+    <div class="guarantee-section">
+        <div class="guarantee-icon">🛡️</div>
+        <h3>30-Tage Geld-zurück-Garantie</h3>
+        <p>Testen Sie alle Features 30 Tage lang kostenlos. Wenn Sie nicht zufrieden sind, erhalten Sie Ihr Geld zurück.</p>
+    </div>
+    
+    <!-- FAQ Section -->
+    <div class="faq-section">
+        <h2 class="text-center mb-4">❓ Häufige Fragen</h2>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="faq-item">
+                    <div class="faq-question">Kann ich meinen Plan jederzeit wechseln?</div>
+                    <div class="faq-answer">Ja, Sie können Ihren Plan jederzeit upgraden oder downgraden. Änderungen werden sofort wirksam.</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="faq-item">
+                    <div class="faq-question">Gibt es versteckte Kosten?</div>
+                    <div class="faq-answer">Nein, alle Preise sind transparent. Keine Setup-Gebühren, keine versteckten Kosten.</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="faq-item">
+                    <div class="faq-question">Wie funktioniert die Kündigung?</div>
+                    <div class="faq-answer">Sie können Ihren Account jederzeit kündigen. Ihre Daten bleiben 30 Tage verfügbar.</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="faq-item">
+                    <div class="faq-question">Welche Zahlungsmethoden werden akzeptiert?</div>
+                    <div class="faq-answer">Kreditkarte, PayPal, SEPA-Lastschrift und Rechnung für Enterprise-Kunden.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Testimonials Section -->
+    <div class="testimonials-section">
+        <h2 class="text-center mb-4">💬 Kundenstimmen</h2>
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <div class="testimonial-text">
+                    "Das Professional-Paket hat unsere Verkaufsprozesse revolutioniert. 40% mehr Abschlüsse!"
+                </div>
+                <div class="testimonial-author">Sarah Müller</div>
+                <div class="testimonial-company">TechStart GmbH</div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-text">
+                    "Endlich eine Lösung, die wirklich funktioniert. ROI in 2 Monaten!"
+                </div>
+                <div class="testimonial-author">Michael Weber</div>
+                <div class="testimonial-company">Digital Solutions</div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-text">
+                    "Die beste Investition für unser Sales-Team. Kunden sind begeistert!"
+                </div>
+                <div class="testimonial-author">Lisa Schmidt</div>
+                <div class="testimonial-company">Innovation Labs</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- CTA Section -->
+    <div class="text-center py-5">
+        <h2>🎯 Bereit für den nächsten Schritt?</h2>
+        <p class="lead">Starten Sie noch heute und steigern Sie Ihre Conversion-Rate!</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{% url 'users:register' %}" class="btn btn-primary btn-lg">🚀 Kostenlos starten</a>
+            <a href="{% url 'core:dashboard' %}" class="btn btn-outline-secondary btn-lg">Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Pricing interaction tracking
+    document.querySelectorAll('.btn-pricing, .btn-outline').forEach(button => {
+        button.addEventListener('click', function() {
+            const planName = this.closest('.pricing-card').querySelector('.plan-name').textContent;
+            const price = this.closest('.pricing-card').querySelector('.plan-price').textContent;
+            
+            // Track pricing interaction
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'begin_checkout', {
+                    'currency': 'EUR',
+                    'value': price.replace(/[^0-9]/g, ''),
+                    'item_name': planName
+                });
+            }
+            
+            // Facebook Pixel
+            if (typeof fbq !== 'undefined') {
+                fbq('track', 'InitiateCheckout', {
+                    'currency': 'EUR',
+                    'value': price.replace(/[^0-9]/g, ''),
+                    'content_name': planName
+                });
+            }
+            
+            // Show pricing modal or redirect
+            if (planName === 'Starter') {
+                window.location.href = "{% url 'users:register' %}";
+            } else {
+                alert(`Upgrade zu ${planName} wird vorbereitet...`);
+            }
+        });
+    });
+    
+    // FAQ interaction tracking
+    document.querySelectorAll('.faq-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const question = this.querySelector('.faq-question').textContent;
+            
+            // Track FAQ interaction
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'view_item', {
+                    'item_name': question,
+                    'item_category': 'FAQ'
+                });
+            }
+        });
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block title %}Quick Setup - Dealroom erstellen{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2>🚀 Quick Setup - Dealroom erstellen</h2>
+                    <p class="text-muted">Erstellen Sie schnell einen neuen Dealroom aus einem Template</p>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Template-Auswahl -->
+                        <div class="mb-4">
+                            <label for="template" class="form-label">📋 Template auswählen</label>
+                            <select name="template" id="template" class="form-select" required>
+                                <option value="">-- Template wählen --</option>
+                                {% for key, name in templates.items %}
+                                <option value="{{ key }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Wählen Sie ein Template für schnelle Erstellung</div>
+                        </div>
+                        
+                        <!-- Grundlegende Informationen -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="title" class="form-label">📝 Dealroom-Titel *</label>
+                                    <input type="text" name="title" id="title" class="form-control" required 
+                                           placeholder="z.B. Software-Angebot für Firma XY">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="recipient_name" class="form-label">👤 Empfänger Name *</label>
+                                    <input type="text" name="recipient_name" id="recipient_name" class="form-control" required
+                                           placeholder="z.B. Max Mustermann">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="recipient_email" class="form-label">📧 Empfänger E-Mail *</label>
+                            <input type="email" name="recipient_email" id="recipient_email" class="form-control" required
+                                   placeholder="max.mustermann@firma.de">
+                        </div>
+                        
+                        <!-- Template-Vorschau -->
+                        <div class="mb-4">
+                            <h5>📋 Template-Vorschau</h5>
+                            <div id="template-preview" class="border rounded p-3 bg-light">
+                                <p class="text-muted">Wählen Sie ein Template um die Vorschau zu sehen...</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'admin:deals_deal_changelist' %}" class="btn btn-secondary">
+                                ← Zurück zur Übersicht
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                🚀 Dealroom erstellen
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Template-Details -->
+            <div class="mt-4">
+                <h4>📋 Verfügbare Templates</h4>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">💻 Software-Angebot</h5>
+                                <p class="card-text">Perfekt für Software-Verkäufe mit detaillierten Features und Support-Informationen.</p>
+                                <ul class="list-unstyled">
+                                    <li>✅ Produktfeatures mit Icons</li>
+                                    <li>✅ Support-Informationen</li>
+                                    <li>✅ FAQ-Bereich</li>
+                                    <li>✅ Unterschriftspflichtige Dokumente</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">🎯 Beratungsprojekt</h5>
+                                <p class="card-text">Ideal für Beratungsprojekte mit Projektphasen und Berater-Informationen.</p>
+                                <ul class="list-unstyled">
+                                    <li>✅ Projektphasen</li>
+                                    <li>✅ Berater-Kontakt</li>
+                                    <li>✅ Projekt-Timeline</li>
+                                    <li>✅ Kick-off Meeting</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">📱 Marketing-Kampagne</h5>
+                                <p class="card-text">Speziell für Marketing-Kampagnen mit Kampagnen-Briefing und Launch-Planung.</p>
+                                <ul class="list-unstyled">
+                                    <li>✅ Kampagnen-Briefing</li>
+                                    <li>✅ Launch-Planung</li>
+                                    <li>✅ Analytics & Reporting</li>
+                                    <li>✅ A/B Testing</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Template-Vorschau
+document.getElementById('template').addEventListener('change', function() {
+    const template = this.value;
+    const preview = document.getElementById('template-preview');
+    
+    const templates = {
+        'software_offer': {
+            title: 'Software-Angebot',
+            description: 'Premium Software Lösung mit Cloud-Basis, 24/7 Support und automatischen Updates.',
+            features: ['Cloud-basiert ☁️', '24/7 Support 🛟', 'Automatische Updates 🔄', 'DSGVO-konform 🔒'],
+            price: '€ 2,999.99',
+            status: 'Angebot in Prüfung (65%)'
+        },
+        'consulting_project': {
+            title: 'Beratungsprojekt',
+            description: 'Professionelle Beratung mit individuellen Lösungen und erfahrenen Beratern.',
+            features: ['Individuelle Beratung 🎯', 'Erfahrene Berater 👨‍💼', 'Nachhaltige Lösungen 🌱', 'Follow-up Support 📞'],
+            price: '€ 5,000.00',
+            status: 'Initial (25%)'
+        },
+        'marketing_campaign': {
+            title: 'Marketing-Kampagne',
+            description: 'Professionelle Marketing-Kampagne mit Social Media, Content Creation und Analytics.',
+            features: ['Social Media Marketing 📱', 'Content Creation ✍️', 'Analytics & Reporting 📊', 'A/B Testing 🧪'],
+            price: '€ 1,500.00',
+            status: 'Vertragsdaten bereitgestellt (80%)'
+        }
+    };
+    
+    if (template && templates[template]) {
+        const t = templates[template];
+        preview.innerHTML = `
+            <h6>${t.title}</h6>
+            <p>${t.description}</p>
+            <p><strong>Preis:</strong> ${t.price}</p>
+            <p><strong>Status:</strong> ${t.status}</p>
+            <p><strong>Features:</strong></p>
+            <ul>
+                ${t.features.map(f => `<li>${f}</li>`).join('')}
+            </ul>
+        `;
+    } else {
+        preview.innerHTML = '<p class="text-muted">Wählen Sie ein Template um die Vorschau zu sehen...</p>';
+    }
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,356 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Neuen Dealroom erstellen - DealShare{% endblock %}
+
+{% block extra_css %}
+<style>
+    .modern-form-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .form-sections {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+    
+    .form-section {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .form-section h3 {
+        color: #333;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #667eea;
+    }
+    
+    .template-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .template-card {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: white;
+    }
+    
+    .template-card:hover {
+        border-color: #667eea;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+    }
+    
+    .template-card.selected {
+        border-color: #667eea;
+        background: #f8f9ff;
+    }
+    
+    .template-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: #667eea;
+    }
+    
+    .content-preview {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .content-item {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .content-item:hover {
+        border-color: #667eea;
+        background: #f8f9ff;
+    }
+    
+    .media-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .media-item {
+        aspect-ratio: 1;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .media-item:hover {
+        transform: scale(1.05);
+    }
+    
+    .media-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .form-actions {
+        grid-column: 1 / -1;
+        text-align: center;
+        margin-top: 2rem;
+    }
+    
+    .btn-create {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 1rem 3rem;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        color: white;
+    }
+    
+    .quick-setup {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .quick-setup h2 {
+        margin-bottom: 1rem;
+    }
+    
+    .quick-setup p {
+        opacity: 0.9;
+        margin-bottom: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="modern-form-container">
+    <!-- Quick Setup Banner -->
+    <div class="quick-setup">
+        <h2>🚀 Neuen Dealroom erstellen</h2>
+        <p>Erstellen Sie eine professionelle Landingpage in wenigen Schritten. Wählen Sie ein Template und passen Sie es an Ihre Bedürfnisse an.</p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="form-sections">
+            <!-- Grundinformationen -->
+            <div class="form-section">
+                <h3>📋 Grundinformationen</h3>
+                
+                <div class="mb-3">
+                    <label for="{{ form.title.id_for_label }}" class="form-label">Dealroom-Titel *</label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                        <div class="text-danger">{{ form.title.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.slug.id_for_label }}" class="form-label">URL-Slug *</label>
+                    {{ form.slug }}
+                    {% if form.slug.errors %}
+                        <div class="text-danger">{{ form.slug.errors }}</div>
+                    {% endif %}
+                    <small class="form-text text-muted">URL-freundlicher Name für die Landingpage (z.B. "mein-dealroom")</small>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.recipient_name.id_for_label }}" class="form-label">Empfänger-Name *</label>
+                    {{ form.recipient_name }}
+                    {% if form.recipient_name.errors %}
+                        <div class="text-danger">{{ form.recipient_name.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.recipient_email.id_for_label }}" class="form-label">Empfänger-E-Mail *</label>
+                    {{ form.recipient_email }}
+                    {% if form.recipient_email.errors %}
+                        <div class="text-danger">{{ form.recipient_email.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.company_name.id_for_label }}" class="form-label">Firmenname</label>
+                    {{ form.company_name }}
+                    {% if form.company_name.errors %}
+                        <div class="text-danger">{{ form.company_name.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.description.id_for_label }}" class="form-label">Beschreibung</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <div class="text-danger">{{ form.description.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Template & Design -->
+            <div class="form-section">
+                <h3>🎨 Template & Design</h3>
+                
+                <div class="mb-3">
+                    <label for="{{ form.template_type.id_for_label }}" class="form-label">Template-Typ</label>
+                    {{ form.template_type }}
+                    {% if form.template_type.errors %}
+                        <div class="text-danger">{{ form.template_type.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <!-- Template-Vorschau -->
+                <div class="template-grid">
+                    {% for template in templates %}
+                    <div class="template-card" data-template="{{ template.name }}">
+                        <div class="template-icon">
+                            {% if template.name == 'modern' %}💻
+                            {% elif template.name == 'classic' %}📊
+                            {% elif template.name == 'minimal' %}📢
+                            {% elif template.name == 'corporate' %}🏢
+                            {% elif template.name == 'creative' %}🎨
+                            {% else %}📄
+                            {% endif %}
+                        </div>
+                        <h5>{{ template.display_name }}</h5>
+                        <p class="text-muted">{{ template.description }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.theme_type.id_for_label }}" class="form-label">Theme</label>
+                    {{ form.theme_type }}
+                    {% if form.theme_type.errors %}
+                        <div class="text-danger">{{ form.theme_type.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.primary_color.id_for_label }}" class="form-label">Primärfarbe</label>
+                    {{ form.primary_color }}
+                    {% if form.primary_color.errors %}
+                        <div class="text-danger">{{ form.primary_color.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.secondary_color.id_for_label }}" class="form-label">Sekundärfarbe</label>
+                    {{ form.secondary_color }}
+                    {% if form.secondary_color.errors %}
+                        <div class="text-danger">{{ form.secondary_color.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Content-Vorschau -->
+            {% if content_blocks %}
+            <div class="form-section">
+                <h3>📝 Verfügbare Content-Blöcke</h3>
+                <p class="text-muted">Diese können Sie später im Designer verwenden:</p>
+                
+                <div class="content-preview">
+                    {% for block in content_blocks %}
+                    <div class="content-item">
+                        <strong>{{ block.title }}</strong>
+                        <p class="text-muted mb-0">{{ block.content|truncatechars:100 }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Media-Vorschau -->
+            {% if media_items %}
+            <div class="form-section">
+                <h3>🖼️ Verfügbare Medien</h3>
+                <p class="text-muted">Diese können Sie später im Designer verwenden:</p>
+                
+                <div class="media-grid">
+                    {% for item in media_items %}
+                    <div class="media-item">
+                        {% if item.file_type == 'image' %}
+                            <img src="{{ item.file.url }}" alt="{{ item.title }}">
+                        {% else %}
+                            <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                                <i class="bi bi-file-earmark"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <button type="submit" class="btn btn-create">
+                <i class="bi bi-magic me-2"></i>Dealroom erstellen & Designer öffnen
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Template-Auswahl
+document.querySelectorAll('.template-card').forEach(card => {
+    card.addEventListener('click', function() {
+        // Alle Cards deselect
+        document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+        // Diese Card select
+        this.classList.add('selected');
+        
+        // Template-Type setzen
+        const templateName = this.dataset.template;
+        const templateSelect = document.getElementById('{{ form.template_type.id_for_label }}');
+        if (templateSelect) {
+            templateSelect.value = templateName;
+        }
+    });
+});
+
+// Color Picker Preview
+document.querySelectorAll('input[type="color"]').forEach(input => {
+    input.addEventListener('change', function() {
+        this.style.backgroundColor = this.value;
+    });
+});
+</script>
+{% endblock %} 

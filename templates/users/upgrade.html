@@ -1,0 +1,388 @@
+{% extends 'base.html' %}
+
+{% block title %}Upgrade - DealShare{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upgrade-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 3rem 0;
+        text-align: center;
+    }
+    
+    .upgrade-hero h1 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .usage-stats {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin: 2rem 0;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 2rem;
+        margin: 2rem 0;
+    }
+    
+    .stat-card {
+        text-align: center;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .upgrade-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 2rem;
+        margin: 3rem 0;
+    }
+    
+    .upgrade-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        position: relative;
+        transition: transform 0.3s ease;
+    }
+    
+    .upgrade-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .upgrade-card.popular {
+        border: 3px solid #667eea;
+        transform: scale(1.05);
+    }
+    
+    .upgrade-card.popular::before {
+        content: '⭐ Beliebt';
+        position: absolute;
+        top: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #667eea;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: bold;
+    }
+    
+    .plan-name {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 1rem;
+    }
+    
+    .plan-price {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 0.5rem;
+    }
+    
+    .plan-period {
+        color: #666;
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .benefits-list {
+        list-style: none;
+        padding: 0;
+        margin: 1.5rem 0;
+    }
+    
+    .benefits-list li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .benefits-list li:last-child {
+        border-bottom: none;
+    }
+    
+    .benefits-list li::before {
+        content: '✅';
+        margin-right: 0.5rem;
+        color: #28a745;
+    }
+    
+    .btn-upgrade {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-top: 1rem;
+    }
+    
+    .btn-upgrade:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .current-plan {
+        background: #e9ecef;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .current-plan h3 {
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+    
+    .current-plan p {
+        color: #666;
+        margin: 0;
+    }
+    
+    .comparison-table {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin: 3rem 0;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .comparison-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .comparison-table th,
+    .comparison-table td {
+        padding: 1rem;
+        text-align: center;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .comparison-table th {
+        background: #f8f9fa;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .feature-check {
+        color: #28a745;
+        font-weight: bold;
+    }
+    
+    .feature-cross {
+        color: #dc3545;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="upgrade-hero">
+    <div class="container">
+        <h1>🚀 Upgrade Ihr DealShare</h1>
+        <p class="lead">Entfesseln Sie das volle Potenzial für mehr Abschlüsse und professionelle Landingpages</p>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Current Usage -->
+    <div class="usage-stats">
+        <h2 class="text-center mb-4">📊 Ihre aktuelle Nutzung</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ current_usage.total_deals }}</div>
+                <div class="stat-label">Gesamte Dealrooms</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ current_usage.active_deals }}</div>
+                <div class="stat-label">Aktive Dealrooms</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ current_usage.draft_deals }}</div>
+                <div class="stat-label">Entwürfe</div>
+            </div>
+        </div>
+        
+        <div class="current-plan">
+            <h3>🎯 Ihr aktueller Plan: Starter</h3>
+            <p>Sie nutzen das kostenlose Starter-Paket mit 5 Dealrooms</p>
+        </div>
+    </div>
+    
+    <!-- Upgrade Options -->
+    <h2 class="text-center mb-4">💎 Upgrade-Optionen</h2>
+    <div class="upgrade-options">
+        {% for option in upgrade_options %}
+        <div class="upgrade-card {% if option.popular %}popular{% endif %}">
+            <div class="plan-name">{{ option.plan }}</div>
+            <div class="plan-price">{{ option.currency }}{{ option.price }}</div>
+            <div class="plan-period">/{{ option.period }}</div>
+            
+            <ul class="benefits-list">
+                {% for benefit in option.benefits %}
+                <li>{{ benefit }}</li>
+                {% endfor %}
+            </ul>
+            
+            <button class="btn btn-upgrade">
+                {{ option.cta }}
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Feature Comparison -->
+    <div class="comparison-table">
+        <h2 class="text-center mb-4">📋 Feature-Vergleich</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Starter</th>
+                    <th>Professional</th>
+                    <th>Enterprise</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Dealrooms</strong></td>
+                    <td>5</td>
+                    <td class="feature-check">Unbegrenzt</td>
+                    <td class="feature-check">Unbegrenzt</td>
+                </tr>
+                <tr>
+                    <td><strong>Templates</strong></td>
+                    <td>10 Basis</td>
+                    <td class="feature-check">50+ Premium</td>
+                    <td class="feature-check">Alle + Custom</td>
+                </tr>
+                <tr>
+                    <td><strong>Content-Bibliothek</strong></td>
+                    <td class="feature-cross">Nein</td>
+                    <td class="feature-check">100+ Vorlagen</td>
+                    <td class="feature-check">Unbegrenzt</td>
+                </tr>
+                <tr>
+                    <td><strong>Support</strong></td>
+                    <td>E-Mail</td>
+                    <td class="feature-check">Priority (24h)</td>
+                    <td class="feature-check">Dedicated</td>
+                </tr>
+                <tr>
+                    <td><strong>Analytics</strong></td>
+                    <td>Basis</td>
+                    <td class="feature-check">Vollständig</td>
+                    <td class="feature-check">Advanced</td>
+                </tr>
+                <tr>
+                    <td><strong>White-Label</strong></td>
+                    <td class="feature-cross">Nein</td>
+                    <td class="feature-check">Option</td>
+                    <td class="feature-check">Vollständig</td>
+                </tr>
+                <tr>
+                    <td><strong>API-Zugang</strong></td>
+                    <td class="feature-cross">Nein</td>
+                    <td class="feature-check">Ja</td>
+                    <td class="feature-check">Unbegrenzt</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- CTA Section -->
+    <div class="text-center py-5">
+        <h2>🎯 Bereit für den nächsten Schritt?</h2>
+        <p class="lead">Upgraden Sie jetzt und steigern Sie Ihre Conversion-Rate um 40%!</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{% url 'users:pricing' %}" class="btn btn-primary btn-lg">💎 Alle Pläne anzeigen</a>
+            <a href="{% url 'core:dashboard' %}" class="btn btn-outline-secondary btn-lg">Zurück zum Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Upgrade Tracking
+    document.querySelectorAll('.btn-upgrade').forEach(button => {
+        button.addEventListener('click', function() {
+            const planName = this.closest('.upgrade-card').querySelector('.plan-name').textContent;
+            const price = this.closest('.upgrade-card').querySelector('.plan-price').textContent;
+            
+            // Track upgrade interaction
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'begin_checkout', {
+                    'currency': 'EUR',
+                    'value': price.replace(/[^0-9]/g, ''),
+                    'item_name': planName
+                });
+            }
+            
+            // Facebook Pixel
+            if (typeof fbq !== 'undefined') {
+                fbq('track', 'InitiateCheckout', {
+                    'currency': 'EUR',
+                    'value': price.replace(/[^0-9]/g, ''),
+                    'content_name': planName
+                });
+            }
+            
+            // Show upgrade modal or redirect
+            alert(`Upgrade zu ${planName} wird vorbereitet...`);
+        });
+    });
+    
+    // Usage tracking
+    const currentUsage = {
+        total_deals: {{ current_usage.total_deals }},
+        active_deals: {{ current_usage.active_deals }},
+        draft_deals: {{ current_usage.draft_deals }}
+    };
+    
+    // Track usage analytics
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'view_item', {
+            'currency': 'EUR',
+            'value': 0,
+            'item_name': 'Starter Plan',
+            'custom_parameters': {
+                'total_deals': currentUsage.total_deals,
+                'active_deals': currentUsage.active_deals
+            }
+        });
+    }
+</script>
+{% endblock %} 

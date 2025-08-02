@@ -15,7 +15,7 @@
                     <p class="text-muted mb-0">Dealroom: {{ deal.title }}</p>
                 </div>
                 <div>
-                    <a href="{% url 'dealrooms:dealroom_detail' deal.pk %}" class="btn btn-outline-secondary">
+                    <a href="{% url 'deals:dealroom_detail' deal.pk %}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-2"></i>Zurück zum Dealroom
                     </a>
                 </div>
@@ -71,7 +71,7 @@
                                                 <a href="{% url 'files:global_file_download' assignment.global_file.pk %}" class="btn btn-sm btn-outline-primary">
                                                     <i class="bi bi-download me-1"></i>Download
                                                 </a>
-                                                <form method="post" action="{% url 'dealrooms:dealroom_unassign_file' deal.pk assignment.pk %}" class="d-inline">
+                                                <form method="post" action="{% url 'deals:dealroom_unassign_file' deal.pk assignment.pk %}" class="d-inline">
                                                     {% csrf_token %}
                                                     <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Datei wirklich entfernen?')">
                                                         <i class="bi bi-trash me-1"></i>Entfernen
@@ -142,7 +142,7 @@
                                             </div>
                                             
                                             <!-- Zuordnen-Formular -->
-                                            <form method="post" action="{% url 'dealrooms:dealroom_assign_file' deal.pk %}">
+                                            <form method="post" action="{% url 'deals:dealroom_assign_file' deal.pk %}">
                                                 {% csrf_token %}
                                                 <input type="hidden" name="file_id" value="{{ file.pk }}">
                                                 <div class="row g-2">

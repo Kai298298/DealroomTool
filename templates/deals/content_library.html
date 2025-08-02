@@ -1,0 +1,388 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Content-Bibliothek{% endblock %}
+
+{% block extra_css %}
+<style>
+    .library-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .library-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .library-header h1 {
+        margin: 0 0 1rem 0;
+        font-size: 2.5rem;
+    }
+    
+    .library-header p {
+        margin: 0;
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+    
+    .library-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 1rem;
+    }
+    
+    .library-tab {
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        color: #333;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        font-weight: 600;
+    }
+    
+    .library-tab:hover,
+    .library-tab.active {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+    
+    .library-section {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .library-section h2 {
+        margin: 0 0 1.5rem 0;
+        color: #333;
+        font-size: 1.8rem;
+        border-bottom: 2px solid #667eea;
+        padding-bottom: 0.5rem;
+    }
+    
+    .content-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .content-card {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .content-card:hover {
+        border-color: #667eea;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+        transform: translateY(-2px);
+    }
+    
+    .content-card h3 {
+        margin: 0 0 0.5rem 0;
+        color: #333;
+        font-size: 1.2rem;
+    }
+    
+    .content-card .meta {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 1rem;
+    }
+    
+    .content-card .content {
+        margin-bottom: 1rem;
+        line-height: 1.5;
+    }
+    
+    .content-card .actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .btn-success {
+        background: #28a745;
+        color: white;
+    }
+    
+    .btn-warning {
+        background: #ffc107;
+        color: #212529;
+    }
+    
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #666;
+    }
+    
+    .empty-state h3 {
+        margin: 0 0 1rem 0;
+        color: #333;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .stat-card .number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-card .label {
+        color: #666;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="library-container">
+    <!-- Header -->
+    <div class="library-header">
+        <h1>📚 Content-Bibliothek</h1>
+        <p>Zentrale Verwaltung für wiederverwendbare Inhalte, Medien und Layouts</p>
+    </div>
+    
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="number">{{ content_blocks.count }}</div>
+            <div class="label">Content-Blöcke</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">{{ media_library.count }}</div>
+            <div class="label">Medien</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">{{ layout_templates.count }}</div>
+            <div class="label">Layout-Vorlagen</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">{{ content_blocks.count|add:media_library.count|add:layout_templates.count }}</div>
+            <div class="label">Gesamt</div>
+        </div>
+    </div>
+    
+    <!-- Tabs -->
+    <div class="library-tabs">
+        <a href="#content" class="library-tab {% if active_tab == 'content' %}active{% endif %}" data-tab="content">
+            📝 Content-Blöcke ({{ content_blocks.count }})
+        </a>
+        <a href="#media" class="library-tab {% if active_tab == 'media' %}active{% endif %}" data-tab="media">
+            🖼️ Medien ({{ media_library.count }})
+        </a>
+        <a href="#layouts" class="library-tab {% if active_tab == 'layouts' %}active{% endif %}" data-tab="layouts">
+            🎨 Layouts ({{ layout_templates.count }})
+        </a>
+        <a href="{% url 'deals:content_block_create' %}" class="library-tab">
+            ➕ Content erstellen
+        </a>
+        <a href="{% url 'deals:media_upload' %}" class="library-tab">
+            📤 Medium hochladen
+        </a>
+        <a href="{% url 'deals:layout_template_create' %}" class="library-tab">
+            🎨 Layout erstellen
+        </a>
+    </div>
+    
+    <!-- Content Blocks Section -->
+    <div id="content-section" class="library-section">
+        <h2>📝 Content-Blöcke</h2>
+        
+        {% if content_blocks %}
+        <div class="content-grid">
+            {% for block in content_blocks %}
+            <div class="content-card">
+                <h3>{{ block.title }}</h3>
+                <div class="meta">
+                    <strong>Typ:</strong> {{ block.get_content_type_display }} | 
+                    <strong>Kategorie:</strong> {{ block.get_category_display }} |
+                    <strong>Verwendungen:</strong> {{ block.usage_count }}
+                </div>
+                <div class="content">
+                    {{ block.content|truncatechars:150 }}
+                </div>
+                <div class="actions">
+                    <a href="#" class="btn btn-primary">Bearbeiten</a>
+                    <a href="#" class="btn btn-secondary">Kopieren</a>
+                    <a href="#" class="btn btn-danger">Löschen</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h3>Keine Content-Blöcke vorhanden</h3>
+            <p>Erstellen Sie Ihren ersten Content-Block für wiederverwendbare Texte.</p>
+            <a href="{% url 'deals:content_block_create' %}" class="btn btn-primary">Content-Block erstellen</a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Media Library Section -->
+    <div id="media-section" class="library-section" style="display: none;">
+        <h2>🖼️ Medien-Bibliothek</h2>
+        
+        {% if media_library %}
+        <div class="content-grid">
+            {% for media in media_library %}
+            <div class="content-card">
+                <h3>{{ media.title }}</h3>
+                <div class="meta">
+                    <strong>Typ:</strong> {{ media.get_media_type_display }} | 
+                    <strong>Kategorie:</strong> {{ media.get_category_display }} |
+                    <strong>Verwendungen:</strong> {{ media.usage_count }}
+                </div>
+                <div class="content">
+                    {{ media.description|default:"Keine Beschreibung"|truncatechars:150 }}
+                </div>
+                <div class="actions">
+                    <a href="#" class="btn btn-primary">Bearbeiten</a>
+                    <a href="{{ media.get_file_url }}" class="btn btn-secondary" target="_blank">Anzeigen</a>
+                    <a href="#" class="btn btn-danger">Löschen</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h3>Keine Medien vorhanden</h3>
+            <p>Laden Sie Ihre ersten Medien für die Landingpages hoch.</p>
+            <a href="{% url 'deals:media_upload' %}" class="btn btn-primary">Medium hochladen</a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Layout Templates Section -->
+    <div id="layouts-section" class="library-section" style="display: none;">
+        <h2>🎨 Layout-Vorlagen</h2>
+        
+        {% if layout_templates %}
+        <div class="content-grid">
+            {% for layout in layout_templates %}
+            <div class="content-card">
+                <h3>{{ layout.title }}</h3>
+                <div class="meta">
+                    <strong>Typ:</strong> {{ layout.get_layout_type_display }} | 
+                    <strong>Kategorie:</strong> {{ layout.get_category_display }} |
+                    <strong>Verwendungen:</strong> {{ layout.usage_count }}
+                </div>
+                <div class="content">
+                    {{ layout.description|default:"Keine Beschreibung"|truncatechars:150 }}
+                </div>
+                <div class="actions">
+                    <a href="#" class="btn btn-primary">Bearbeiten</a>
+                    <a href="#" class="btn btn-secondary">Vorschau</a>
+                    <a href="#" class="btn btn-danger">Löschen</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h3>Keine Layout-Vorlagen vorhanden</h3>
+            <p>Erstellen Sie Ihre ersten Layout-Vorlagen für konsistente Designs.</p>
+            <a href="{% url 'deals:layout_template_create' %}" class="btn btn-primary">Layout erstellen</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Tab Navigation
+    document.querySelectorAll('.library-tab').forEach(tab => {
+        tab.addEventListener('click', function(e) {
+            if (this.getAttribute('href').startsWith('#')) {
+                e.preventDefault();
+                const tabName = this.getAttribute('href').substring(1);
+                switchTab(tabName);
+            }
+        });
+    });
+    
+    function switchTab(tabName) {
+        // Remove active class from all tabs
+        document.querySelectorAll('.library-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Add active class to clicked tab
+        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        
+        // Hide all sections
+        document.querySelectorAll('.library-section').forEach(section => {
+            section.style.display = 'none';
+        });
+        
+        // Show selected section
+        const targetSection = document.getElementById(`${tabName}-section`);
+        if (targetSection) {
+            targetSection.style.display = 'block';
+        }
+    }
+    
+    // Initialize with content tab
+    if (document.querySelector('[data-tab="content"]').classList.contains('active')) {
+        switchTab('content');
+    }
+</script>
+{% endblock %} 

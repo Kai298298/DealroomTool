@@ -36,9 +36,9 @@ if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Admin-Site-Konfiguration
-admin.site.site_header = "Dealroom Dashboard Administration"
-admin.site.site_title = "Dealroom Dashboard"
-admin.site.index_title = "Willkommen im Dealroom Dashboard"
+admin.site.site_header = "DealShare Administration"
+admin.site.site_title = "DealShare"
+admin.site.index_title = "Willkommen bei DealShare"
 
 # URL-Patterns für generierte Websites
 urlpatterns += [
