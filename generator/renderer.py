@@ -53,13 +53,23 @@ class DealroomGenerator:
     
     def _generate_html_header(self) -> str:
         """Generiert HTML-Header"""
+        meta_title = self.dealroom.meta_title or self.dealroom.title
+        meta_description = self.dealroom.meta_description or self.dealroom.description or ''
+        
         return f'''<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{self.dealroom.title}</title>
-    <meta name="description" content="{self.dealroom.description or ''}">
+    <title>{meta_title}</title>
+    <meta name="description" content="{meta_description}">
+    <meta name="keywords" content="Dealroom, {self.dealroom.title}, Business">
+    <meta name="author" content="{self.dealroom.created_by.get_full_name() or self.dealroom.created_by.username}">
+    <meta property="og:title" content="{meta_title}">
+    <meta property="og:description" content="{meta_description}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{self.get_website_url()}">
+    <link rel="canonical" href="{self.get_website_url()}">
 </head>'''
     
     def _generate_css(self) -> str:
@@ -88,6 +98,24 @@ class DealroomGenerator:
             <div class="container">
                 <h1>{self.dealroom.hero_title or self.dealroom.title}</h1>
                 <p>{self.dealroom.hero_subtitle or ''}</p>'''
+        
+        # Hero-Bild hinzufügen falls vorhanden
+        hero_images = self.dealroom.get_hero_images()
+        if hero_images:
+            hero_image = hero_images.first()
+            if hero_image and hero_image.get_actual_file():
+                hero_html += f'''
+                <div class="hero-image">
+                    <img src="{hero_image.get_file_url()}" alt="Hero-Bild" class="hero-img">
+                </div>'''
+        
+        # Video hinzufügen falls vorhanden
+        if self.dealroom.central_video_url:
+            video_embed = self.video_processor.create_embed_code(self.dealroom.central_video_url)
+            hero_html += f'''
+            <div class="hero-video">
+                {video_embed}
+            </div>'''
         
         if self.dealroom.call_to_action:
             hero_html += f'<a href="#" class="btn">{self.dealroom.call_to_action}</a>'
@@ -131,6 +159,11 @@ class DealroomGenerator:
             content_html += '''
                 </div>
             </section>'''
+        
+        # Bild-Galerie-Sektion
+        gallery_section = self._generate_gallery_section()
+        if gallery_section:
+            content_html += gallery_section
         
         # Dateien-Download-Sektion
         files_section = self._generate_files_download_section()
@@ -206,6 +239,46 @@ class DealroomGenerator:
         
         return files_html
     
+    def _generate_gallery_section(self) -> str:
+        """Generiert Galerie-Sektion für Bilder"""
+        # Alle Galerie-Bilder abrufen
+        gallery_assignments = self.dealroom.get_gallery_files()
+        
+        if not gallery_assignments:
+            return ''
+        
+        # Bild-URLs sammeln
+        image_urls = []
+        for assignment in gallery_assignments:
+            global_file = assignment.global_file
+            if global_file and global_file.file_type == 'image' and global_file.file:
+                image_urls.append(global_file.file.url)
+        
+        if not image_urls:
+            return ''
+        
+        # Galerie-HTML generieren
+        gallery_html = '''
+            <section class="section">
+                <h2>Galerie</h2>
+                <div class="image-gallery">
+                    <div class="gallery-grid">
+        '''
+        
+        for image_url in image_urls:
+            gallery_html += f'''
+                        <div class="gallery-item">
+                            <img src="{image_url}" alt="Galerie-Bild" loading="lazy">
+                        </div>
+            '''
+        
+        gallery_html += '''
+                    </div>
+                </div>
+            </section>'''
+        
+        return gallery_html
+    
     def _generate_footer(self) -> str:
         """Generiert Footer"""
         return f'''
@@ -217,7 +290,49 @@ class DealroomGenerator:
     
     def _generate_body_end(self) -> str:
         """Generiert Body-Ende"""
-        return '''
+        return f'''
+        <script>
+        // Interaktive Funktionen
+        document.addEventListener('DOMContentLoaded', function() {{
+            // Smooth Scrolling für Anker-Links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {{
+                anchor.addEventListener('click', function (e) {{
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {{
+                        target.scrollIntoView({{
+                            behavior: 'smooth',
+                            block: 'start'
+                        }});
+                    }}
+                }});
+            }});
+            
+            // Lazy Loading für Bilder
+            const images = document.querySelectorAll('img[loading="lazy"]');
+            if ('IntersectionObserver' in window) {{
+                const imageObserver = new IntersectionObserver((entries, observer) => {{
+                    entries.forEach(entry => {{
+                        if (entry.isIntersecting) {{
+                            const img = entry.target;
+                            img.src = img.dataset.src || img.src;
+                            img.classList.remove('lazy');
+                            imageObserver.unobserve(img);
+                        }}
+                    }});
+                }});
+                
+                images.forEach(img => imageObserver.observe(img));
+            }}
+            
+            // Download-Tracking
+            document.querySelectorAll('.btn-download').forEach(btn => {{
+                btn.addEventListener('click', function() {{
+                    console.log('Download gestartet:', this.href);
+                }});
+            }});
+        }});
+        </script>
         </body>
         </html>'''
     

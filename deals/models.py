@@ -309,6 +309,10 @@ class Deal(models.Model):
         """Gibt alle Galerie-Dateien zurück"""
         return self.get_assigned_files(role='gallery')
     
+    def get_hero_images(self):
+        """Gibt alle Hero-Bilder zurück"""
+        return self.get_assigned_files(role='hero_image')
+    
     def get_documents(self):
         """Gibt alle Dokumente zurück"""
         return self.get_assigned_files(role='document')
@@ -347,56 +351,65 @@ def auto_generate_website(sender, instance, created, **kwargs):
     Die Generierung läuft asynchron um die Performance nicht zu beeinträchtigen.
     """
     
+    print(f"🔍 Signal triggered for: {instance.title} (Status: {instance.status}, Created: {created})")
+    
     # Nur für aktive Dealrooms
     if instance.status == 'active':
         try:
             from generator.renderer import DealroomGenerator
             import os
             
-            # Asynchrone Ausführung um Performance zu optimieren
-            def delayed_generation():
-                """Verzögerte Generierung um Race Conditions zu vermeiden"""
-                time.sleep(2)  # 2 Sekunden warten
-                try:
-                    print(f"🔄 Starte automatische Website-Generierung für '{instance.title}'...")
+            # Direkte Generierung für bessere Zuverlässigkeit
+            try:
+                print(f"🔄 Starte automatische Website-Generierung für '{instance.title}'...")
+                
+                # Generator initialisieren
+                generator = DealroomGenerator(instance)
+                
+                # Website-Verzeichnis erstellen
+                output_dir = os.path.join(settings.BASE_DIR, 'generated_pages', f'dealroom-{instance.id}')
+                output_path = os.path.join(output_dir, 'index.html')
+                
+                # Website speichern
+                success = generator.save_website(output_path)
+                
+                if success:
+                    # URL im Model speichern (ohne Signal auszulösen)
+                    website_url = f"/generated_pages/dealroom-{instance.id}/index.html"
+                    instance.local_website_url = website_url
+                    instance.website_status = 'generated'
+                    instance.last_generation = timezone.now()
+                    instance.generation_error = None
+                    # Signal temporär deaktivieren
+                    from django.db.models.signals import post_save
+                    post_save.disconnect(auto_generate_website, sender=Deal)
+                    instance.save(update_fields=['local_website_url', 'website_status', 'last_generation', 'generation_error'])
+                    # Signal wieder aktivieren
+                    post_save.connect(auto_generate_website, sender=Deal)
                     
-                    # Generator initialisieren
-                    generator = DealroomGenerator(instance)
-                    
-                    # Website-Verzeichnis erstellen
-                    output_dir = os.path.join(settings.BASE_DIR, 'generated_pages', f'dealroom-{instance.id}')
-                    output_path = os.path.join(output_dir, 'index.html')
-                    
-                    # Website speichern
-                    success = generator.save_website(output_path)
-                    
-                    if success:
-                        # URL im Model speichern
-                        website_url = f"/generated_pages/dealroom-{instance.id}/"
-                        instance.local_website_url = website_url
-                        instance.website_status = 'generated'
-                        instance.last_generation = timezone.now()
-                        instance.generation_error = None
-                        instance.save(update_fields=['local_website_url', 'website_status', 'last_generation', 'generation_error'])
-                        
-                        print(f"✅ Website für '{instance.title}' automatisch generiert: {website_url}")
-                    else:
-                        instance.website_status = 'failed'
-                        instance.generation_error = 'Fehler beim Speichern der Website'
-                        instance.save(update_fields=['website_status', 'generation_error'])
-                        print(f"❌ Fehler beim Speichern der Website für '{instance.title}'")
-                    
-                except Exception as e:
-                    print(f"❌ Fehler bei automatischer Website-Generierung für '{instance.title}': {e}")
-                    # Fehler im Model speichern
+                    print(f"✅ Website für '{instance.title}' automatisch generiert: {website_url}")
+                else:
                     instance.website_status = 'failed'
-                    instance.generation_error = str(e)
+                    instance.generation_error = 'Fehler beim Speichern der Website'
+                    # Signal temporär deaktivieren
+                    from django.db.models.signals import post_save
+                    post_save.disconnect(auto_generate_website, sender=Deal)
                     instance.save(update_fields=['website_status', 'generation_error'])
-            
-            # Thread für asynchrone Ausführung starten
-            thread = threading.Thread(target=delayed_generation)
-            thread.daemon = True  # Thread wird beendet wenn Hauptprogramm endet
-            thread.start()
+                    # Signal wieder aktivieren
+                    post_save.connect(auto_generate_website, sender=Deal)
+                    print(f"❌ Fehler beim Speichern der Website für '{instance.title}'")
+                
+            except Exception as e:
+                print(f"❌ Fehler bei automatischer Website-Generierung für '{instance.title}': {e}")
+                # Fehler im Model speichern (ohne Signal auszulösen)
+                instance.website_status = 'failed'
+                instance.generation_error = str(e)
+                # Signal temporär deaktivieren
+                from django.db.models.signals import post_save
+                post_save.disconnect(auto_generate_website, sender=Deal)
+                instance.save(update_fields=['website_status', 'generation_error'])
+                # Signal wieder aktivieren
+                post_save.connect(auto_generate_website, sender=Deal)
             
         except ImportError:
             print("⚠️ Generator-Modul nicht verfügbar - Website-Generierung übersprungen")

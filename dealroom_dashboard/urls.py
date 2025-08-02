@@ -52,16 +52,4 @@ urlpatterns += [
         },
         name='generated_website'
     ),
-    
-    # Fallback für generierte Websites (ohne spezifischen Pfad)
-    re_path(
-        r'^generated_pages/dealroom-(?P<dealroom_id>\d+)/$',
-        serve,
-        {
-            'document_root': os.path.join(settings.BASE_DIR, 'generated_pages'),
-            'path': 'dealroom-{dealroom_id}/index.html',
-            'show_indexes': False,
-        },
-        name='generated_website_root'
-    ),
 ]
