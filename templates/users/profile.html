@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mein Profil - Dealroom Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">
+                        <i class="fas fa-user-circle me-2"></i>
+                        Mein Profil
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            {% if user.avatar %}
+                                <img src="{{ user.avatar.url }}" alt="Profilbild" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 150px; height: 150px;">
+                                    <i class="fas fa-user fa-4x text-white"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <h3>{{ user.get_full_name|default:user.username }}</h3>
+                            <p class="text-muted">{{ user.get_role_display }}</p>
+                            
+                            <div class="row mt-4">
+                                <div class="col-sm-6">
+                                    <h5>Kontaktdaten</h5>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-envelope me-2"></i>{{ user.email }}</li>
+                                        {% if user.phone %}
+                                            <li><i class="fas fa-phone me-2"></i>{{ user.phone }}</li>
+                                        {% endif %}
+                                        {% if user.company %}
+                                            <li><i class="fas fa-building me-2"></i>{{ user.company }}</li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                                <div class="col-sm-6">
+                                    <h5>Account-Info</h5>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-calendar me-2"></i>Registriert: {{ user.date_joined|date:"d.m.Y" }}</li>
+                                        <li><i class="fas fa-clock me-2"></i>Letzter Login: {{ user.last_login|date:"d.m.Y H:i"|default:"Noch nie" }}</li>
+                                        <li><i class="fas fa-shield-alt me-2"></i>Status: {% if user.is_active %}Aktiv{% else %}Inaktiv{% endif %}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            {% if user.bio %}
+                                <div class="mt-4">
+                                    <h5>Über mich</h5>
+                                    <p>{{ user.bio }}</p>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="mt-4">
+                                <a href="{% url 'users:profile_edit' %}" class="btn btn-primary">
+                                    <i class="fas fa-edit me-2"></i>Profil bearbeiten
+                                </a>
+                                <a href="{% url 'users:password_change' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-key me-2"></i>Passwort ändern
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

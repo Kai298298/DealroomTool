@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profil bearbeiten - Dealroom Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>
+                        Profil bearbeiten
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Persönliche Daten</h5>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.first_name.id_for_label }}" class="form-label">Vorname</label>
+                                    <input type="text" name="{{ form.first_name.name }}" value="{{ form.first_name.value|default:'' }}" class="form-control" id="{{ form.first_name.id_for_label }}">
+                                    {% if form.first_name.errors %}
+                                        <div class="text-danger">{{ form.first_name.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.last_name.id_for_label }}" class="form-label">Nachname</label>
+                                    <input type="text" name="{{ form.last_name.name }}" value="{{ form.last_name.value|default:'' }}" class="form-control" id="{{ form.last_name.id_for_label }}">
+                                    {% if form.last_name.errors %}
+                                        <div class="text-danger">{{ form.last_name.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.email.id_for_label }}" class="form-label">E-Mail</label>
+                                    <input type="email" name="{{ form.email.name }}" value="{{ form.email.value|default:'' }}" class="form-control" id="{{ form.email.id_for_label }}">
+                                    {% if form.email.errors %}
+                                        <div class="text-danger">{{ form.email.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.phone.id_for_label }}" class="form-label">Telefonnummer</label>
+                                    <input type="tel" name="{{ form.phone.name }}" value="{{ form.phone.value|default:'' }}" class="form-control" id="{{ form.phone.id_for_label }}">
+                                    {% if form.phone.errors %}
+                                        <div class="text-danger">{{ form.phone.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5>Berufliche Daten</h5>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.company.id_for_label }}" class="form-label">Unternehmen</label>
+                                    <input type="text" name="{{ form.company.name }}" value="{{ form.company.value|default:'' }}" class="form-control" id="{{ form.company.id_for_label }}">
+                                    {% if form.company.errors %}
+                                        <div class="text-danger">{{ form.company.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.bio.id_for_label }}" class="form-label">Über mich</label>
+                                    <textarea name="{{ form.bio.name }}" class="form-control" id="{{ form.bio.id_for_label }}" rows="4">{{ form.bio.value|default:'' }}</textarea>
+                                    {% if form.bio.errors %}
+                                        <div class="text-danger">{{ form.bio.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.avatar.id_for_label }}" class="form-label">Profilbild</label>
+                                    <input type="file" name="{{ form.avatar.name }}" class="form-control" id="{{ form.avatar.id_for_label }}" accept="image/*">
+                                    {% if form.avatar.errors %}
+                                        <div class="text-danger">{{ form.avatar.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">Unterstützte Formate: JPG, PNG, GIF. Max. 5MB.</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Änderungen speichern
+                            </button>
+                            <a href="{% url 'users:profile' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Abbrechen
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control, .form-select {
+        border-radius: 0.375rem;
+        border: 1px solid #ced4da;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+    }
+</style>
+{% endblock %} 

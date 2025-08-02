@@ -18,10 +18,4 @@ urlpatterns = [
     # Benutzerprofil
     path('profile/', views.ProfileView.as_view(), name='profile'),
     path('profile/edit/', views.ProfileEditView.as_view(), name='profile_edit'),
-    
-    # Benutzerverwaltung (nur für Manager/Admin)
-    path('list/', views.UserListView.as_view(), name='user_list'),
-    path('create/', views.UserCreateView.as_view(), name='user_create'),
-    path('<int:pk>/edit/', views.UserEditView.as_view(), name='user_edit'),
-    path('<int:pk>/delete/', views.UserDeleteView.as_view(), name='user_delete'),
 ] 
