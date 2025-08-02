@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Hilfe - Dealroom Dashboard{% endblock %}
+
+{% block page_title %}Hilfe & Dokumentation{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Schnellstart-Anleitung</h5>
+            </div>
+            <div class="card-body">
+                <h6>1. Erste Schritte</h6>
+                <p>Nach dem Login können Sie das Dashboard nutzen, um Deals zu verwalten und Templates zu erstellen.</p>
+                
+                <h6>2. Deals erstellen</h6>
+                <ol>
+                    <li>Gehen Sie zu "Deals" im Hauptmenü</li>
+                    <li>Klicken Sie auf "Neuen Deal erstellen"</li>
+                    <li>Füllen Sie alle erforderlichen Felder aus</li>
+                    <li>Wählen Sie ein Template aus (optional)</li>
+                    <li>Speichern Sie den Deal</li>
+                </ol>
+                
+                <h6>3. Dateien hochladen</h6>
+                <ol>
+                    <li>Öffnen Sie einen Deal</li>
+                    <li>Gehen Sie zu "Dateien"</li>
+                    <li>Klicken Sie auf "Datei hochladen"</li>
+                    <li>Wählen Sie eine Datei aus und kategorisieren Sie sie</li>
+                    <li>Speichern Sie die Datei</li>
+                </ol>
+                
+                <h6>4. Templates verwalten</h6>
+                <ol>
+                    <li>Gehen Sie zu "Templates" im Hauptmenü</li>
+                    <li>Erstellen Sie neue Templates oder bearbeiten Sie bestehende</li>
+                    <li>Laden Sie Template-Dateien hoch</li>
+                    <li>Aktivieren Sie Templates für die Verwendung</li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Rollen & Berechtigungen</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Rolle</th>
+                                <th>Deals bearbeiten</th>
+                                <th>Templates verwalten</th>
+                                <th>Benutzer verwalten</th>
+                                <th>Admin-Zugriff</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Admin</strong></td>
+                                <td><i class="bi bi-check text-success"></i></td>
+                                <td><i class="bi bi-check text-success"></i></td>
+                                <td><i class="bi bi-check text-success"></i></td>
+                                <td><i class="bi bi-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Manager</strong></td>
+                                <td><i class="bi bi-check text-success"></i></td>
+                                <td><i class="bi bi-check text-success"></i></td>
+                                <td><i class="bi bi-check text-success"></i></td>
+                                <td><i class="bi bi-x text-danger"></i></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Editor</strong></td>
+                                <td><i class="bi bi-check text-success"></i></td>
+                                <td><i class="bi bi-x text-danger"></i></td>
+                                <td><i class="bi bi-x text-danger"></i></td>
+                                <td><i class="bi bi-x text-danger"></i></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Viewer</strong></td>
+                                <td><i class="bi bi-x text-danger"></i></td>
+                                <td><i class="bi bi-x text-danger"></i></td>
+                                <td><i class="bi bi-x text-danger"></i></td>
+                                <td><i class="bi bi-x text-danger"></i></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Tastenkombinationen</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li><kbd>Ctrl/Cmd + K</kbd> - Suche öffnen</li>
+                    <li><kbd>Escape</kbd> - Modals schließen</li>
+                    <li><kbd>Enter</kbd> - Formulare absenden</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Support</h5>
+            </div>
+            <div class="card-body">
+                <p>Bei Fragen oder Problemen wenden Sie sich an den Systemadministrator.</p>
+                <p><strong>E-Mail:</strong> support@dealroom-dashboard.de</p>
+                <p><strong>Telefon:</strong> +49 (0) 123 456789</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

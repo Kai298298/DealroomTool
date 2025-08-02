@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Über - Dealroom Dashboard{% endblock %}
+
+{% block page_title %}Über das Dealroom Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Willkommen im Dealroom Dashboard</h5>
+                <p class="card-text">
+                    Das Dealroom Dashboard ist ein modernes Verwaltungstool für die Organisation und Verwaltung von Dealroom-Daten. 
+                    Es ermöglicht es Ihnen, Deals zu erstellen, Templates zu verwalten und Dateien hochzuladen, die später für 
+                    die Erstellung von Landingpages verwendet werden können.
+                </p>
+                
+                <h6>Hauptfunktionen:</h6>
+                <ul>
+                    <li><strong>Deal-Verwaltung:</strong> Erstellen und verwalten Sie Deals mit detaillierten Informationen</li>
+                    <li><strong>Template-System:</strong> Verschiedene Templates für Landingpages</li>
+                    <li><strong>Datei-Management:</strong> Upload und Organisation von Deal-bezogenen Dateien</li>
+                    <li><strong>Benutzerverwaltung:</strong> Rollenbasierte Zugriffskontrolle</li>
+                    <li><strong>Dashboard:</strong> Übersicht über alle wichtigen Daten und Statistiken</li>
+                </ul>
+                
+                <h6>Technische Details:</h6>
+                <ul>
+                    <li>Django 5.2.4 Framework</li>
+                    <li>Bootstrap 5 für responsives Design</li>
+                    <li>SQLite Datenbank (produktionsbereit für PostgreSQL)</li>
+                    <li>Rollenbasierte Sicherheit</li>
+                    <li>Deutsche Lokalisierung</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">System-Informationen</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Version:</strong> 1.0.0</p>
+                <p><strong>Entwickelt mit:</strong> Django, Python</p>
+                <p><strong>Design:</strong> Bootstrap 5</p>
+                <p><strong>Sprache:</strong> Deutsch</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

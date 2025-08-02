@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dealrooms - Dealroom Dashboard{% endblock %}
+
+{% block page_title %}Dealrooms{% endblock %}
+
+{% block page_subtitle %}
+<p class="text-muted">Verwalten Sie Ihre Dealroom-Daten</p>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <form method="get" class="d-flex">
+            <input type="text" name="search" class="form-control me-2" placeholder="Dealrooms durchsuchen..." value="{{ search }}">
+            <select name="status" class="form-select me-2" style="max-width: 150px;">
+                <option value="">Alle Status</option>
+                {% for status_choice in status_choices %}
+                <option value="{{ status_choice.0 }}" {% if status_filter == status_choice.0 %}selected{% endif %}>
+                    {{ status_choice.1 }}
+                </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i> Suchen
+            </button>
+        </form>
+    </div>
+    <div class="col-md-4 text-end">
+        {% if user.can_edit_deals %}
+        <div class="btn-group" role="group">
+            <a href="{% url 'dealrooms:dealroom_create' %}" class="btn btn-success">
+                <i class="bi bi-plus"></i> Neuen Dealroom erstellen
+            </a>
+            <a href="{% url 'dealrooms:dealroom_batch_create' %}" class="btn btn-info">
+                <i class="bi bi-upload"></i> Batch Import
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if deals %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Titel</th>
+                        <th>Firma</th>
+                        <th>Status</th>
+                        <th>Template-Typ</th>
+                        <th>Erstellt von</th>
+                        <th>Datum</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for deal in deals %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'dealrooms:dealroom_detail' deal.pk %}" class="text-decoration-none">
+                                {{ deal.title }}
+                            </a>
+                        </td>
+                        <td>{{ deal.company_name|default:"-" }}</td>
+                        <td>
+                            <span class="badge bg-{% if deal.status == 'active' %}success{% elif deal.status == 'draft' %}secondary{% elif deal.status == 'inactive' %}warning{% else %}dark{% endif %}">
+                                {{ deal.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ deal.get_template_type_display }}</td>
+                        <td>{{ deal.created_by.get_full_name|default:deal.created_by.username }}</td>
+                        <td>{{ deal.created_at|date:"d.m.Y" }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'dealrooms:dealroom_detail' deal.pk %}" class="btn btn-outline-primary" title="Anzeigen">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if user.can_edit_deals %}
+                                <a href="{% url 'dealrooms:dealroom_edit' deal.pk %}" class="btn btn-outline-warning" title="Bearbeiten">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'dealrooms:dealroom_delete' deal.pk %}" class="btn btn-outline-danger btn-delete" title="Löschen">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<nav aria-label="Dealroom-Navigation">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                <i class="bi bi-chevron-double-left"></i>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+        {% endif %}
+        
+        <li class="page-item active">
+            <span class="page-link">
+                Seite {{ page_obj.number }} von {{ page_obj.paginator.num_pages }}
+            </span>
+        </li>
+        
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                <i class="bi bi-chevron-double-right"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>
+    Noch keine Dealrooms vorhanden. 
+    {% if user.can_edit_deals %}
+    <a href="{% url 'dealrooms:dealroom_create' %}" class="alert-link">Erstellen Sie den ersten Dealroom</a>.
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Bestätigung für Löschen
+document.querySelectorAll('.btn-delete').forEach(function(button) {
+    button.addEventListener('click', function(e) {
+        if (!confirm('Sind Sie sicher, dass Sie diesen Dealroom löschen möchten?')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %} 

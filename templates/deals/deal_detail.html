@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ deal.title }} - Dealroom Dashboard{% endblock %}
+
+{% block page_title %}{{ deal.title }}{% endblock %}
+
+{% block page_subtitle %}
+<p class="text-muted">Dealroom-Details</p>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Dealroom-Informationen -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle"></i> Dealroom-Informationen
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Grundlegende Informationen</h6>
+                        <dl class="row">
+                            <dt class="col-sm-4">Titel:</dt>
+                            <dd class="col-sm-8">{{ deal.title }}</dd>
+                            
+                            <dt class="col-sm-4">Status:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge bg-{% if deal.status == 'active' %}success{% elif deal.status == 'draft' %}secondary{% elif deal.status == 'inactive' %}warning{% else %}dark{% endif %}">
+                                    {{ deal.get_status_display }}
+                                </span>
+                            </dd>
+                            
+                            <dt class="col-sm-4">Template-Typ:</dt>
+                            <dd class="col-sm-8">{{ deal.get_template_type_display }}</dd>
+                            
+                            <dt class="col-sm-4">URL-Slug:</dt>
+                            <dd class="col-sm-8">{{ deal.slug }}</dd>
+                        </dl>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6>Firmeninformationen</h6>
+                        <dl class="row">
+                            <dt class="col-sm-4">Firma:</dt>
+                            <dd class="col-sm-8">{{ deal.company_name|default:"-" }}</dd>
+                            
+                            <dt class="col-sm-4">Branche:</dt>
+                            <dd class="col-sm-8">{{ deal.industry|default:"-" }}</dd>
+                            
+                            <dt class="col-sm-4">Investition:</dt>
+                            <dd class="col-sm-8">
+                                {% if deal.investment_amount %}
+                                    {{ deal.investment_amount }} {{ deal.currency }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+                
+                {% if deal.description %}
+                <div class="mt-3">
+                    <h6>Beschreibung</h6>
+                    <p>{{ deal.description }}</p>
+                </div>
+                {% endif %}
+                
+                <!-- Dealroom-Inhalt -->
+                {% if deal.hero_title or deal.hero_subtitle or deal.call_to_action %}
+                <div class="mt-4">
+                    <h6>Dealroom-Inhalt</h6>
+                    <div class="row">
+                        {% if deal.hero_title %}
+                        <div class="col-md-4">
+                            <strong>Hero-Titel:</strong><br>
+                            {{ deal.hero_title }}
+                        </div>
+                        {% endif %}
+                        
+                        {% if deal.hero_subtitle %}
+                        <div class="col-md-4">
+                            <strong>Hero-Untertitel:</strong><br>
+                            {{ deal.hero_subtitle }}
+                        </div>
+                        {% endif %}
+                        
+                        {% if deal.call_to_action %}
+                        <div class="col-md-4">
+                            <strong>Call-to-Action:</strong><br>
+                            {{ deal.call_to_action }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Design -->
+                <div class="mt-4">
+                    <h6>Design</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Primärfarbe:</strong>
+                            <div class="d-flex align-items-center mt-1">
+                                <div class="color-preview me-2" style="width: 20px; height: 20px; background-color: {{ deal.primary_color }}; border-radius: 3px;"></div>
+                                {{ deal.primary_color }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Sekundärfarbe:</strong>
+                            <div class="d-flex align-items-center mt-1">
+                                <div class="color-preview me-2" style="width: 20px; height: 20px; background-color: {{ deal.secondary_color }}; border-radius: 3px;"></div>
+                                {{ deal.secondary_color }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dateien -->
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-folder"></i> Dateien ({{ files.count }})
+                </h5>
+                {% if user.can_edit_deals %}
+                <a href="{% url 'dealrooms:dealroom_file_upload' deal.pk %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-upload"></i> Datei hochladen
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if files %}
+                <div class="row">
+                    {% for file in files %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100">
+                            {% if file.is_image %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
+                                <i class="bi bi-image fs-1 text-muted"></i>
+                            </div>
+                            {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
+                                <i class="bi bi-file-earmark fs-1 text-muted"></i>
+                            </div>
+                            {% endif %}
+                            <div class="card-body">
+                                <h6 class="card-title">{{ file.title }}</h6>
+                                <p class="card-text small text-muted">{{ file.description|default:"Keine Beschreibung" }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-primary">{{ file.get_file_type_display }}</span>
+                                    {% if file.is_primary %}
+                                    <span class="badge bg-success">Primär</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div class="btn-group btn-group-sm w-100">
+                                    <a href="{% url 'dealrooms:dealroom_file_detail' file.pk %}" class="btn btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% if user.can_edit_deals %}
+                                    <a href="{% url 'dealrooms:dealroom_file_edit' file.pk %}" class="btn btn-outline-warning">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'dealrooms:dealroom_file_delete' file.pk %}" class="btn btn-outline-danger btn-delete">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center">Noch keine Dateien hochgeladen.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Aktionen -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-gear"></i> Aktionen
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if user.can_edit_deals %}
+                    <a href="{% url 'dealrooms:dealroom_edit' deal.pk %}" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Bearbeiten
+                    </a>
+                    <a href="{% url 'dealrooms:dealroom_files' deal.pk %}" class="btn btn-primary">
+                        <i class="bi bi-folder"></i> Dateien verwalten
+                    </a>
+                    {% endif %}
+                    
+                    {% if deal.is_published %}
+                    <a href="{{ deal.get_landingpage_url }}" class="btn btn-success" target="_blank">
+                        <i class="bi bi-eye"></i> Dealroom anzeigen
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'dealrooms:dealroom_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Zurück zur Übersicht
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Kontaktinformationen -->
+        {% if deal.contact_email or deal.contact_phone or deal.website %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-person-lines-fill"></i> Kontakt
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if deal.contact_email %}
+                <p><strong>E-Mail:</strong><br>{{ deal.contact_email }}</p>
+                {% endif %}
+                
+                {% if deal.contact_phone %}
+                <p><strong>Telefon:</strong><br>{{ deal.contact_phone }}</p>
+                {% endif %}
+                
+                {% if deal.website %}
+                <p><strong>Website:</strong><br><a href="{{ deal.website }}" target="_blank">{{ deal.website }}</a></p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Metadaten -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle"></i> Metadaten
+                </h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Erstellt von:</strong><br>{{ deal.created_by.get_full_name|default:deal.created_by.username }}</p>
+                <p><strong>Erstellt am:</strong><br>{{ deal.created_at|date:"d.m.Y H:i" }}</p>
+                {% if deal.updated_by %}
+                <p><strong>Aktualisiert von:</strong><br>{{ deal.updated_by.get_full_name|default:deal.updated_by.username }}</p>
+                <p><strong>Aktualisiert am:</strong><br>{{ deal.updated_at|date:"d.m.Y H:i" }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

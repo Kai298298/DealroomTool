@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login erfolgreich - Dealroom Dashboard{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-lg">
+            <div class="card-header bg-success text-white text-center">
+                <h2 class="mb-0">
+                    <i class="bi bi-check-circle"></i> Login erfolgreich!
+                </h2>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <i class="bi bi-person-check" style="font-size: 4rem; color: #28a745;"></i>
+                </div>
+                <h3 class="text-success mb-3">Willkommen zurück!</h3>
+                <p class="lead">Sie sind erfolgreich angemeldet.</p>
+                <p class="text-muted">Benutzername: <strong>{{ user.username }}</strong></p>
+                
+                <div class="mt-4">
+                    <a href="{% url 'core:dashboard' %}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-speedometer2"></i> Zum Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

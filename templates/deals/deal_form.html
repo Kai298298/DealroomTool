@@ -1,0 +1,370 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if object %}Dealroom bearbeiten{% else %}Neuen Dealroom erstellen{% endif %} - Dealroom Dashboard
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        {% if object %}Dealroom bearbeiten{% else %}Neuen Dealroom erstellen{% endif %}
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Pflichtfelder -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="bi bi-star-fill me-2"></i>Wichtige Informationen
+                                </h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.title.id_for_label }}" class="form-label fw-bold">
+                                    {{ form.title.label }} *
+                                </label>
+                                {{ form.title }}
+                                {% if form.title.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.title.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.slug.id_for_label }}" class="form-label fw-bold">
+                                    {{ form.slug.label }} *
+                                </label>
+                                {{ form.slug }}
+                                {% if form.slug.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.slug.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">URL-freundlicher Name (z.B. "mein-dealroom-2024")</div>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.description.id_for_label }}" class="form-label">
+                                    {{ form.description.label }}
+                                </label>
+                                {{ form.description }}
+                                {% if form.description.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.description.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Empfänger (Pflicht) -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-success mb-3">
+                                    <i class="bi bi-person-check me-2"></i>Empfänger
+                                </h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.recipient_name.id_for_label }}" class="form-label fw-bold">
+                                    {{ form.recipient_name.label }} *
+                                </label>
+                                {{ form.recipient_name }}
+                                {% if form.recipient_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.recipient_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.recipient_email.id_for_label }}" class="form-label fw-bold">
+                                    {{ form.recipient_email.label }} *
+                                </label>
+                                {{ form.recipient_email }}
+                                {% if form.recipient_email.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.recipient_email.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Design & Template - Prominent -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-info mb-4">
+                                    <i class="bi bi-palette me-2"></i>Design & Template
+                                </h5>
+                            </div>
+                            <div class="col-md-8 mb-3">
+                                <label for="{{ form.template_type.id_for_label }}" class="form-label fw-bold">
+                                    {{ form.template_type.label }} *
+                                </label>
+                                {{ form.template_type }}
+                                {% if form.template_type.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.template_type.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">Wählen Sie das Design für Ihren Dealroom</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.status.id_for_label }}" class="form-label">
+                                    {{ form.status.label }}
+                                </label>
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.status.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Template-Vorschau - Prominent -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-dark mb-3">
+                                    <i class="bi bi-eye me-2"></i>Verfügbare Templates
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card border-primary h-100 template-card" data-template="modern">
+                                            <div class="card-body text-center">
+                                                <i class="bi bi-layout-text-window fs-1 text-primary"></i>
+                                                <h6 class="mt-2">Modern</h6>
+                                                <p class="small text-muted">Sauberes, modernes Design</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card border-secondary h-100 template-card" data-template="classic">
+                                            <div class="card-body text-center">
+                                                <i class="bi bi-layout-sidebar fs-1 text-secondary"></i>
+                                                <h6 class="mt-2">Klassisch</h6>
+                                                <p class="small text-muted">Traditionelles Layout</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card border-info h-100 template-card" data-template="minimal">
+                                            <div class="card-body text-center">
+                                                <i class="bi bi-layout-three-columns fs-1 text-info"></i>
+                                                <h6 class="mt-2">Minimalistisch</h6>
+                                                <p class="small text-muted">Schlicht und elegant</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card border-success h-100 template-card" data-template="corporate">
+                                            <div class="card-body text-center">
+                                                <i class="bi bi-layout-wtf fs-1 text-success"></i>
+                                                <h6 class="mt-2">Corporate</h6>
+                                                <p class="small text-muted">Professionell und seriös</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Optional: Video -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-warning mb-3">
+                                    <i class="bi bi-camera-video me-2"></i>Video (Optional)
+                                </h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.central_video_url.id_for_label }}" class="form-label">
+                                    {{ form.central_video_url.label }}
+                                </label>
+                                {{ form.central_video_url }}
+                                {% if form.central_video_url.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.central_video_url.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">YouTube oder Vimeo Link</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.central_video_file.id_for_label }}" class="form-label">
+                                    {{ form.central_video_file.label }}
+                                </label>
+                                {{ form.central_video_file }}
+                                {% if form.central_video_file.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.central_video_file.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Optional: Landingpage-Inhalt -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-secondary mb-3">
+                                    <i class="bi bi-layout-text-window me-2"></i>Landingpage-Inhalt (Optional)
+                                </h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.hero_title.id_for_label }}" class="form-label">
+                                    {{ form.hero_title.label }}
+                                </label>
+                                {{ form.hero_title }}
+                                {% if form.hero_title.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.hero_title.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.call_to_action.id_for_label }}" class="form-label">
+                                    {{ form.call_to_action.label }}
+                                </label>
+                                {{ form.call_to_action }}
+                                {% if form.call_to_action.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.call_to_action.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.hero_subtitle.id_for_label }}" class="form-label">
+                                    {{ form.hero_subtitle.label }}
+                                </label>
+                                {{ form.hero_subtitle }}
+                                {% if form.hero_subtitle.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.hero_subtitle.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Optional: Farben -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-dark mb-3">
+                                    <i class="bi bi-palette2 me-2"></i>Farben (Optional)
+                                </h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.primary_color.id_for_label }}" class="form-label">
+                                    {{ form.primary_color.label }}
+                                </label>
+                                {{ form.primary_color }}
+                                {% if form.primary_color.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.primary_color.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.secondary_color.id_for_label }}" class="form-label">
+                                    {{ form.secondary_color.label }}
+                                </label>
+                                {{ form.secondary_color }}
+                                {% if form.secondary_color.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.secondary_color.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <a href="{% url 'core:dashboard' %}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-arrow-left me-2"></i>Zurück
+                                    </a>
+                                    <div>
+                                        <button type="submit" class="btn btn-primary btn-lg">
+                                            <i class="bi bi-check-circle me-2"></i>
+                                            {% if object %}Aktualisieren{% else %}Dealroom erstellen{% endif %}
+                                        </button>
+                                        {% if object %}
+                                        <a href="{% url 'dealrooms:dealroom_detail' object.pk %}" class="btn btn-outline-primary ms-2">
+                                            <i class="bi bi-eye me-2"></i>Anzeigen
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.template-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-width: 2px;
+}
+
+.template-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.template-card.selected {
+    border-width: 3px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    transform: translateY(-5px);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Slug-Generierung
+document.getElementById('{{ form.title.id_for_label }}').addEventListener('input', function() {
+    var title = this.value;
+    var slug = title.toLowerCase()
+        .replace(/[^a-z0-9 -]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim('-');
+    document.getElementById('{{ form.slug.id_for_label }}').value = slug;
+});
+
+// Template-Auswahl
+document.querySelectorAll('.template-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+        // Alle Karten zurücksetzen
+        document.querySelectorAll('.template-card').forEach(function(c) {
+            c.classList.remove('selected');
+        });
+        
+        // Diese Karte auswählen
+        this.classList.add('selected');
+        
+        // Template-Type setzen
+        var template = this.getAttribute('data-template');
+        var select = document.getElementById('{{ form.template_type.id_for_label }}');
+        select.value = template;
+    });
+});
+
+// Initial Template auswählen
+document.addEventListener('DOMContentLoaded', function() {
+    var select = document.getElementById('{{ form.template_type.id_for_label }}');
+    var selectedTemplate = select.value;
+    var card = document.querySelector('[data-template="' + selectedTemplate + '"]');
+    if (card) {
+        card.classList.add('selected');
+    }
+});
+</script>
+{% endblock %} 
