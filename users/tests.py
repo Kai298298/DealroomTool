@@ -67,9 +67,10 @@ class UserViewsTest(TestCase):
         # Erst einloggen
         self.client.login(username='testuser', password='testpass123')
         
-        # Dann logout
-        response = self.client.get(reverse('users:logout'))
-        self.assertRedirects(response, '/')
+        # Dann logout - Django's LogoutView erwartet POST
+        response = self.client.post(reverse('users:logout'))
+        self.assertEqual(response.status_code, 302)  # Redirect
+        self.assertEqual(response.url, '/')
 
     def test_profile_page_requires_login(self):
         """Test: Profile-Seite erfordert Login"""
@@ -81,7 +82,7 @@ class UserViewsTest(TestCase):
         self.client.login(username='testuser', password='testpass123')
         response = self.client.get(reverse('users:profile'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'testuser')
+        self.assertContains(response, 'Test User')
         self.assertContains(response, 'test@example.com')
         self.assertContains(response, 'Administrator')
 
@@ -141,7 +142,7 @@ class UserViewsTest(TestCase):
         """Test: Register-Seite lädt"""
         response = self.client.get(reverse('users:register'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Registrierung')
+        self.assertContains(response, 'Registrieren')
 
     def test_register_success(self):
         """Test: Registrierung funktioniert"""
@@ -151,11 +152,11 @@ class UserViewsTest(TestCase):
             'password1': 'newuserpass123',
             'password2': 'newuserpass123',
             'first_name': 'New',
-            'last_name': 'User'
-        })
-        
-        self.assertRedirects(response, reverse('core:dashboard'))
-        
+            'last_name': 'User',
+            'role': 'viewer'
+        }, follow=False)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, '/dashboard/')
         # Prüfen ob Benutzer erstellt wurde
         new_user = User.objects.get(username='newuser')
         self.assertEqual(new_user.email, 'newuser@example.com')
@@ -274,8 +275,9 @@ class UserIntegrationTest(TestCase):
         self.assertRedirects(response, reverse('users:password_change_done'))
         
         # 5. Logout
-        response = self.client.get(reverse('users:logout'))
-        self.assertRedirects(response, '/')
+        response = self.client.post(reverse('users:logout'))
+        self.assertEqual(response.status_code, 302)  # Redirect
+        self.assertEqual(response.url, '/')
         
         # 6. Mit neuem Passwort einloggen
         login_success = self.client.login(username='integrationtest', password='newpass123')

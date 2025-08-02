@@ -260,7 +260,7 @@ class Deal(models.Model):
         return self.title
     
     def get_absolute_url(self):
-        return reverse('deals:deal_detail', kwargs={'pk': self.pk})
+        return reverse('dealrooms:dealroom_detail', kwargs={'pk': self.pk})
     
     def get_landingpage_url(self):
         """Gibt die öffentliche Landingpage-URL zurück"""
@@ -287,6 +287,37 @@ class Deal(models.Model):
     def get_template_css_class(self):
         """Gibt CSS-Klasse für Template-Typ zurück"""
         return f"template-{self.template_type}"
+    
+    def get_assigned_files(self, role=None):
+        """Gibt die zugeordneten Dateien zurück, optional gefiltert nach Rolle"""
+        queryset = self.file_assignments.select_related('global_file').order_by('order')
+        if role:
+            queryset = queryset.filter(role=role)
+        return queryset
+    
+    def get_hero_images(self):
+        """Gibt alle Hero-Bilder zurück"""
+        return self.get_assigned_files(role='hero_image')
+    
+    def get_logos(self):
+        """Gibt alle Logos zurück"""
+        return self.get_assigned_files(role='logo')
+    
+    def get_gallery_files(self):
+        """Gibt alle Galerie-Dateien zurück"""
+        return self.get_assigned_files(role='gallery')
+    
+    def get_documents(self):
+        """Gibt alle Dokumente zurück"""
+        return self.get_assigned_files(role='document')
+    
+    def get_videos(self):
+        """Gibt alle Videos zurück"""
+        return self.get_assigned_files(role='video')
+    
+    def get_data_files(self):
+        """Gibt alle Daten-Dateien zurück"""
+        return self.get_assigned_files(role='data')
 
 
 # Signal-Handler für automatische Website-Generierung
@@ -457,6 +488,10 @@ class DealFile(models.Model):
         VIDEO = 'video', _('Video')
         OTHER = 'other', _('Sonstiges')
     
+    class FileSource(models.TextChoices):
+        UPLOADED = 'uploaded', _('Direkt hochgeladen')
+        GLOBAL_ASSIGNED = 'global_assigned', _('Globale Datei zugeordnet')
+    
     deal = models.ForeignKey(
         Deal,
         on_delete=models.CASCADE,
@@ -475,9 +510,30 @@ class DealFile(models.Model):
         verbose_name=_('Beschreibung')
     )
     
+    # Datei-Quelle
+    file_source = models.CharField(
+        max_length=20,
+        choices=FileSource.choices,
+        default=FileSource.UPLOADED,
+        verbose_name=_('Datei-Quelle')
+    )
+    
+    # Direkt hochgeladene Datei
     file = models.FileField(
         upload_to='deal_files/',
+        blank=True,
+        null=True,
         verbose_name=_('Datei')
+    )
+    
+    # Referenz auf globale Datei (falls zugeordnet)
+    global_file = models.ForeignKey(
+        'files.GlobalFile',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name='deal_file_references',
+        verbose_name=_('Globale Datei')
     )
     
     file_type = models.CharField(
@@ -519,20 +575,215 @@ class DealFile(models.Model):
     
     def get_file_size(self):
         """Gibt die Dateigröße zurück"""
-        if self.file:
-            return self.file.size
-        return 0
+        if self.file_source == self.FileSource.UPLOADED and self.file:
+            try:
+                size = self.file.size
+                for unit in ['B', 'KB', 'MB', 'GB']:
+                    if size < 1024.0:
+                        return f"{size:.1f} {unit}"
+                    size /= 1024.0
+                return f"{size:.1f} TB"
+            except:
+                return "Unbekannt"
+        elif self.file_source == self.FileSource.GLOBAL_ASSIGNED and self.global_file:
+            return self.global_file.get_file_size()
+        return "Unbekannt"
     
     def get_file_extension(self):
         """Gibt die Dateiendung zurück"""
-        if self.file:
+        if self.file_source == self.FileSource.UPLOADED and self.file:
             return os.path.splitext(self.file.name)[1].lower()
-        return ''
+        elif self.file_source == self.FileSource.GLOBAL_ASSIGNED and self.global_file:
+            return self.global_file.get_file_extension()
+        return ""
     
     def is_image(self):
         """Prüft ob es sich um ein Bild handelt"""
-        return self.file_type in [self.FileType.HERO_IMAGE, self.FileType.LOGO, self.FileType.GALLERY]
+        if self.file_source == self.FileSource.UPLOADED and self.file:
+            ext = self.get_file_extension().lower()
+            return ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']
+        elif self.file_source == self.FileSource.GLOBAL_ASSIGNED and self.global_file:
+            return self.global_file.is_image()
+        return False
     
     def is_document(self):
         """Prüft ob es sich um ein Dokument handelt"""
-        return self.file_type == self.FileType.DOCUMENT
+        if self.file_source == self.FileSource.UPLOADED and self.file:
+            ext = self.get_file_extension().lower()
+            return ext in ['.pdf', '.doc', '.docx', '.txt', '.rtf']
+        elif self.file_source == self.FileSource.GLOBAL_ASSIGNED and self.global_file:
+            return self.global_file.is_document()
+        return False
+    
+    def get_actual_file(self):
+        """Gibt die tatsächliche Datei zurück (entweder direkt oder über globale Referenz)"""
+        if self.file_source == self.FileSource.UPLOADED:
+            return self.file
+        elif self.file_source == self.FileSource.GLOBAL_ASSIGNED and self.global_file:
+            return self.global_file.file
+        return None
+    
+    def get_file_url(self):
+        """Gibt die Download-URL zurück"""
+        if self.file_source == self.FileSource.UPLOADED:
+            return self.file.url if self.file else None
+        elif self.file_source == self.FileSource.GLOBAL_ASSIGNED and self.global_file:
+            return self.global_file.file.url if self.global_file.file else None
+        return None
+
+
+class DealFileAssignment(models.Model):
+    """
+    Zuordnung von globalen Dateien zu Dealrooms
+    """
+    deal = models.ForeignKey(
+        'Deal',
+        on_delete=models.CASCADE,
+        related_name='file_assignments',
+        verbose_name=_('Dealroom')
+    )
+    
+    global_file = models.ForeignKey(
+        'files.GlobalFile',
+        on_delete=models.CASCADE,
+        related_name='deal_assignments',
+        verbose_name=_('Globale Datei')
+    )
+    
+    assigned_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name=_('Zugeordnet von')
+    )
+    
+    assigned_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('Zugeordnet am')
+    )
+    
+    # Spezielle Rolle für diese Datei im Dealroom
+    role = models.CharField(
+        max_length=50,
+        choices=[
+            ('hero_image', _('Hero-Bild')),
+            ('logo', _('Logo')),
+            ('gallery', _('Galerie')),
+            ('document', _('Dokument')),
+            ('video', _('Video')),
+            ('data', _('Daten')),
+            ('other', _('Sonstiges')),
+        ],
+        default='other',
+        verbose_name=_('Rolle')
+    )
+    
+    # Reihenfolge für Sortierung
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_('Reihenfolge')
+    )
+    
+    class Meta:
+        verbose_name = _('Dealroom-Datei-Zuordnung')
+        verbose_name_plural = _('Dealroom-Datei-Zuordnungen')
+        ordering = ['order', 'assigned_at']
+        unique_together = ['deal', 'global_file']
+    
+    def __str__(self):
+        return f"{self.deal.title} - {self.global_file.title} ({self.get_role_display()})"
+
+
+class DealChangeLog(models.Model):
+    """
+    Änderungsprotokoll für Dealrooms
+    """
+    class ChangeType(models.TextChoices):
+        CREATED = 'created', _('Erstellt')
+        UPDATED = 'updated', _('Aktualisiert')
+        DELETED = 'deleted', _('Gelöscht')
+        FILE_ASSIGNED = 'file_assigned', _('Datei zugeordnet')
+        FILE_UNASSIGNED = 'file_unassigned', _('Datei entfernt')
+        STATUS_CHANGED = 'status_changed', _('Status geändert')
+        WEBSITE_GENERATED = 'website_generated', _('Website generiert')
+        WEBSITE_DELETED = 'website_deleted', _('Website gelöscht')
+    
+    deal = models.ForeignKey(
+        Deal,
+        on_delete=models.CASCADE,
+        related_name='change_logs',
+        verbose_name=_('Dealroom')
+    )
+    
+    change_type = models.CharField(
+        max_length=50,
+        choices=ChangeType.choices,
+        verbose_name=_('Änderungstyp')
+    )
+    
+    changed_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name=_('Geändert von')
+    )
+    
+    changed_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('Geändert am')
+    )
+    
+    field_name = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name=_('Feldname')
+    )
+    
+    old_value = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_('Alter Wert')
+    )
+    
+    new_value = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_('Neuer Wert')
+    )
+    
+    description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_('Beschreibung')
+    )
+    
+    class Meta:
+        verbose_name = _('Dealroom-Änderung')
+        verbose_name_plural = _('Dealroom-Änderungen')
+        ordering = ['-changed_at']
+    
+    def __str__(self):
+        return f"{self.deal.title} - {self.get_change_type_display()} ({self.changed_at.strftime('%d.%m.%Y %H:%M')})"
+    
+    def get_change_description(self):
+        """Gibt eine benutzerfreundliche Beschreibung der Änderung zurück"""
+        if self.description:
+            return self.description
+        
+        if self.change_type == self.ChangeType.CREATED:
+            return f"Dealroom '{self.deal.title}' wurde erstellt"
+        elif self.change_type == self.ChangeType.UPDATED:
+            if self.field_name:
+                return f"Feld '{self.field_name}' wurde geändert"
+            return "Dealroom wurde aktualisiert"
+        elif self.change_type == self.ChangeType.STATUS_CHANGED:
+            return f"Status geändert von '{self.old_value}' zu '{self.new_value}'"
+        elif self.change_type == self.ChangeType.FILE_ASSIGNED:
+            return f"Datei '{self.new_value}' wurde zugeordnet"
+        elif self.change_type == self.ChangeType.FILE_UNASSIGNED:
+            return f"Datei '{self.old_value}' wurde entfernt"
+        elif self.change_type == self.ChangeType.WEBSITE_GENERATED:
+            return "Website wurde generiert"
+        elif self.change_type == self.ChangeType.WEBSITE_DELETED:
+            return "Website wurde gelöscht"
+        
+        return self.get_change_type_display()

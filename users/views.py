@@ -30,7 +30,7 @@ class RegisterView(CreateView):
         user = form.save()
         login(self.request, user)
         messages.success(self.request, _('Registrierung erfolgreich! Willkommen im Dealroom Dashboard.'))
-        return super().form_valid(form)
+        return redirect('core:dashboard')
 
 
 class CustomLoginView(TemplateView):

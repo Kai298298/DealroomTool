@@ -1,447 +1,321 @@
 """
-CSS-Generator für dynamische Styles basierend auf Dealroom-Daten
-==============================================================
+CSS-Generator für dynamische Styles
+==================================
 
-Diese Datei generiert dynamisches CSS basierend auf den Farben und
-Einstellungen eines Dealrooms. Das CSS wird zur Laufzeit erstellt
-und passt sich automatisch an die benutzerdefinierten Farben an.
-
-Funktionsweise:
-1. Nimmt einen Dealroom als Input
-2. Extrahiert die benutzerdefinierten Farben (primary_color, secondary_color)
-3. Generiert vollständiges CSS mit CSS-Variablen
-4. Erstellt responsive, moderne Styles
-5. Fügt Animationen und Hover-Effekte hinzu
-
-Verwendung:
-    css_generator = CSSGenerator()
-    css_content = css_generator.generate(dealroom)
+Generiert CSS-Code basierend auf Dealroom-Konfigurationen
+wie Farben, Layouts und Design-Elementen.
 """
 
 
 class CSSGenerator:
     """
-    Generiert dynamisches CSS basierend auf Dealroom-Daten
-    
-    Diese Klasse erstellt vollständiges CSS für die generierten Websites.
-    Das CSS verwendet CSS-Variablen (Custom Properties) um sich dynamisch
-    an die benutzerdefinierten Farben des Dealrooms anzupassen.
-    
-    Features:
-    - Responsive Design (Mobile-first)
-    - CSS-Variablen für dynamische Farben
-    - Moderne Animationen und Transitions
-    - Hover-Effekte und Interaktionen
-    - Flexbox und Grid Layouts
-    - Status-Badges und Utility-Klassen
+    Generiert dynamisches CSS für Dealroom-Websites
     """
     
-    def generate(self, dealroom):
+    def __init__(self, dealroom):
         """
-        Generiert CSS mit benutzerdefinierten Farben und Styles
-        
-        Erstellt vollständiges CSS basierend auf den Farben und
-        Einstellungen des Dealrooms. Das CSS ist responsiv und
-        modern gestaltet.
+        Initialisiert den CSS-Generator
         
         Args:
-            dealroom: Dealroom-Model-Objekt mit Farben und Einstellungen
-            
-        Returns:
-            str: Vollständiges CSS als String
+            dealroom: Dealroom-Objekt mit Design-Konfiguration
         """
+        self.dealroom = dealroom
+        self.primary_color = dealroom.primary_color or '#0d6efd'
+        self.secondary_color = dealroom.secondary_color or '#6c757d'
+    
+    def generate_css(self) -> str:
+        """
+        Generiert das komplette CSS für die Website
         
-        # CSS-Template mit CSS-Variablen für dynamische Farben
-        css_template = f"""
-/* Dealroom Website - {dealroom.title} */
-/* Generiert am: {dealroom.last_generation or 'Unbekannt'} */
-/* Template: {dealroom.template_type} */
-
-/* CSS-Variablen für dynamische Farben */
-/* Diese Variablen werden mit den Dealroom-Farben gefüllt */
-:root {{
-    --primary-color: {dealroom.primary_color};      /* Hauptfarbe des Dealrooms */
-    --secondary-color: {dealroom.secondary_color};  /* Sekundärfarbe des Dealrooms */
-    --text-color: #333333;                         /* Standard-Textfarbe */
-    --background-color: #ffffff;                   /* Hintergrundfarbe */
-    --light-gray: #f8f9fa;                        /* Helles Grau für Hintergründe */
-    --border-color: #dee2e6;                      /* Rahmenfarbe */
-    --shadow: 0 2px 10px rgba(0,0,0,0.1);        /* Standard-Schatten */
-    --transition: all 0.3s ease;                  /* Standard-Animation */
-}}
-
-/* CSS Reset und Basis-Styles */
-* {{
+        Returns:
+            str: CSS-Code
+        """
+        css_parts = [
+            self._generate_reset_css(),
+            self._generate_variables_css(),
+            self._generate_base_styles(),
+            self._generate_header_styles(),
+            self._generate_hero_styles(),
+            self._generate_content_styles(),
+            self._generate_footer_styles(),
+            self._generate_responsive_styles()
+        ]
+        
+        return '\n\n'.join(css_parts)
+    
+    def _generate_reset_css(self) -> str:
+        """Generiert CSS-Reset"""
+        return """
+/* CSS Reset */
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-}}
+}
 
-body {{
+body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
-    color: var(--text-color);
-    background-color: var(--background-color);
+    color: #333;
+}
+"""
+    
+    def _generate_variables_css(self) -> str:
+        """Generiert CSS-Variablen"""
+        return f"""
+/* CSS Variables */
+:root {{
+    --primary-color: {self.primary_color};
+    --secondary-color: {self.secondary_color};
+    --text-color: #333;
+    --light-gray: #f8f9fa;
+    --border-color: #dee2e6;
 }}
-
-/* Header-Styles */
-/* Hero-Bereich mit Gradient-Hintergrund */
-.header {{
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: white;
-    padding: 2rem 0;
-    text-align: center;
-}}
-
-.header h1 {{
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-    font-weight: 700;
-}}
-
-.header p {{
-    font-size: 1.2rem;
-    opacity: 0.9;
-}}
-
-/* Navigation-Styles */
-/* Sticky Navigation mit Schatten */
-.nav {{
-    background: white;
-    box-shadow: var(--shadow);
-    padding: 1rem 0;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-}}
-
-.nav-container {{
+"""
+    
+    def _generate_base_styles(self) -> str:
+        """Generiert Basis-Styles"""
+        return """
+/* Base Styles */
+.container {
     max-width: 1200px;
     margin: 0 auto;
+    padding: 0 15px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.btn:hover {
+    background-color: var(--secondary-color);
+}
+"""
+    
+    def _generate_header_styles(self) -> str:
+        """Generiert Header-Styles"""
+        return """
+/* Header Styles */
+.header {
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 1rem 0;
+}
+
+.nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 2rem;
-}}
+}
 
-.nav-logo {{
+.logo {
     font-size: 1.5rem;
     font-weight: bold;
     color: var(--primary-color);
-}}
-
-.nav-menu {{
-    display: flex;
-    list-style: none;
-    gap: 2rem;
-}}
-
-.nav-menu a {{
-    text-decoration: none;
-    color: var(--text-color);
-    font-weight: 500;
-    transition: var(--transition);
-}}
-
-.nav-menu a:hover {{
-    color: var(--primary-color);
-}}
-
-/* Hauptinhalt-Styles */
-.main {{
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-}}
-
-.section {{
-    margin-bottom: 4rem;
-}}
-
-.section-title {{
-    font-size: 2rem;
-    color: var(--primary-color);
-    margin-bottom: 1.5rem;
-    text-align: center;
-}}
-
-/* Hero-Section Styles */
-/* Prominenter Bereich mit Call-to-Action */
-.hero {{
+}
+"""
+    
+    def _generate_hero_styles(self) -> str:
+        """Generiert Hero-Section Styles"""
+        return """
+/* Hero Section */
+.hero {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: white;
-    padding: 4rem 2rem;
+    padding: 4rem 0;
     text-align: center;
-    border-radius: 10px;
-    margin-bottom: 3rem;
-}}
+}
 
-.hero h2 {{
+.hero h1 {
     font-size: 3rem;
     margin-bottom: 1rem;
-    font-weight: 700;
-}}
+}
 
-.hero p {{
-    font-size: 1.3rem;
+.hero p {
+    font-size: 1.2rem;
     margin-bottom: 2rem;
     opacity: 0.9;
-}}
+}
+"""
+    
+    def _generate_content_styles(self) -> str:
+        """Generiert Content-Styles"""
+        return """
+/* Content Styles */
+.content {
+    padding: 3rem 0;
+}
 
-/* Call-to-Action Button */
-.cta-button {{
-    background-color: white;
+.section {
+    margin-bottom: 3rem;
+}
+
+.section h2 {
     color: var(--primary-color);
-    padding: 1rem 2rem;
-    border: none;
-    border-radius: 50px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
-    text-decoration: none;
-    display: inline-block;
-}}
+    margin-bottom: 1rem;
+}
 
-.cta-button:hover {{
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    text-decoration: none;
-    color: var(--primary-color);
-}}
-
-/* Info-Cards Grid */
-/* Responsive Grid für Informationskarten */
-.info-grid {{
+/* File Download Section */
+.files-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-    margin-bottom: 3rem;
-}}
-
-.info-card {{
-    background: white;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-}}
-
-.info-card:hover {{
-    transform: translateY(-5px);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-}}
-
-.info-card h3 {{
-    color: var(--primary-color);
-    margin-bottom: 1rem;
-    font-size: 1.5rem;
-}}
-
-.info-card p {{
-    color: #666;
-    line-height: 1.6;
-}}
-
-/* Video-Section Styles */
-/* Responsive Video-Container */
-.video-section {{
-    text-align: center;
-    margin: 3rem 0;
-}}
-
-.video-container {{
-    max-width: 800px;
-    margin: 0 auto;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: var(--shadow);
-}}
-
-.video-container iframe {{
-    width: 100%;
-    height: 450px;
-    border: none;
-}}
-
-/* Datei-Galerie Styles */
-/* Grid für Dateien und Dokumente */
-.file-gallery {{
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.5rem;
-    margin: 2rem 0;
-}}
+    margin-top: 1rem;
+}
 
-.file-item {{
+.file-card {
     background: white;
-    padding: 1.5rem;
+    border: 1px solid var(--border-color);
     border-radius: 8px;
-    box-shadow: var(--shadow);
-    text-align: center;
-    transition: var(--transition);
-}}
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
 
-.file-item:hover {{
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
-}}
+.file-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
 
-.file-item h4 {{
-    color: var(--primary-color);
-    margin-bottom: 0.5rem;
-}}
+.file-icon {
+    flex-shrink: 0;
+    width: 50px;
+    height: 50px;
+    background: var(--light-gray);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
 
-.file-item p {{
-    color: #666;
+.file-icon::before {
+    content: "📄";
+}
+
+.file-icon-pdf::before { content: "📕"; }
+.file-icon-doc::before { content: "📘"; }
+.file-icon-docx::before { content: "📘"; }
+.file-icon-xls::before { content: "📊"; }
+.file-icon-xlsx::before { content: "📊"; }
+.file-icon-ppt::before { content: "📑"; }
+.file-icon-pptx::before { content: "📑"; }
+.file-icon-jpg::before { content: "🖼️"; }
+.file-icon-jpeg::before { content: "🖼️"; }
+.file-icon-png::before { content: "🖼️"; }
+.file-icon-gif::before { content: "🖼️"; }
+.file-icon-mp4::before { content: "🎥"; }
+.file-icon-mov::before { content: "🎥"; }
+.file-icon-avi::before { content: "🎥"; }
+.file-icon-mp3::before { content: "🎵"; }
+.file-icon-wav::before { content: "🎵"; }
+.file-icon-zip::before { content: "📦"; }
+.file-icon-rar::before { content: "📦"; }
+.file-icon-txt::before { content: "📄"; }
+
+.file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.file-info h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    color: var(--text-color);
+}
+
+.file-info p {
+    margin: 0 0 0.5rem 0;
     font-size: 0.9rem;
-    margin-bottom: 1rem;
-}}
+    color: #666;
+    line-height: 1.4;
+}
 
-.file-link {{
+.file-size {
+    font-size: 0.8rem;
+    color: #888;
+    font-weight: 500;
+}
+
+.file-actions {
+    flex-shrink: 0;
+}
+
+.btn-download {
     background: var(--primary-color);
     color: white;
     padding: 0.5rem 1rem;
-    border-radius: 5px;
+    border-radius: 4px;
     text-decoration: none;
     font-size: 0.9rem;
-    transition: var(--transition);
-}}
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.2s;
+}
 
-.file-link:hover {{
+.btn-download:hover {
     background: var(--secondary-color);
+    color: white;
     text-decoration: none;
-    color: white;
-}}
+}
 
-/* Kontakt-Section Styles */
-/* Hervorgehobener Kontaktbereich */
-.contact-section {{
-    background: var(--light-gray);
-    padding: 3rem 2rem;
-    border-radius: 10px;
-    text-align: center;
-}}
-
-.contact-info {{
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 2rem;
-    margin-top: 2rem;
-}}
-
-.contact-item {{
-    background: white;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: var(--shadow);
-}}
-
-.contact-item h4 {{
-    color: var(--primary-color);
-    margin-bottom: 0.5rem;
-}}
-
-.contact-item p {{
-    color: #666;
-}}
-
-/* Footer-Styles */
-/* Dunkler Footer mit Copyright */
-.footer {{
-    background: var(--text-color);
-    color: white;
-    text-align: center;
-    padding: 2rem;
-    margin-top: 4rem;
-}}
-
-.footer p {{
-    opacity: 0.8;
-}}
-
-/* Responsive Design */
-/* Mobile-first Ansatz mit Breakpoints */
-@media (max-width: 768px) {{
-    .header h1 {{
-        font-size: 2rem;
-    }}
-    
-    .hero h2 {{
-        font-size: 2.5rem;
-    }}
-    
-    .nav-menu {{
-        flex-direction: column;
-        gap: 1rem;
-    }}
-    
-    .info-grid {{
-        grid-template-columns: 1fr;
-    }}
-    
-    .file-gallery {{
-        grid-template-columns: 1fr;
-    }}
-    
-    .contact-info {{
-        grid-template-columns: 1fr;
-    }}
-}}
-
-/* Loading-Animation */
-/* Spinner für Ladezustände */
-.loading {{
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255,255,255,.3);
-    border-radius: 50%;
-    border-top-color: #fff;
-    animation: spin 1s ease-in-out infinite;
-}}
-
-@keyframes spin {{
-    to {{ transform: rotate(360deg); }}
-}}
-
-/* Status-Badges */
-/* Farbkodierte Status-Anzeigen */
-.status-badge {{
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
+.download-icon::before {
+    content: "⬇️";
     font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-}}
+}
 
-.status-active {{
-    background: #28a745;
-    color: white;
-}}
+/* Contact Info Styles */
+.contact-info p {
+    margin-bottom: 0.5rem;
+}
 
-.status-draft {{
-    background: #6c757d;
-    color: white;
-}}
+.contact-info a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
 
-.status-inactive {{
-    background: #ffc107;
-    color: #212529;
-}}
-
-/* Utility-Klassen */
-/* Hilfsklassen für häufige Styling-Aufgaben */
-.text-center {{ text-align: center; }}
-.text-primary {{ color: var(--primary-color); }}
-.text-secondary {{ color: var(--secondary-color); }}
-.mb-1 {{ margin-bottom: 0.5rem; }}
-.mb-2 {{ margin-bottom: 1rem; }}
-.mb-3 {{ margin-bottom: 1.5rem; }}
-.mt-1 {{ margin-top: 0.5rem; }}
-.mt-2 {{ margin-top: 1rem; }}
-.mt-3 {{ margin-top: 1.5rem; }}
+.contact-info a:hover {
+    text-decoration: underline;
+}
 """
-        
-        return css_template 
+    
+    def _generate_footer_styles(self) -> str:
+        """Generiert Footer-Styles"""
+        return """
+/* Footer Styles */
+.footer {
+    background-color: var(--light-gray);
+    padding: 2rem 0;
+    text-align: center;
+    margin-top: 3rem;
+}
+"""
+    
+    def _generate_responsive_styles(self) -> str:
+        """Generiert responsive Styles"""
+        return """
+/* Responsive Design */
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 2rem;
+    }
+    
+    .hero p {
+        font-size: 1rem;
+    }
+    
+    .container {
+        padding: 0 10px;
+    }
+}
+""" 

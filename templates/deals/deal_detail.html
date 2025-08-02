@@ -3,259 +3,365 @@
 
 {% block title %}{{ deal.title }} - Dealroom Dashboard{% endblock %}
 
-{% block page_title %}{{ deal.title }}{% endblock %}
-
-{% block page_subtitle %}
-<p class="text-muted">Dealroom-Details</p>
-{% endblock %}
-
 {% block content %}
-<div class="row">
-    <!-- Dealroom-Informationen -->
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-info-circle"></i> Dealroom-Informationen
-                </h5>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-building me-2"></i>{{ deal.title }}
+                    </h2>
+                    <p class="text-muted mb-0">{{ deal.description|default:"Keine Beschreibung" }}</p>
+                </div>
+                <div>
+                    <a href="{% url 'dealrooms:dealroom_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Zurück zur Übersicht
+                    </a>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6>Grundlegende Informationen</h6>
-                        <dl class="row">
-                            <dt class="col-sm-4">Titel:</dt>
-                            <dd class="col-sm-8">{{ deal.title }}</dd>
-                            
-                            <dt class="col-sm-4">Status:</dt>
-                            <dd class="col-sm-8">
-                                <span class="badge bg-{% if deal.status == 'active' %}success{% elif deal.status == 'draft' %}secondary{% elif deal.status == 'inactive' %}warning{% else %}dark{% endif %}">
-                                    {{ deal.get_status_display }}
-                                </span>
-                            </dd>
-                            
-                            <dt class="col-sm-4">Template-Typ:</dt>
-                            <dd class="col-sm-8">{{ deal.get_template_type_display }}</dd>
-                            
-                            <dt class="col-sm-4">URL-Slug:</dt>
-                            <dd class="col-sm-8">{{ deal.slug }}</dd>
-                        </dl>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <h6>Firmeninformationen</h6>
-                        <dl class="row">
-                            <dt class="col-sm-4">Firma:</dt>
-                            <dd class="col-sm-8">{{ deal.company_name|default:"-" }}</dd>
-                            
-                            <dt class="col-sm-4">Branche:</dt>
-                            <dd class="col-sm-8">{{ deal.industry|default:"-" }}</dd>
-                            
-                            <dt class="col-sm-4">Investition:</dt>
-                            <dd class="col-sm-8">
-                                {% if deal.investment_amount %}
-                                    {{ deal.investment_amount }} {{ deal.currency }}
-                                {% else %}
-                                    -
+
+            <div class="row">
+                <!-- Hauptinhalt -->
+                <div class="col-lg-8">
+                    <!-- Dealroom-Informationen -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-info-circle me-2"></i>Dealroom-Informationen
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Status</label>
+                                    <p class="form-control-plaintext">
+                                        <span class="badge bg-{% if deal.status == 'active' %}success{% elif deal.status == 'draft' %}warning{% elif deal.status == 'inactive' %}secondary{% else %}dark{% endif %}">
+                                            {{ deal.get_status_display }}
+                                        </span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Template</label>
+                                    <p class="form-control-plaintext">{{ deal.get_template_type_display }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Empfänger</label>
+                                    <p class="form-control-plaintext">{{ deal.recipient_name|default:"Nicht angegeben" }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">E-Mail</label>
+                                    <p class="form-control-plaintext">{{ deal.recipient_email|default:"Nicht angegeben" }}</p>
+                                </div>
+                                {% if deal.recipient_company %}
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Firma</label>
+                                    <p class="form-control-plaintext">{{ deal.recipient_company }}</p>
+                                </div>
                                 {% endif %}
-                            </dd>
-                        </dl>
-                    </div>
-                </div>
-                
-                {% if deal.description %}
-                <div class="mt-3">
-                    <h6>Beschreibung</h6>
-                    <p>{{ deal.description }}</p>
-                </div>
-                {% endif %}
-                
-                <!-- Dealroom-Inhalt -->
-                {% if deal.hero_title or deal.hero_subtitle or deal.call_to_action %}
-                <div class="mt-4">
-                    <h6>Dealroom-Inhalt</h6>
-                    <div class="row">
-                        {% if deal.hero_title %}
-                        <div class="col-md-4">
-                            <strong>Hero-Titel:</strong><br>
-                            {{ deal.hero_title }}
-                        </div>
-                        {% endif %}
-                        
-                        {% if deal.hero_subtitle %}
-                        <div class="col-md-4">
-                            <strong>Hero-Untertitel:</strong><br>
-                            {{ deal.hero_subtitle }}
-                        </div>
-                        {% endif %}
-                        
-                        {% if deal.call_to_action %}
-                        <div class="col-md-4">
-                            <strong>Call-to-Action:</strong><br>
-                            {{ deal.call_to_action }}
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endif %}
-                
-                <!-- Design -->
-                <div class="mt-4">
-                    <h6>Design</h6>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <strong>Primärfarbe:</strong>
-                            <div class="d-flex align-items-center mt-1">
-                                <div class="color-preview me-2" style="width: 20px; height: 20px; background-color: {{ deal.primary_color }}; border-radius: 3px;"></div>
-                                {{ deal.primary_color }}
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <strong>Sekundärfarbe:</strong>
-                            <div class="d-flex align-items-center mt-1">
-                                <div class="color-preview me-2" style="width: 20px; height: 20px; background-color: {{ deal.secondary_color }}; border-radius: 3px;"></div>
-                                {{ deal.secondary_color }}
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Erstellt von</label>
+                                    <p class="form-control-plaintext">{{ deal.created_by.get_full_name|default:deal.created_by.username }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Erstellt am</label>
+                                    <p class="form-control-plaintext">{{ deal.created_at|date:"d.m.Y H:i" }}</p>
+                                </div>
+                                {% if deal.updated_by %}
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Aktualisiert von</label>
+                                    <p class="form-control-plaintext">{{ deal.updated_by.get_full_name|default:deal.updated_by.username }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Aktualisiert am</label>
+                                    <p class="form-control-plaintext">{{ deal.updated_at|date:"d.m.Y H:i" }}</p>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Dateien -->
-        <div class="card mt-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-folder"></i> Dateien ({{ files.count }})
-                </h5>
-                {% if user.can_edit_deals %}
-                <a href="{% url 'dealrooms:dealroom_file_upload' deal.pk %}" class="btn btn-primary btn-sm">
-                    <i class="bi bi-upload"></i> Datei hochladen
-                </a>
-                {% endif %}
-            </div>
-            <div class="card-body">
-                {% if files %}
-                <div class="row">
-                    {% for file in files %}
-                    <div class="col-md-6 col-lg-4 mb-3">
-                        <div class="card h-100">
-                            {% if file.is_image %}
-                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
-                                <i class="bi bi-image fs-1 text-muted"></i>
+
+                    <!-- Landingpage-Inhalt -->
+                    {% if deal.hero_title or deal.hero_subtitle or deal.call_to_action %}
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-layout-text-window me-2"></i>Landingpage-Inhalt
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% if deal.hero_title %}
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Hero-Titel</label>
+                                    <p class="form-control-plaintext">{{ deal.hero_title }}</p>
+                                </div>
+                                {% endif %}
+                                {% if deal.hero_subtitle %}
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Hero-Untertitel</label>
+                                    <p class="form-control-plaintext">{{ deal.hero_subtitle }}</p>
+                                </div>
+                                {% endif %}
+                                {% if deal.call_to_action %}
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Call-to-Action</label>
+                                    <p class="form-control-plaintext">{{ deal.call_to_action }}</p>
+                                </div>
+                                {% endif %}
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Farben</label>
+                                    <p class="form-control-plaintext">
+                                        <span class="badge" style="background-color: {{ deal.primary_color }};">Primär: {{ deal.primary_color }}</span>
+                                        <span class="badge" style="background-color: {{ deal.secondary_color }};">Sekundär: {{ deal.secondary_color }}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Dateien -->
+                    <div class="card mt-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-files me-2"></i>Dateien ({{ files.count }})
+                            </h5>
+                            {% if user.can_edit_deals %}
+                            <a href="{% url 'dealrooms:dealroom_file_upload' deal.pk %}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus me-1"></i>Datei hinzufügen
+                            </a>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            {% if files %}
+                            <div class="row">
+                                {% for file in files %}
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="card h-100 {% if file.file_source == 'global_assigned' %}border-info{% else %}border-primary{% endif %}">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="card-title mb-1">{{ file.title }}</h6>
+                                                <div>
+                                                    <span class="badge bg-{% if file.file_type == 'hero_image' %}primary{% elif file.file_type == 'logo' %}success{% elif file.file_type == 'document' %}info{% elif file.file_type == 'video' %}warning{% else %}secondary{% endif %} me-1">
+                                                        {{ file.get_file_type_display }}
+                                                    </span>
+                                                    {% if file.file_source == 'global_assigned' %}
+                                                    <span class="badge bg-info">Global</span>
+                                                    {% else %}
+                                                    <span class="badge bg-primary">Lokal</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            
+                                            <p class="text-muted small mb-2">{{ file.description|default:"Keine Beschreibung" }}</p>
+                                            
+                                            <div class="row text-muted small mb-3">
+                                                <div class="col-6">
+                                                    <i class="bi bi-calendar me-1"></i>
+                                                    {{ file.uploaded_at|date:"d.m.Y" }}
+                                                </div>
+                                                <div class="col-6 text-end">
+                                                    <i class="bi bi-hdd me-1"></i>
+                                                    {{ file.get_file_size }}
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="d-flex gap-2">
+                                                {% if file.file_source == 'global_assigned' and file.global_file %}
+                                                <a href="{% url 'files:global_file_download' file.global_file.pk %}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-download me-1"></i>Download
+                                                </a>
+                                                {% else %}
+                                                <a href="{% url 'dealrooms:dealroom_file_download' file.pk %}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-download me-1"></i>Download
+                                                </a>
+                                                {% endif %}
+                                                
+                                                {% if user.can_edit_deals %}
+                                                <a href="{% url 'dealrooms:dealroom_file_edit' file.pk %}" class="btn btn-sm btn-outline-warning">
+                                                    <i class="bi bi-pencil me-1"></i>Bearbeiten
+                                                </a>
+                                                <a href="{% url 'dealrooms:dealroom_file_delete' file.pk %}" class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-trash me-1"></i>Löschen
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
                             </div>
                             {% else %}
-                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
-                                <i class="bi bi-file-earmark fs-1 text-muted"></i>
+                            <div class="text-center py-4">
+                                <i class="bi bi-folder2-open display-4 text-muted"></i>
+                                <h5 class="mt-3 text-muted">Keine Dateien vorhanden</h5>
+                                <p class="text-muted">Fügen Sie Dateien hinzu, um sie hier zu sehen.</p>
+                                {% if user.can_edit_deals %}
+                                <a href="{% url 'dealrooms:dealroom_file_upload' deal.pk %}" class="btn btn-primary">
+                                    <i class="bi bi-upload me-2"></i>Erste Datei hinzufügen
+                                </a>
+                                {% endif %}
                             </div>
                             {% endif %}
-                            <div class="card-body">
-                                <h6 class="card-title">{{ file.title }}</h6>
-                                <p class="card-text small text-muted">{{ file.description|default:"Keine Beschreibung" }}</p>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="badge bg-primary">{{ file.get_file_type_display }}</span>
-                                    {% if file.is_primary %}
-                                    <span class="badge bg-success">Primär</span>
-                                    {% endif %}
-                                </div>
+                        </div>
+                    </div>
+
+                    <!-- Änderungsprotokoll -->
+                    {% if change_logs %}
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-clock-history me-2"></i>Änderungsprotokoll
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Datum & Zeit</th>
+                                            <th>Änderung</th>
+                                            <th>Benutzer</th>
+                                            <th>Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for log in change_logs %}
+                                        <tr>
+                                            <td>
+                                                <small class="text-muted">
+                                                    {{ log.changed_at|date:"d.m.Y H:i" }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{% if log.change_type == 'created' %}success{% elif log.change_type == 'updated' %}primary{% elif log.change_type == 'status_changed' %}warning{% elif log.change_type == 'file_assigned' %}info{% elif log.change_type == 'file_unassigned' %}secondary{% elif log.change_type == 'website_generated' %}success{% elif log.change_type == 'website_deleted' %}danger{% else %}secondary{% endif %}">
+                                                    {{ log.get_change_type_display }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <small>
+                                                    {{ log.changed_by.get_full_name|default:log.changed_by.username }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    {{ log.get_change_description }}
+                                                </small>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
                             </div>
-                            <div class="card-footer">
-                                <div class="btn-group btn-group-sm w-100">
-                                    <a href="{% url 'dealrooms:dealroom_file_detail' file.pk %}" class="btn btn-outline-primary">
-                                        <i class="bi bi-eye"></i>
+                            
+                            {% if change_logs|length >= 20 %}
+                            <div class="text-center mt-3">
+                                <small class="text-muted">
+                                    Zeigt die letzten 20 Änderungen an
+                                </small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+                    <!-- Aktionen -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-gear me-2"></i>Aktionen
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                {% if user.can_edit_deals %}
+                                <a href="{% url 'dealrooms:dealroom_edit' deal.pk %}" class="btn btn-warning">
+                                    <i class="bi bi-pencil me-2"></i>Bearbeiten
+                                </a>
+                                <a href="{% url 'dealrooms:dealroom_file_upload' deal.pk %}" class="btn btn-primary">
+                                    <i class="bi bi-upload me-2"></i>Datei hinzufügen
+                                </a>
+                                <a href="{% url 'dealrooms:dealroom_file_upload' deal.pk %}" class="btn btn-info">
+                                    <i class="bi bi-link-45deg me-2"></i>Datei hinzufügen
+                                </a>
+                                {% endif %}
+                                
+                                {% if deal.is_published %}
+                                <a href="{{ deal.get_landingpage_url }}" class="btn btn-success" target="_blank">
+                                    <i class="bi bi-eye me-2"></i>Dealroom anzeigen
+                                </a>
+                                {% endif %}
+                                
+                                <a href="{% url 'dealrooms:dealroom_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>Zurück zur Übersicht
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Website-Status -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-globe me-2"></i>Website-Status
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Status</label>
+                                <p class="form-control-plaintext">
+                                    <span class="badge bg-{% if deal.website_status == 'generated' %}success{% elif deal.website_status == 'generating' %}warning{% elif deal.website_status == 'failed' %}danger{% else %}secondary{% endif %}">
+                                        {{ deal.get_website_status_display }}
+                                    </span>
+                                </p>
+                            </div>
+                            
+                            {% if deal.website_status == 'generated' %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">URL</label>
+                                <p class="form-control-plaintext">
+                                    <a href="{{ deal.public_url|default:deal.local_website_url }}" target="_blank">
+                                        {{ deal.public_url|default:deal.local_website_url }}
                                     </a>
-                                    {% if user.can_edit_deals %}
-                                    <a href="{% url 'dealrooms:dealroom_file_edit' file.pk %}" class="btn btn-outline-warning">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <a href="{% url 'dealrooms:dealroom_file_delete' file.pk %}" class="btn btn-outline-danger btn-delete">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
-                                    {% endif %}
+                                </p>
+                            </div>
+                            {% endif %}
+                            
+                                                         {% if user.can_edit_deals %}
+                             <div class="d-grid gap-2">
+                                 <a href="{% url 'dealrooms:dealroom_edit' deal.pk %}" class="btn btn-outline-primary">
+                                     <i class="bi bi-pencil me-2"></i>Website bearbeiten
+                                 </a>
+                             </div>
+                             {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Statistiken -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-graph-up me-2"></i>Statistiken
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <h4 class="text-primary">{{ files.count }}</h4>
+                                    <small class="text-muted">Dateien</small>
+                                </div>
+                                <div class="col-6">
+                                    <h4 class="text-success">{{ change_logs.count }}</h4>
+                                    <small class="text-muted">Änderungen</small>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
-                {% else %}
-                <p class="text-muted text-center">Noch keine Dateien hochgeladen.</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    
-    <!-- Sidebar -->
-    <div class="col-lg-4">
-        <!-- Aktionen -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-gear"></i> Aktionen
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    {% if user.can_edit_deals %}
-                    <a href="{% url 'dealrooms:dealroom_edit' deal.pk %}" class="btn btn-warning">
-                        <i class="bi bi-pencil"></i> Bearbeiten
-                    </a>
-                    <a href="{% url 'dealrooms:dealroom_files' deal.pk %}" class="btn btn-primary">
-                        <i class="bi bi-folder"></i> Dateien verwalten
-                    </a>
-                    {% endif %}
-                    
-                    {% if deal.is_published %}
-                    <a href="{{ deal.get_landingpage_url }}" class="btn btn-success" target="_blank">
-                        <i class="bi bi-eye"></i> Dealroom anzeigen
-                    </a>
-                    {% endif %}
-                    
-                    <a href="{% url 'dealrooms:dealroom_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left"></i> Zurück zur Übersicht
-                    </a>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Kontaktinformationen -->
-        {% if deal.contact_email or deal.contact_phone or deal.website %}
-        <div class="card mt-4">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-person-lines-fill"></i> Kontakt
-                </h5>
-            </div>
-            <div class="card-body">
-                {% if deal.contact_email %}
-                <p><strong>E-Mail:</strong><br>{{ deal.contact_email }}</p>
-                {% endif %}
-                
-                {% if deal.contact_phone %}
-                <p><strong>Telefon:</strong><br>{{ deal.contact_phone }}</p>
-                {% endif %}
-                
-                {% if deal.website %}
-                <p><strong>Website:</strong><br><a href="{{ deal.website }}" target="_blank">{{ deal.website }}</a></p>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
-        
-        <!-- Metadaten -->
-        <div class="card mt-4">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-info-circle"></i> Metadaten
-                </h5>
-            </div>
-            <div class="card-body">
-                <p><strong>Erstellt von:</strong><br>{{ deal.created_by.get_full_name|default:deal.created_by.username }}</p>
-                <p><strong>Erstellt am:</strong><br>{{ deal.created_at|date:"d.m.Y H:i" }}</p>
-                {% if deal.updated_by %}
-                <p><strong>Aktualisiert von:</strong><br>{{ deal.updated_by.get_full_name|default:deal.updated_by.username }}</p>
-                <p><strong>Aktualisiert am:</strong><br>{{ deal.updated_at|date:"d.m.Y H:i" }}</p>
-                {% endif %}
             </div>
         </div>
     </div>

@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ file.title }} - Datei-Verwaltung{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="bi bi-file-earmark me-2"></i>{{ file.title }}
+                        </h4>
+                        <div>
+                            <a href="{% url 'files:global_file_download' file.pk %}" class="btn btn-light btn-sm">
+                                <i class="bi bi-download me-1"></i>Download
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5>Details</h5>
+                            <dl class="row">
+                                <dt class="col-sm-3">Titel:</dt>
+                                <dd class="col-sm-9">{{ file.title }}</dd>
+                                
+                                <dt class="col-sm-3">Beschreibung:</dt>
+                                <dd class="col-sm-9">{{ file.description|default:"Keine Beschreibung" }}</dd>
+                                
+                                <dt class="col-sm-3">Dateityp:</dt>
+                                <dd class="col-sm-9">
+                                    <span class="badge bg-{% if file.file_type == 'hero_image' %}primary{% elif file.file_type == 'logo' %}success{% elif file.file_type == 'document' %}info{% elif file.file_type == 'video' %}warning{% elif file.file_type == 'data' %}secondary{% else %}secondary{% endif %}">
+                                        {{ file.get_file_type_display }}
+                                    </span>
+                                </dd>
+                                
+                                <dt class="col-sm-3">Dateigröße:</dt>
+                                <dd class="col-sm-9">{{ file.get_file_size }}</dd>
+                                
+                                <dt class="col-sm-3">Dateiendung:</dt>
+                                <dd class="col-sm-9">{{ file.get_file_extension }}</dd>
+                                
+
+                                
+                                {% if file.tags %}
+                                <dt class="col-sm-3">Tags:</dt>
+                                <dd class="col-sm-9">
+                                    {% for tag in file.tags.split %}
+                                    <span class="badge bg-light text-dark me-1">{{ tag }}</span>
+                                    {% endfor %}
+                                </dd>
+                                {% endif %}
+                                
+                                <dt class="col-sm-3">Hochgeladen von:</dt>
+                                <dd class="col-sm-9">{{ file.uploaded_by.get_full_name|default:file.uploaded_by.username }}</dd>
+                                
+                                <dt class="col-sm-3">Hochgeladen am:</dt>
+                                <dd class="col-sm-9">{{ file.uploaded_at|date:"d.m.Y H:i" }}</dd>
+                            </dl>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <h5>Vorschau</h5>
+                            <div class="text-center">
+                                {% if file.is_image %}
+                                    <img src="{{ file.file.url }}" alt="{{ file.title }}" class="img-fluid rounded" style="max-height: 200px;">
+                                {% elif file.is_video %}
+                                    <video controls style="max-width: 100%; max-height: 200px;">
+                                        <source src="{{ file.file.url }}" type="video/mp4">
+                                        Ihr Browser unterstützt keine Video-Wiedergabe.
+                                    </video>
+                                {% else %}
+                                    <div class="bg-light rounded p-4 text-center">
+                                        <i class="bi bi-file-earmark display-4 text-muted"></i>
+                                        <p class="mt-2 text-muted">{{ file.get_file_extension }} Datei</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Aktionen -->
+                    <div class="mt-4 pt-3 border-top">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{% url 'files:global_file_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Zurück zur Übersicht
+                            </a>
+                            <div>
+                                {% if user == file.uploaded_by or user.is_staff %}
+                                <a href="{% url 'files:global_file_edit' file.pk %}" class="btn btn-warning">
+                                    <i class="bi bi-pencil me-2"></i>Bearbeiten
+                                </a>
+                                <a href="{% url 'files:global_file_delete' file.pk %}" class="btn btn-danger ms-2">
+                                    <i class="bi bi-trash me-2"></i>Löschen
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Datei hochladen - {{ deal.title }} - Dealroom Dashboard{% endblock %}
+
+{% block extra_head %}
+<script>
+function toggleFileInputs() {
+    const useGlobalFile = document.getElementById('id_use_global_file');
+    const globalFileDiv = document.getElementById('global-file-section');
+    const uploadFileDiv = document.getElementById('upload-file-section');
+    
+    if (useGlobalFile.checked) {
+        globalFileDiv.style.display = 'block';
+        uploadFileDiv.style.display = 'none';
+    } else {
+        globalFileDiv.style.display = 'none';
+        uploadFileDiv.style.display = 'block';
+    }
+}
+
+// Initial state
+document.addEventListener('DOMContentLoaded', function() {
+    toggleFileInputs();
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-upload me-2"></i>Datei hinzufügen
+                    </h2>
+                    <p class="text-muted mb-0">Dealroom: {{ deal.title }}</p>
+                </div>
+                <div>
+                    <a href="{% url 'dealrooms:dealroom_files' deal.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Zurück zu Dateien
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-file-earmark-plus me-2"></i>Neue Datei hinzufügen
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                
+                                <!-- Datei-Quelle wählen -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <div class="form-check">
+                                            {{ form.use_global_file }}
+                                            <label class="form-check-label" for="{{ form.use_global_file.id_for_label }}">
+                                                {{ form.use_global_file.label }}
+                                            </label>
+                                            <div class="form-text">{{ form.use_global_file.help_text }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Globale Datei auswählen -->
+                                <div id="global-file-section" style="display: none;">
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            <label for="{{ form.global_file_id.id_for_label }}" class="form-label">
+                                                {{ form.global_file_id.label }}
+                                            </label>
+                                            {{ form.global_file_id }}
+                                            {% if form.global_file_id.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.global_file_id.errors.0 }}
+                                                </div>
+                                            {% endif %}
+                                            <div class="form-text">{{ form.global_file_id.help_text }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Datei hochladen -->
+                                <div id="upload-file-section">
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            <label for="{{ form.file.id_for_label }}" class="form-label">
+                                                {{ form.file.label }}
+                                            </label>
+                                            {{ form.file }}
+                                            {% if form.file.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.file.errors.0 }}
+                                                </div>
+                                            {% endif %}
+                                            <div class="form-text">{{ form.file.help_text }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Allgemeine Informationen -->
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.title.id_for_label }}" class="form-label">
+                                            {{ form.title.label }}
+                                        </label>
+                                        {{ form.title }}
+                                        {% if form.title.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.title.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.file_type.id_for_label }}" class="form-label">
+                                            {{ form.file_type.label }}
+                                        </label>
+                                        {{ form.file_type }}
+                                        {% if form.file_type.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.file_type.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                        <div class="form-text">{{ form.file_type.help_text }}</div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                                            {{ form.description.label }}
+                                        </label>
+                                        {{ form.description }}
+                                        {% if form.description.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.description.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check">
+                                            {{ form.is_public }}
+                                            <label class="form-check-label" for="{{ form.is_public.id_for_label }}">
+                                                {{ form.is_public.label }}
+                                            </label>
+                                            <div class="form-text">{{ form.is_public.help_text }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check">
+                                            {{ form.is_primary }}
+                                            <label class="form-check-label" for="{{ form.is_primary.id_for_label }}">
+                                                {{ form.is_primary.label }}
+                                            </label>
+                                            <div class="form-text">{{ form.is_primary.help_text }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Buttons -->
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="d-flex gap-2">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="bi bi-upload me-2"></i>Datei hinzufügen
+                                            </button>
+                                            <a href="{% url 'dealrooms:dealroom_files' deal.pk %}" class="btn btn-outline-secondary">
+                                                <i class="bi bi-x me-2"></i>Abbrechen
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+                    <!-- Hilfe -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-question-circle me-2"></i>Hilfe
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <h6>Datei-Quelle wählen:</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Direkt hochladen:</strong> Neue Datei für diesen Dealroom</li>
+                                <li><strong>Globale Datei:</strong> Datei aus der zentralen Datei-Verwaltung</li>
+                            </ul>
+                            
+                            <h6 class="mt-3">Dateitypen:</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Hero-Bild:</strong> Hauptbild für den Dealroom</li>
+                                <li><strong>Logo:</strong> Firmenlogo</li>
+                                <li><strong>Galerie:</strong> Bilder für die Galerie</li>
+                                <li><strong>Dokument:</strong> PDFs, Word-Dateien, etc.</li>
+                                <li><strong>Video:</strong> Video-Dateien</li>
+                                <li><strong>Sonstiges:</strong> Andere Dateitypen</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Verfügbare globale Dateien -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-folder2-open me-2"></i>Verfügbare globale Dateien
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if global_files %}
+                            <div class="list-group list-group-flush">
+                                {% for file in global_files %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ file.title }}</h6>
+                                        <small class="text-muted">{{ file.get_file_type_display }}</small>
+                                    </div>
+                                    <a href="{% url 'files:global_file_detail' file.pk %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="mt-3">
+                                <a href="{% url 'files:global_file_list' %}" class="btn btn-outline-info btn-sm">
+                                    <i class="bi bi-folder2-open me-1"></i>Alle globalen Dateien anzeigen
+                                </a>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">Keine globalen Dateien verfügbar.</p>
+                            <a href="{% url 'files:global_file_upload' %}" class="btn btn-outline-info btn-sm">
+                                <i class="bi bi-upload me-1"></i>Globale Datei hochladen
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

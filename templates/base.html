@@ -36,15 +36,15 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'dealrooms:dealroom_list' %}">
-                            <i class="bi bi-building"></i> Dealrooms
+                        <a class="nav-link" href="{% url 'files:global_file_list' %}">
+                            <i class="bi bi-folder2-open"></i> Dateien
                         </a>
                     </li>
 
                 </ul>
                 
                 <ul class="navbar-nav">
-                    {% if user.is_authenticated %}
+                    
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}
@@ -53,26 +53,13 @@
                             <li><a class="dropdown-item" href="{% url 'users:profile' %}">
                                 <i class="bi bi-person"></i> Profil
                             </a></li>
-                            <li><a class="dropdown-item" href="{% url 'users:profile_edit' %}">
-                                <i class="bi bi-pencil"></i> Profil bearbeiten
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'users:password_change' %}">
-                                <i class="bi bi-key"></i> Passwort ändern
-                            </a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'users:logout' %}">
                                 <i class="bi bi-box-arrow-right"></i> Abmelden
                             </a></li>
                         </ul>
                     </li>
-                    {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'users:login' %}">
-                            <i class="bi bi-box-arrow-in-right"></i> Anmelden
-                        </a>
-                    </li>
-                    {% endif %}
+                    
                 </ul>
             </div>
         </div>

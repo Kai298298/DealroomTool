@@ -10,12 +10,18 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy, reverse
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
-from django.http import HttpResponse, Http404, HttpResponseRedirect
+from django.http import HttpResponse, Http404, HttpResponseRedirect, JsonResponse
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 from django.db import transaction
-from .models import Deal, DealFile
+from .models import Deal, DealFile, DealFileAssignment
 from .forms import DealForm, DealFileForm
+from files.models import GlobalFile
+from .utils import (
+    log_deal_creation, log_deal_update, log_status_change,
+    log_file_assignment, log_file_unassignment,
+    log_website_generation, log_website_deletion
+)
 
 
 # Dealroom Views
@@ -69,42 +75,80 @@ class DealDetailView(LoginRequiredMixin, DetailView):
         context['files'] = self.object.files.all().order_by('-uploaded_at')
         context['hero_image'] = self.object.files.filter(file_type='hero_image', is_primary=True).first()
         context['logo'] = self.object.files.filter(file_type='logo', is_primary=True).first()
+        
+        # Änderungsprotokoll hinzufügen
+        context['change_logs'] = self.object.change_logs.select_related('changed_by').order_by('-changed_at')[:20]
+        
         return context
 
 
 class DealCreateView(LoginRequiredMixin, CreateView):
     """
-    Neuen Dealroom erstellen - Vereinfacht
+    Neuen Dealroom erstellen
     """
     model = Deal
     form_class = DealForm
     template_name = 'deals/deal_form.html'
-    success_url = reverse_lazy('dealrooms:dealroom_list')
-    
-    def post(self, request, *args, **kwargs):
-        print(f"🔍 POST-Request erhalten für Dealroom-Erstellung")
-        print(f"🔍 Benutzer: {request.user.username}")
-        print(f"🔍 POST-Daten: {request.POST}")
-        
-        form = self.get_form()
-        if form.is_valid():
-            print("✅ Formular ist gültig")
-            return self.form_valid(form)
-        else:
-            print(f"❌ Formular-Fehler: {form.errors}")
-            return self.form_invalid(form)
+    success_url = reverse_lazy('core:dashboard')
     
     def form_valid(self, form):
-        print("✅ form_valid aufgerufen")
         form.instance.created_by = self.request.user
         response = super().form_valid(form)
-        messages.success(self.request, _('Dealroom erfolgreich erstellt.'))
-        print(f"✅ Dealroom erstellt: {form.instance.title}")
+        
+        # Log erstellen
+        log_deal_creation(self.object, self.request.user)
+        
+        # Logo-Upload verarbeiten
+        logo_file = self.request.FILES.get('logo_upload')
+        if logo_file:
+            deal_file = DealFile.objects.create(
+                deal=self.object,
+                title=f"Logo - {self.object.title}",
+                description="Logo für diesen Dealroom",
+                file=logo_file,
+                file_type='logo',
+                uploaded_by=self.request.user,
+                is_primary=True
+            )
+        
+        # Globale Datei zuordnen
+        global_file_id = self.request.POST.get('global_file_select')
+        if global_file_id:
+            try:
+                global_file = GlobalFile.objects.get(id=global_file_id)
+                DealFileAssignment.objects.create(
+                    deal=self.object,
+                    global_file=global_file,
+                    role='other',
+                    assigned_by=self.request.user
+                )
+            except GlobalFile.DoesNotExist:
+                pass
+        
+        # Direkte Datei-Upload verarbeiten
+        uploaded_file = self.request.FILES.get('file_upload')
+        if uploaded_file:
+            file_title = self.request.POST.get('file_title', 'Hochgeladene Datei')
+            file_description = self.request.POST.get('file_description', '')
+            file_type = self.request.POST.get('file_type', 'other')
+            
+            DealFile.objects.create(
+                deal=self.object,
+                title=file_title,
+                description=file_description,
+                file=uploaded_file,
+                file_type=file_type,
+                uploaded_by=self.request.user
+            )
+        
+        messages.success(self.request, f'Dealroom "{self.object.title}" wurde erfolgreich erstellt.')
         return response
     
-    def form_invalid(self, form):
-        print(f"❌ form_invalid aufgerufen: {form.errors}")
-        return super().form_invalid(form)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Globale Dateien für die Auswahl hinzufügen
+        context['global_files'] = GlobalFile.objects.filter(is_public=True).order_by('-uploaded_at')[:20]
+        return context
 
 
 class DealBatchCreateView(LoginRequiredMixin, TemplateView):
@@ -189,7 +233,7 @@ class DealBatchCreateView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class DealEditView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+class DealUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     """
     Dealroom bearbeiten
     """
@@ -198,15 +242,78 @@ class DealEditView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     template_name = 'deals/deal_form.html'
     
     def test_func(self):
-        return self.request.user.can_edit_deals()
+        deal = self.get_object()
+        return self.request.user.can_edit_deals() or deal.created_by == self.request.user
     
     def form_valid(self, form):
-        form.instance.updated_by = self.request.user
-        messages.success(self.request, _('Dealroom erfolgreich aktualisiert.'))
-        return super().form_valid(form)
+        old_status = self.object.status
+        response = super().form_valid(form)
+        
+        # Log erstellen
+        log_deal_update(self.object, self.request.user)
+        
+        # Status-Änderung loggen
+        if old_status != self.object.status:
+            log_status_change(self.object, self.request.user, old_status, self.object.status)
+        
+        # Logo-Upload verarbeiten
+        logo_file = self.request.FILES.get('logo_upload')
+        if logo_file:
+            deal_file = DealFile.objects.create(
+                deal=self.object,
+                title=f"Logo - {self.object.title}",
+                description="Logo für diesen Dealroom",
+                file=logo_file,
+                file_type='logo',
+                uploaded_by=self.request.user,
+                is_primary=True
+            )
+        
+        # Globale Datei zuordnen
+        global_file_id = self.request.POST.get('global_file_select')
+        if global_file_id:
+            try:
+                global_file = GlobalFile.objects.get(id=global_file_id)
+                # Prüfen ob bereits zugeordnet
+                existing_assignment = DealFileAssignment.objects.filter(
+                    deal=self.object,
+                    global_file=global_file
+                ).first()
+                
+                if not existing_assignment:
+                    DealFileAssignment.objects.create(
+                        deal=self.object,
+                        global_file=global_file,
+                        role='other',
+                        assigned_by=self.request.user
+                    )
+            except GlobalFile.DoesNotExist:
+                pass
+        
+        # Direkte Datei-Upload verarbeiten
+        uploaded_file = self.request.FILES.get('file_upload')
+        if uploaded_file:
+            file_title = self.request.POST.get('file_title', 'Hochgeladene Datei')
+            file_description = self.request.POST.get('file_description', '')
+            file_type = self.request.POST.get('file_type', 'other')
+            
+            DealFile.objects.create(
+                deal=self.object,
+                title=file_title,
+                description=file_description,
+                file=uploaded_file,
+                file_type=file_type,
+                uploaded_by=self.request.user
+            )
+        
+        messages.success(self.request, f'Dealroom "{self.object.title}" wurde erfolgreich aktualisiert.')
+        return response
     
-    def get_success_url(self):
-        return reverse('dealrooms:dealroom_detail', kwargs={'pk': self.object.pk})
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Globale Dateien für die Auswahl hinzufügen
+        context['global_files'] = GlobalFile.objects.filter(is_public=True).order_by('-uploaded_at')[:20]
+        return context
 
 
 class DealDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
@@ -259,6 +366,11 @@ class DealFileUploadView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['deal'] = get_object_or_404(Deal, pk=self.kwargs['deal_pk'])
+        
+        # Globale Dateien für die Sidebar hinzufügen
+        from files.models import GlobalFile
+        context['global_files'] = GlobalFile.objects.filter(is_public=True).order_by('-uploaded_at')[:10]
+        
         return context
     
     def form_valid(self, form):
@@ -402,6 +514,9 @@ class RegenerateWebsiteView(LoginRequiredMixin, View):
             # Website regenerieren
             website_url = generator.regenerate_website()
             
+            # Änderung protokollieren
+            log_website_generation(dealroom, request.user)
+            
             messages.success(
                 request,
                 f"Website für '{dealroom.title}' erfolgreich regeneriert: {website_url}"
@@ -445,6 +560,9 @@ class DeleteWebsiteView(LoginRequiredMixin, View):
             dealroom.generation_error = None
             dealroom.save(update_fields=['website_status', 'local_website_url', 'generation_error'])
             
+            # Änderung protokollieren
+            log_website_deletion(dealroom, request.user)
+            
             messages.success(
                 request,
                 f"Website für '{dealroom.title}' erfolgreich gelöscht."
@@ -460,3 +578,105 @@ class DeleteWebsiteView(LoginRequiredMixin, View):
         
         # Zurück zur vorherigen Seite
         return HttpResponseRedirect(request.META.get('HTTP_REFERER', reverse('dealrooms:dealroom_list')))
+
+
+class DealFileAssignmentView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """
+    Datei zu Dealroom zuordnen
+    """
+    
+    def test_func(self):
+        deal = get_object_or_404(Deal, pk=self.kwargs['pk'])
+        return self.request.user.can_edit_deals()
+    
+    def post(self, request, pk):
+        deal = get_object_or_404(Deal, pk=pk)
+        global_file_id = request.POST.get('global_file_id')
+        role = request.POST.get('role', 'other')
+        
+        try:
+            global_file = GlobalFile.objects.get(pk=global_file_id)
+            
+            # Prüfen ob Zuordnung bereits existiert
+            assignment, created = DealFileAssignment.objects.get_or_create(
+                deal=deal,
+                global_file=global_file,
+                defaults={
+                    'assigned_by': request.user,
+                    'role': role,
+                    'order': deal.file_assignments.count()
+                }
+            )
+            
+            if created:
+                messages.success(request, _('Datei erfolgreich zugeordnet.'))
+                # Änderung protokollieren
+                log_file_assignment(deal, request.user, global_file.title, role)
+            else:
+                # Rolle aktualisieren
+                old_role = assignment.role
+                assignment.role = role
+                assignment.save()
+                messages.success(request, _('Datei-Rolle aktualisiert.'))
+                # Änderung protokollieren
+                log_deal_update(deal, request.user, field_name='file_role', 
+                              old_value=f"{global_file.title} ({old_role})", 
+                              new_value=f"{global_file.title} ({role})")
+            
+        except GlobalFile.DoesNotExist:
+            messages.error(request, _('Datei nicht gefunden.'))
+        except Exception as e:
+            messages.error(request, _('Fehler beim Zuordnen der Datei: {}').format(str(e)))
+        
+        return redirect('dealrooms:dealroom_detail', pk=pk)
+
+
+class DealFileUnassignmentView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """
+    Datei von Dealroom entfernen
+    """
+    
+    def test_func(self):
+        deal = get_object_or_404(Deal, pk=self.kwargs['pk'])
+        return self.request.user.can_edit_deals()
+    
+    def post(self, request, pk):
+        deal = get_object_or_404(Deal, pk=pk)
+        assignment_id = request.POST.get('assignment_id')
+        
+        try:
+            assignment = get_object_or_404(DealFileAssignment, pk=assignment_id, deal=deal)
+            
+            # Änderung protokollieren
+            log_file_unassignment(deal, request.user, assignment.global_file.title, assignment.role)
+            
+            assignment.delete()
+            messages.success(request, _('Datei erfolgreich entfernt.'))
+            
+        except Exception as e:
+            messages.error(request, _('Fehler beim Entfernen der Datei: {}').format(str(e)))
+        
+        return redirect('dealrooms:dealroom_detail', pk=pk)
+
+
+class DealFileAssignmentListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    """
+    Liste der zugeordneten Dateien für einen Dealroom
+    """
+    template_name = 'deals/deal_file_assignment_list.html'
+    
+    def test_func(self):
+        deal = get_object_or_404(Deal, pk=self.kwargs['pk'])
+        return self.request.user.can_edit_deals()
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        deal = get_object_or_404(Deal, pk=self.kwargs['pk'])
+        
+        context['deal'] = deal
+        context['assignments'] = deal.file_assignments.select_related('global_file', 'assigned_by').order_by('order')
+        context['available_files'] = GlobalFile.objects.filter(is_public=True).exclude(
+            deal_assignments__deal=deal
+        ).order_by('-uploaded_at')
+        
+        return context

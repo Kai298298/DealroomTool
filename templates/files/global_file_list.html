@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Datei-Verwaltung - Dealroom Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-folder2-open me-2"></i>Datei-Verwaltung
+                    </h2>
+                    <p class="text-muted mb-0">Globale Datei-Verwaltung für alle Dealrooms</p>
+                </div>
+                <div>
+                    <a href="{% url 'files:global_file_upload' %}" class="btn btn-primary">
+                        <i class="bi bi-upload me-2"></i>Datei hochladen
+                    </a>
+                </div>
+            </div>
+
+            <!-- Such- und Filter-Bereich -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="search" class="form-label">Suche</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search }}" placeholder="Titel, Beschreibung oder Tags...">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="file_type" class="form-label">Dateityp</label>
+                            <select class="form-select" id="file_type" name="file_type">
+                                <option value="">Alle Typen</option>
+                                {% for value, label in file_type_choices %}
+                                <option value="{{ value }}" {% if file_type_filter == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="uploaded_by" class="form-label">Hochgeladen von</label>
+                            <input type="text" class="form-control" id="uploaded_by" name="uploaded_by" 
+                                   value="{{ uploaded_by_filter }}" placeholder="Benutzername...">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-outline-primary me-2">
+                                <i class="bi bi-search me-1"></i>Suchen
+                            </button>
+                            <a href="{% url 'files:global_file_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Reset
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if files %}
+            <div class="row">
+                {% for file in files %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start justify-content-between mb-3">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title mb-1">{{ file.title }}</h6>
+                                    <p class="text-muted small mb-2">{{ file.description|default:"Keine Beschreibung" }}</p>
+                                    
+                                    <!-- Dateityp Badge -->
+                                    <span class="badge bg-{% if file.file_type == 'hero_image' %}primary{% elif file.file_type == 'logo' %}success{% elif file.file_type == 'document' %}info{% elif file.file_type == 'video' %}warning{% elif file.file_type == 'data' %}secondary{% else %}secondary{% endif %} me-2">
+                                        {{ file.get_file_type_display }}
+                                    </span>
+                                    
+
+                                </div>
+                                
+                                <!-- Datei-Icon -->
+                                <div class="ms-3">
+                                    {% if file.is_image %}
+                                        <i class="bi bi-image fs-3 text-primary"></i>
+                                    {% elif file.is_document %}
+                                        <i class="bi bi-file-earmark-text fs-3 text-info"></i>
+                                    {% elif file.is_video %}
+                                        <i class="bi bi-camera-video fs-3 text-warning"></i>
+                                    {% elif file.file_type == 'data' %}
+                                        <i class="bi bi-database fs-3 text-secondary"></i>
+                                    {% else %}
+                                        <i class="bi bi-file-earmark fs-3 text-secondary"></i>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Tags -->
+                            {% if file.tags %}
+                            <div class="mb-3">
+                                {% for tag in file.tags.split|slice:":3" %}
+                                <span class="badge bg-light text-dark me-1">{{ tag }}</span>
+                                {% endfor %}
+                                {% if file.tags.split|length > 3 %}
+                                <span class="badge bg-light text-dark">+{{ file.tags.split|length|add:"-3" }}</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Datei-Info -->
+                            <div class="row text-muted small mb-3">
+                                <div class="col-6">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    {{ file.uploaded_at|date:"d.m.Y" }}
+                                </div>
+                                <div class="col-6 text-end">
+                                    <i class="bi bi-person me-1"></i>
+                                    {{ file.uploaded_by.get_full_name|default:file.uploaded_by.username }}
+                                </div>
+                            </div>
+                            
+                            <!-- Dateigröße -->
+                            <p class="text-muted small mb-3">
+                                <i class="bi bi-hdd me-1"></i>
+                                {{ file.get_file_size }}
+                            </p>
+                            
+                            <!-- Aktionen -->
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'files:global_file_download' file.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-download me-1"></i>Download
+                                </a>
+                                <a href="{% url 'files:global_file_detail' file.pk %}" class="btn btn-sm btn-outline-info">
+                                    <i class="bi bi-eye me-1"></i>Details
+                                </a>
+                                {% if user == file.uploaded_by or user.is_staff %}
+                                <a href="{% url 'files:global_file_edit' file.pk %}" class="btn btn-sm btn-outline-warning">
+                                    <i class="bi bi-pencil me-1"></i>Bearbeiten
+                                </a>
+                                <a href="{% url 'files:global_file_delete' file.pk %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash me-1"></i>Löschen
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Datei-Navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if file_type_filter %}&file_type={{ file_type_filter }}{% endif %}{% if uploaded_by_filter %}&uploaded_by={{ uploaded_by_filter }}{% endif %}">&laquo; Erste</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if file_type_filter %}&file_type={{ file_type_filter }}{% endif %}{% if uploaded_by_filter %}&uploaded_by={{ uploaded_by_filter }}{% endif %}">Zurück</a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Seite {{ page_obj.number }} von {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if file_type_filter %}&file_type={{ file_type_filter }}{% endif %}{% if uploaded_by_filter %}&uploaded_by={{ uploaded_by_filter }}{% endif %}">Weiter</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if file_type_filter %}&file_type={{ file_type_filter }}{% endif %}{% if uploaded_by_filter %}&uploaded_by={{ uploaded_by_filter }}{% endif %}">Letzte &raquo;</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-folder2-open display-1 text-muted"></i>
+                <h4 class="mt-3 text-muted">Keine Dateien vorhanden</h4>
+                <p class="text-muted">Laden Sie die erste globale Datei hoch.</p>
+                <a href="{% url 'files:global_file_upload' %}" class="btn btn-primary">
+                    <i class="bi bi-upload me-2"></i>Erste Datei hochladen
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

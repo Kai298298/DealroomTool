@@ -22,6 +22,9 @@ urlpatterns = [
     # Dealrooms-App
     path('dealrooms/', include('deals.urls')),
     
+    # Files-App
+    path('files/', include('files.urls')),
+    
     # Generierte Webseiten
     re_path(r'^generated_pages/(?P<path>.*)$', serve, {
         'document_root': os.path.join(settings.BASE_DIR, 'generated_pages'),

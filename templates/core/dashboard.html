@@ -3,345 +3,328 @@
 
 {% block title %}Dashboard - Dealroom Dashboard{% endblock %}
 
-{% block page_title %}Dashboard{% endblock %}
-
 {% block content %}
-<!-- Hero Section -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card bg-gradient-primary text-white border-0 shadow-lg">
-            <div class="card-body p-4">
-                <div class="row align-items-center">
-                    <div class="col-lg-8">
-                        <h2 class="mb-3">
-                            <i class="bi bi-building"></i> Willkommen im Dealroom Dashboard
-                        </h2>
-                        <p class="lead mb-3">
-                            Das professionelle Tool für Ihre Dealroom-Verwaltung und Landingpage-Generierung
-                        </p>
-                        <div class="row text-center">
-                            <div class="col-4">
-                                <i class="bi bi-lightning text-warning fs-2"></i>
-                                <p class="mb-0 small">Schnelle Verwaltung</p>
-                            </div>
-                            <div class="col-4">
-                                <i class="bi bi-shield-check text-success fs-2"></i>
-                                <p class="mb-0 small">Sichere Daten</p>
-                            </div>
-                            <div class="col-4">
-                                <i class="bi bi-gear text-info fs-2"></i>
-                                <p class="mb-0 small">Flexible Templates</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 text-center">
-                        <div class="bg-white bg-opacity-25 rounded p-3">
-                            <h5 class="text-white mb-2">🚀 Premium Features</h5>
-                            <ul class="list-unstyled text-white-50">
-                                <li><i class="bi bi-check"></i> Automatische Landingpages</li>
-                                <li><i class="bi bi-check"></i> Template-Management</li>
-                                <li><i class="bi bi-check"></i> Datei-Upload</li>
-                                <li><i class="bi bi-check"></i> Benutzerverwaltung</li>
-                            </ul>
-                        </div>
-                    </div>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                    </h2>
+                    <p class="text-muted mb-0">Willkommen zurück, {{ user.get_full_name|default:user.username }}!</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'core:csv_export' %}" class="btn btn-outline-success">
+                        <i class="bi bi-download me-2"></i>CSV Export
+                    </a>
+                    <a href="{% url 'dealrooms:dealroom_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Neuen Dealroom erstellen
+                    </a>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
 
-<!-- Dealroom-Liste -->
-<div class="row">
-    <div class="col-12">
-        <div class="card shadow">
-            <div class="card-header bg-white">
-                <div class="row align-items-center">
-                    <div class="col-md-6">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-building me-2"></i> Dealrooms
-                        </h5>
+            <!-- Statistiken -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-building display-4 text-primary mb-3"></i>
+                            <h3 class="text-primary">{{ deals.count }}</h3>
+                            <p class="text-muted mb-0">Dealrooms</p>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <form method="get" class="d-flex">
-                            <div class="input-group">
-                                <input type="text" name="search" class="form-control" placeholder="Dealrooms durchsuchen..." value="{{ search_query }}">
-                                <button class="btn btn-outline-primary" type="submit">
-                                    <i class="bi bi-search"></i>
-                                </button>
-                                {% if search_query %}
-                                <a href="{% url 'core:dashboard' %}" class="btn btn-outline-secondary">
-                                    <i class="bi bi-x"></i>
-                                </a>
-                                {% endif %}
-                            </div>
-                        </form>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-folder2-open display-4 text-success mb-3"></i>
+                            <h3 class="text-success">{{ global_files.count }}</h3>
+                            <p class="text-muted mb-0">Globale Dateien</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-check-circle display-4 text-info mb-3"></i>
+                            <h3 class="text-info">{{ active_deals.count }}</h3>
+                            <p class="text-muted mb-0">Aktive Dealrooms</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-clock-history display-4 text-warning mb-3"></i>
+                            <h3 class="text-warning">{{ recent_changes.count }}</h3>
+                            <p class="text-muted mb-0">Letzte Änderungen</p>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="card-body">
-                {% if dealrooms %}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Titel</th>
-                                <th>Empfänger</th>
-                                <th>Empfänger E-Mail</th>
-                                <th>Empfänger Firma</th>
-                                <th>Status</th>
-                                <th>Website-Status</th>
-                                <th>Erstellt von</th>
-                                <th>Erstellt am</th>
-                                <th>Letzter Zugriff</th>
-                                <th class="text-end">Aktionen</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for dealroom in dealrooms %}
-                            <tr>
-                                <td>
-                                    <a href="{% url 'deals:deal_detail' dealroom.pk %}" class="text-decoration-none fw-bold">
-                                        {{ dealroom.title }}
+
+            <!-- Dealroom-Liste -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-building me-2"></i>Dealrooms
+                            </h5>
+                        </div>
+                        <div class="col-md-6">
+                            <form method="get" class="d-flex">
+                                <div class="input-group">
+                                    <input type="text" name="search" class="form-control" placeholder="Dealrooms durchsuchen..." value="{{ search_query }}">
+                                    <select name="status" class="form-select" style="max-width: 150px;">
+                                        <option value="">Alle Status</option>
+                                        <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Entwurf</option>
+                                        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Aktiv</option>
+                                        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inaktiv</option>
+                                    </select>
+                                    <button class="btn btn-outline-primary" type="submit">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                    {% if search_query or status_filter %}
+                                    <a href="{% url 'core:dashboard' %}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-x"></i>
                                     </a>
-                                </td>
-                                <td>{{ dealroom.recipient_name }}</td>
-                                <td>{{ dealroom.recipient_email }}</td>
-                                <td>{{ dealroom.recipient_company|default:"-" }}</td>
-                                <td>
-                                    <span class="badge bg-{% if dealroom.status == 'active' %}success{% elif dealroom.status == 'draft' %}secondary{% elif dealroom.status == 'inactive' %}warning{% else %}dark{% endif %}">
-                                        {{ dealroom.get_status_display }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-{% if dealroom.website_status == 'generated' %}success{% elif dealroom.website_status == 'failed' %}danger{% elif dealroom.website_status == 'generating' %}warning{% else %}secondary{% endif %}">
-                                        {{ dealroom.get_website_status_display }}
-                                    </span>
-                                    {% if dealroom.local_website_url %}
-                                    <br><small><a href="{{ dealroom.local_website_url }}" target="_blank" class="text-decoration-none">
-                                        <i class="bi bi-box-arrow-up-right"></i> Website anzeigen
-                                    </a></small>
                                     {% endif %}
-                                </td>
-                                <td>{{ dealroom.created_by.get_full_name|default:dealroom.created_by.username }}</td>
-                                <td>{{ dealroom.created_at|date:"d.m.Y" }}</td>
-                                <td>
-                                    {% if dealroom.last_accessed %}
-                                        {{ dealroom.last_accessed|date:"d.m.Y H:i" }}
-                                    {% else %}
-                                        <span class="text-muted">-</span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-end">
-                                    <div class="btn-group" role="group">
-                                        <a href="{% url 'dealrooms:dealroom_edit' dealroom.pk %}" class="btn btn-outline-primary btn-sm" title="Bearbeiten">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <a href="{% url 'dealrooms:dealroom_delete' dealroom.pk %}" class="btn btn-outline-danger btn-sm" title="Löschen">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-                
-                <!-- Pagination -->
-                {% if paginator.num_pages > 1 %}
-                <nav aria-label="Dealroom-Navigation" class="mt-4">
-                    <ul class="pagination justify-content-center">
-                        {% if dealrooms.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">
-                                <i class="bi bi-chevron-double-left"></i>
-                            </a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ dealrooms.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
-                                <i class="bi bi-chevron-left"></i>
-                            </a>
-                        </li>
-                        {% endif %}
-                        
-                        {% for num in paginator.page_range %}
-                            {% if dealrooms.number == num %}
-                            <li class="page-item active">
-                                <span class="page-link">{{ num }}</span>
-                            </li>
-                            {% elif num > dealrooms.number|add:'-3' and num < dealrooms.number|add:'3' %}
+                <div class="card-body">
+                    {% if dealrooms %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Titel</th>
+                                    <th>Empfänger</th>
+                                    <th>Status</th>
+                                    <th>Website-Status</th>
+                                    <th>Erstellt von</th>
+                                    <th>Erstellt am</th>
+                                    <th class="text-end">Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dealroom in dealrooms %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'dealrooms:dealroom_detail' dealroom.pk %}" class="text-decoration-none fw-bold">
+                                            {{ dealroom.title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ dealroom.recipient_name }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if dealroom.status == 'active' %}success{% elif dealroom.status == 'draft' %}warning{% elif dealroom.status == 'inactive' %}secondary{% else %}dark{% endif %}">
+                                            {{ dealroom.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if dealroom.website_status == 'generated' %}success{% elif dealroom.website_status == 'failed' %}danger{% elif dealroom.website_status == 'generating' %}warning{% else %}secondary{% endif %}">
+                                            {{ dealroom.get_website_status_display }}
+                                        </span>
+                                        {% if dealroom.local_website_url %}
+                                        <br><small><a href="{{ dealroom.local_website_url }}" target="_blank" class="text-decoration-none">
+                                            <i class="bi bi-box-arrow-up-right"></i> Website anzeigen
+                                        </a></small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ dealroom.created_by.get_full_name|default:dealroom.created_by.username }}</td>
+                                    <td>{{ dealroom.created_at|date:"d.m.Y" }}</td>
+                                    <td class="text-end">
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'dealrooms:dealroom_detail' dealroom.pk %}" class="btn btn-outline-primary btn-sm" title="Anzeigen">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            {% if user.can_edit_deals %}
+                                            <a href="{% url 'dealrooms:dealroom_edit' dealroom.pk %}" class="btn btn-outline-warning btn-sm" title="Bearbeiten">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a href="{% url 'dealrooms:dealroom_delete' dealroom.pk %}" class="btn btn-outline-danger btn-sm" title="Löschen">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if paginator.num_pages > 1 %}
+                    <nav aria-label="Dealroom-Navigation" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if dealrooms.has_previous %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ dealrooms.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
                             </li>
                             {% endif %}
-                        {% endfor %}
-                        
-                        {% if dealrooms.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ dealrooms.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
-                                <i class="bi bi-chevron-right"></i>
-                            </a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">
-                                <i class="bi bi-chevron-double-right"></i>
-                            </a>
-                        </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-                {% endif %}
-                
-                <!-- Suchergebnisse Info -->
-                {% if search_query %}
-                <div class="alert alert-info mt-3">
-                    <i class="bi bi-search"></i> 
-                    {% if paginator.count == 1 %}
-                        {{ paginator.count }} Dealroom gefunden für "{{ search_query }}"
-                    {% else %}
-                        {{ paginator.count }} Dealrooms gefunden für "{{ search_query }}"
+                            
+                            {% for num in paginator.page_range %}
+                                {% if dealrooms.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                                {% elif num > dealrooms.number|add:'-3' and num < dealrooms.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if dealrooms.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ dealrooms.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
                     {% endif %}
-                </div>
-                {% endif %}
-                
-                {% else %}
-                <div class="text-center py-5">
-                    <i class="bi bi-building text-muted fs-1 mb-3"></i>
+                    
+                    <!-- Suchergebnisse Info -->
                     {% if search_query %}
-                    <h5 class="text-muted">Keine Dealrooms gefunden</h5>
-                    <p class="text-muted">Keine Dealrooms gefunden für "{{ search_query }}".</p>
-                    <a href="{% url 'core:dashboard' %}" class="btn btn-primary">
-                        <i class="bi bi-arrow-left"></i> Zurück zur Übersicht
-                    </a>
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-search"></i> 
+                        {% if paginator.count == 1 %}
+                            {{ paginator.count }} Dealroom gefunden für "{{ search_query }}"
+                        {% else %}
+                            {{ paginator.count }} Dealrooms gefunden für "{{ search_query }}"
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
                     {% else %}
-                    <h5 class="text-muted">Noch keine Dealrooms vorhanden</h5>
-                    <p class="text-muted">Erstellen Sie Ihren ersten Dealroom, um loszulegen.</p>
+                    <div class="text-center py-5">
+                        <i class="bi bi-building text-muted fs-1 mb-3"></i>
+                        {% if search_query %}
+                        <h5 class="text-muted">Keine Dealrooms gefunden</h5>
+                        <p class="text-muted">Keine Dealrooms gefunden für "{{ search_query }}".</p>
+                        <a href="{% url 'core:dashboard' %}" class="btn btn-primary">
+                            <i class="bi bi-arrow-left"></i> Zurück zur Übersicht
+                        </a>
+                        {% else %}
+                        <h5 class="text-muted">Noch keine Dealrooms vorhanden</h5>
+                        <p class="text-muted">Erstellen Sie Ihren ersten Dealroom, um loszulegen.</p>
+                        {% endif %}
+                    </div>
                     {% endif %}
                 </div>
-                {% endif %}
-            </div>
-            <div class="card-footer bg-white text-center">
-                <a href="{% url 'dealrooms:dealroom_create' %}" class="btn btn-primary btn-lg">
-                    <i class="bi bi-plus-circle me-2"></i> Neuen Dealroom erstellen
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Statistiken -->
-<div class="row mt-4">
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="card bg-primary text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4 class="card-title">{{ total_dealrooms }}</h4>
-                        <p class="card-text">Dealrooms</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-building fs-1"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="card bg-success text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4 class="card-title">{{ active_dealrooms }}</h4>
-                        <p class="card-text">Aktive Dealrooms</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-check-circle fs-1"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="card bg-info text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4 class="card-title">{{ total_templates }}</h4>
-                        <p class="card-text">Templates</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-file-earmark-text fs-1"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="card bg-warning text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4 class="card-title">{{ total_files }}</h4>
-                        <p class="card-text">Dateien</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-folder fs-1"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Werbung für das Tool -->
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card border-success">
-            <div class="card-body text-center">
-                <h4 class="text-success mb-3">
-                    <i class="bi bi-star-fill"></i> Dealroom Dashboard - Ihr Partner für professionelle Dealroom-Verwaltung
-                </h4>
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="text-center p-3">
-                            <i class="bi bi-graph-up text-primary fs-1"></i>
-                            <h6 class="mt-2">Erhöhte Effizienz</h6>
-                            <p class="small text-muted">Sparen Sie Zeit bei der Verwaltung Ihrer Dealrooms</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="text-center p-3">
-                            <i class="bi bi-layers text-success fs-1"></i>
-                            <h6 class="mt-2">Flexible Templates</h6>
-                            <p class="small text-muted">Anpassbare Landingpages für jeden Dealroom</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="text-center p-3">
-                            <i class="bi bi-cloud-upload text-info fs-1"></i>
-                            <h6 class="mt-2">Einfacher Upload</h6>
-                            <p class="small text-muted">Hochladen und verwalten Sie alle Dateien</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="text-center p-3">
-                            <i class="bi bi-people text-warning fs-1"></i>
-                            <h6 class="mt-2">Team-Kollaboration</h6>
-                            <p class="small text-muted">Arbeiten Sie effektiv im Team zusammen</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <a href="{% url 'dealrooms:dealroom_create' %}" class="btn btn-success me-2">
-                        <i class="bi bi-plus-circle"></i> Ersten Dealroom erstellen
+                <div class="card-footer bg-white text-center">
+                    <a href="{% url 'dealrooms:dealroom_create' %}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-plus-circle me-2"></i> Neuen Dealroom erstellen
                     </a>
-                    <a href="{% url 'core:about' %}" class="btn btn-outline-primary">
-                        <i class="bi bi-info-circle"></i> Mehr erfahren
-                    </a>
+                </div>
+            </div>
+
+            <!-- Schnellaktionen -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-folder2-open me-2"></i>Neueste globale Dateien
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_global_files %}
+                            <div class="list-group list-group-flush">
+                                {% for file in recent_global_files %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ file.title }}</h6>
+                                        <small class="text-muted">{{ file.description|default:"Keine Beschreibung"|truncatechars:50 }}</small>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <a href="{% url 'files:global_file_detail' file.pk %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'files:global_file_download' file.pk %}" class="btn btn-sm btn-outline-success">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="text-center mt-3">
+                                <a href="{% url 'files:global_file_list' %}" class="btn btn-outline-primary">
+                                    <i class="bi bi-arrow-right me-1"></i>Alle Dateien anzeigen
+                                </a>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-folder2-open text-muted fs-1 mb-3"></i>
+                                <h6 class="text-muted">Keine globalen Dateien vorhanden</h6>
+                                <a href="{% url 'files:global_file_upload' %}" class="btn btn-primary">
+                                    <i class="bi bi-upload me-2"></i>Erste Datei hochladen
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-clock-history me-2"></i>Letzte Änderungen
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_changes %}
+                            <div class="list-group list-group-flush">
+                                {% for log in recent_changes %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                <a href="{% url 'dealrooms:dealroom_detail' log.deal.pk %}" class="text-decoration-none">
+                                                    {{ log.deal.title }}
+                                                </a>
+                                            </h6>
+                                            <small class="text-muted">{{ log.get_change_description }}</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-{% if log.change_type == 'created' %}success{% elif log.change_type == 'updated' %}primary{% elif log.change_type == 'status_changed' %}warning{% elif log.change_type == 'file_assigned' %}info{% elif log.change_type == 'file_unassigned' %}secondary{% elif log.change_type == 'website_generated' %}success{% elif log.change_type == 'website_deleted' %}danger{% else %}secondary{% endif %}">
+                                                {{ log.get_change_type_display }}
+                                            </span>
+                                            <br><small class="text-muted">{{ log.changed_at|date:"d.m.Y H:i" }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-clock-history text-muted fs-1 mb-3"></i>
+                                <h6 class="text-muted">Keine Änderungen vorhanden</h6>
+                                <p class="text-muted">Hier werden die letzten Änderungen angezeigt.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

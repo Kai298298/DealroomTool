@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Startseite - Dealroom Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center py-5">
+                <h1 class="display-4 mb-4">
+                    <i class="bi bi-building text-primary"></i>
+                    Dealroom Dashboard
+                </h1>
+                <p class="lead mb-4">
+                    Willkommen beim Dealroom Dashboard
+                </p>
+                <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                    <a href="{% url 'users:login' %}" class="btn btn-primary btn-lg px-4 gap-3">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Anmelden
+                    </a>
+                    <a href="{% url 'core:about' %}" class="btn btn-outline-secondary btn-lg px-4">
+                        <i class="bi bi-info-circle me-2"></i>Mehr erfahren
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
