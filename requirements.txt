@@ -1,16 +1,18 @@
-# Landingpage Generator Requirements
+# Django Dealroom Tool Requirements
 
-# Web Framework
-Flask==3.0.0
-Flask-CORS==4.0.0
-Flask-RESTful==0.3.10
+# Django Framework
+Django==5.2.4
+djangorestframework==3.14.0
 
-# Template Engine
-Jinja2==3.1.2
+# Environment and Configuration
+python-decouple==3.8
+python-dotenv==1.0.0
+
+# Database
+django-cors-headers==4.3.1
 
 # Image Processing
 Pillow==11.3.0
-Pillow-SIMD==2.0.0
 
 # HTTP Requests
 requests==2.31.0
@@ -18,17 +20,15 @@ httpx==0.25.2
 
 # Data Processing
 pydantic==2.5.0
-python-decouple==3.8
 
-# Development
-python-dotenv==1.0.0
+# Development Tools
 black==23.12.0
 flake8==7.0.0
 pytest==7.4.3
+pytest-django==4.7.0
 
 # Production
 gunicorn==21.2.0
-uvicorn==0.25.0
 
 # Utilities
 click==8.1.7
