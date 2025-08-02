@@ -278,20 +278,20 @@
                         </div>
                         <div class="card-body">
                             <div class="d-grid gap-2">
-                                {% if user.can_edit_deals %}
+                                {% if user.is_staff or user == deal.created_by %}
+                                <a href="{% url 'deals:grapesjs_editor' deal.pk %}" class="btn btn-success btn-lg">
+                                    <i class="bi bi-palette me-2"></i>🎨 Designer öffnen
+                                </a>
                                 <a href="{% url 'deals:dealroom_edit' deal.pk %}" class="btn btn-warning">
                                     <i class="bi bi-pencil me-2"></i>Bearbeiten
                                 </a>
                                 <a href="{% url 'deals:dealroom_file_upload' deal.pk %}" class="btn btn-primary">
                                     <i class="bi bi-upload me-2"></i>Datei hinzufügen
                                 </a>
-                                <a href="{% url 'deals:dealroom_file_upload' deal.pk %}" class="btn btn-info">
-                                    <i class="bi bi-link-45deg me-2"></i>Datei hinzufügen
-                                </a>
                                 {% endif %}
                                 
                                 {% if deal.is_published %}
-                                <a href="{{ deal.get_landingpage_url }}" class="btn btn-success" target="_blank">
+                                <a href="{{ deal.get_landingpage_url }}" class="btn btn-info" target="_blank">
                                     <i class="bi bi-eye me-2"></i>Dealroom anzeigen
                                 </a>
                                 {% endif %}
@@ -331,13 +331,7 @@
                             </div>
                             {% endif %}
                             
-                                                         {% if user.can_edit_deals %}
-                             <div class="d-grid gap-2">
-                                 <a href="{% url 'deals:dealroom_edit' deal.pk %}" class="btn btn-outline-primary">
-                                     <i class="bi bi-pencil me-2"></i>Website bearbeiten
-                                 </a>
-                             </div>
-                             {% endif %}
+
                         </div>
                     </div>
 

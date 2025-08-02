@@ -949,219 +949,40 @@ class PasswordProtectionAdminView(View):
 
 
 # Content-Management Views
-class LandingpageBuilderView(View):
-    """Landingpage-Builder mit visueller Bearbeitung"""
-    def get(self, request, deal_id):
-        deal = get_object_or_404(Deal, id=deal_id)
-        
-        # Content-Bibliothek laden
-        content_blocks = {
-            'welcome': deal.get_content_blocks_by_type('welcome'),
-            'product_description': deal.get_content_blocks_by_type('product_description'),
-            'faq_item': deal.get_content_blocks_by_type('faq_item'),
-            'cta_text': deal.get_content_blocks_by_type('cta_text'),
-            'contact_info': deal.get_content_blocks_by_type('contact_info'),
-        }
-        
-        media_library = {
-            'image': deal.get_media_by_type('image'),
-            'logo': deal.get_media_by_type('logo'),
-            'video': deal.get_media_by_type('video'),
-        }
-        
-        layout_templates = deal.get_layout_templates()
-        
-        context = {
-            'deal': deal,
-            'content_blocks': content_blocks,
-            'media_library': media_library,
-            'layout_templates': layout_templates,
-            'active_tab': request.GET.get('tab', 'content')
-        }
-        
-        return render(request, 'deals/landingpage_builder.html', context)
+class LandingpageBuilderView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """Landingpage-Builder - Weiterleitung zum GrapesJS Editor"""
     
-    def post(self, request, deal_id):
-        deal = get_object_or_404(Deal, id=deal_id)
-        action = request.POST.get('action')
-        
-        if action == 'update_content':
-            # Content-Felder aktualisieren
-            deal.welcome_message = request.POST.get('welcome_message', '')
-            deal.product_description = request.POST.get('product_description', '')
-            deal.hero_title = request.POST.get('hero_title', '')
-            deal.hero_subtitle = request.POST.get('hero_subtitle', '')
-            deal.call_to_action = request.POST.get('call_to_action', '')
-            deal.save()
-            
-            messages.success(request, 'Content wurde aktualisiert!')
-        
-        elif action == 'apply_content_block':
-            # Content-Block aus Bibliothek anwenden
-            block_id = request.POST.get('content_block_id')
-            if block_id:
-                from .models import ContentBlock
-                block = get_object_or_404(ContentBlock, id=block_id)
-                
-                # Content basierend auf Typ anwenden
-                if block.content_type == 'welcome':
-                    deal.welcome_message = block.content
-                elif block.content_type == 'product_description':
-                    deal.product_description = block.content
-                elif block.content_type == 'cta_text':
-                    deal.call_to_action = block.content
-                
-                deal.save()
-                block.increment_usage()
-                messages.success(request, f'Content-Block "{block.title}" wurde angewendet!')
-        
-        elif action == 'apply_media':
-            # Medium aus Bibliothek anwenden
-            media_id = request.POST.get('media_id')
-            media_role = request.POST.get('media_role')
-            if media_id and media_role:
-                from .models import MediaLibrary
-                media = get_object_or_404(MediaLibrary, id=media_id)
-                
-                # Medium basierend auf Rolle anwenden
-                if media_role == 'hero_image':
-                    deal.hero_image_url = media.get_file_url()
-                elif media_role == 'logo':
-                    deal.customer_logo_url = media.get_file_url()
-                
-                deal.save()
-                media.increment_usage()
-                messages.success(request, f'Medium "{media.title}" wurde angewendet!')
-        
-        elif action == 'apply_layout':
-            # Layout-Vorlage anwenden
-            layout_id = request.POST.get('layout_id')
-            if layout_id:
-                from .models import LayoutTemplate
-                layout = get_object_or_404(LayoutTemplate, id=layout_id)
-                
-                # Layout-CSS anwenden
-                deal.custom_css = layout.css_classes
-                deal.save()
-                layout.increment_usage()
-                messages.success(request, f'Layout "{layout.title}" wurde angewendet!')
-        
-        return redirect('deals:landingpage_builder', deal_id=deal_id)
+    def test_func(self):
+        """Prüft ob User Zugriff auf den Dealroom hat"""
+        deal = get_object_or_404(Deal, pk=self.kwargs['deal_id'])
+        return self.request.user == deal.created_by or self.request.user.is_staff
+    
+    def get(self, request, deal_id):
+        """Weiterleitung zum GrapesJS Editor"""
+        return redirect('deals:grapesjs_editor', deal_id=deal_id)
 
 
 class ContentLibraryView(View):
-    """Content-Bibliothek Verwaltung"""
+    """Content-Bibliothek Übersicht - nur für Designer verfügbar"""
     def get(self, request):
-        from .models import ContentBlock, MediaLibrary, LayoutTemplate
+        from .models import ContentBlock, MediaLibrary
         
         content_blocks = ContentBlock.objects.all().order_by('category', 'title')
         media_library = MediaLibrary.objects.all().order_by('category', 'title')
-        layout_templates = LayoutTemplate.objects.all().order_by('category', 'title')
         
         context = {
             'content_blocks': content_blocks,
             'media_library': media_library,
-            'layout_templates': layout_templates,
             'active_tab': request.GET.get('tab', 'content')
         }
         
         return render(request, 'deals/content_library.html', context)
 
 
-class ContentBlockCreateView(View):
-    """Content-Block erstellen"""
-    def get(self, request):
-        return render(request, 'deals/content_block_form.html')
-    
-    def post(self, request):
-        from .models import ContentBlock
-        
-        title = request.POST.get('title')
-        content_type = request.POST.get('content_type')
-        category = request.POST.get('category')
-        content = request.POST.get('content')
-        description = request.POST.get('description')
-        
-        if all([title, content_type, content]):
-            content_block = ContentBlock.objects.create(
-                title=title,
-                content_type=content_type,
-                category=category,
-                content=content,
-                description=description,
-                created_by=request.user
-            )
-            messages.success(request, f'Content-Block "{title}" wurde erstellt!')
-            return redirect('deals:content_library')
-        
-        messages.error(request, 'Bitte füllen Sie alle Pflichtfelder aus!')
-        return render(request, 'deals/content_block_form.html')
 
 
-class MediaUploadView(View):
-    """Medium hochladen"""
-    def get(self, request):
-        return render(request, 'deals/media_upload_form.html')
-    
-    def post(self, request):
-        from .models import MediaLibrary
-        
-        title = request.POST.get('title')
-        media_type = request.POST.get('media_type')
-        category = request.POST.get('category')
-        description = request.POST.get('description')
-        alt_text = request.POST.get('alt_text')
-        file = request.FILES.get('file')
-        
-        if all([title, media_type, file]):
-            media = MediaLibrary.objects.create(
-                title=title,
-                media_type=media_type,
-                category=category,
-                file=file,
-                description=description,
-                alt_text=alt_text,
-                created_by=request.user
-            )
-            messages.success(request, f'Medium "{title}" wurde hochgeladen!')
-            return redirect('deals:content_library')
-        
-        messages.error(request, 'Bitte füllen Sie alle Pflichtfelder aus!')
-        return render(request, 'deals/media_upload_form.html')
 
 
-class LayoutTemplateCreateView(View):
-    """Layout-Vorlage erstellen"""
-    def get(self, request):
-        return render(request, 'deals/layout_template_form.html')
-    
-    def post(self, request):
-        from .models import LayoutTemplate
-        
-        title = request.POST.get('title')
-        layout_type = request.POST.get('layout_type')
-        category = request.POST.get('category')
-        description = request.POST.get('description')
-        css_classes = request.POST.get('css_classes')
-        html_structure = request.POST.get('html_structure')
-        preview_image = request.FILES.get('preview_image')
-        
-        if all([title, layout_type]):
-            layout = LayoutTemplate.objects.create(
-                title=title,
-                layout_type=layout_type,
-                category=category,
-                description=description,
-                css_classes=css_classes,
-                html_structure=html_structure,
-                preview_image=preview_image,
-                created_by=request.user
-            )
-            messages.success(request, f'Layout-Vorlage "{title}" wurde erstellt!')
-            return redirect('deals:content_library')
-        
-        messages.error(request, 'Bitte füllen Sie alle Pflichtfelder aus!')
-        return render(request, 'deals/layout_template_form.html')
 
 
 class DuplicateDealView(View):
@@ -1410,8 +1231,6 @@ class ModernDealCreateView(LoginRequiredMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['templates'] = Deal.get_available_templates()
-        context['content_blocks'] = ContentBlock.objects.all()[:5]  # Letzte 5 Blöcke
-        context['media_items'] = MediaLibrary.objects.all()[:5]  # Letzte 5 Media-Items
         return context
 
 

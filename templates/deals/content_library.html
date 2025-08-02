@@ -196,8 +196,8 @@
 <div class="library-container">
     <!-- Header -->
     <div class="library-header">
-        <h1>📚 Content-Bibliothek</h1>
-        <p>Zentrale Verwaltung für wiederverwendbare Inhalte, Medien und Layouts</p>
+        <h1>📚 Designer-Bibliothek</h1>
+        <p>Verfügbare Content-Blöcke und Medien für den Designer</p>
     </div>
     
     <!-- Stats -->
@@ -211,11 +211,7 @@
             <div class="label">Medien</div>
         </div>
         <div class="stat-card">
-            <div class="number">{{ layout_templates.count }}</div>
-            <div class="label">Layout-Vorlagen</div>
-        </div>
-        <div class="stat-card">
-            <div class="number">{{ content_blocks.count|add:media_library.count|add:layout_templates.count }}</div>
+            <div class="number">{{ content_blocks.count|add:media_library.count }}</div>
             <div class="label">Gesamt</div>
         </div>
     </div>
@@ -227,18 +223,6 @@
         </a>
         <a href="#media" class="library-tab {% if active_tab == 'media' %}active{% endif %}" data-tab="media">
             🖼️ Medien ({{ media_library.count }})
-        </a>
-        <a href="#layouts" class="library-tab {% if active_tab == 'layouts' %}active{% endif %}" data-tab="layouts">
-            🎨 Layouts ({{ layout_templates.count }})
-        </a>
-        <a href="{% url 'deals:content_block_create' %}" class="library-tab">
-            ➕ Content erstellen
-        </a>
-        <a href="{% url 'deals:media_upload' %}" class="library-tab">
-            📤 Medium hochladen
-        </a>
-        <a href="{% url 'deals:layout_template_create' %}" class="library-tab">
-            🎨 Layout erstellen
         </a>
     </div>
     
@@ -260,9 +244,7 @@
                     {{ block.content|truncatechars:150 }}
                 </div>
                 <div class="actions">
-                    <a href="#" class="btn btn-primary">Bearbeiten</a>
-                    <a href="#" class="btn btn-secondary">Kopieren</a>
-                    <a href="#" class="btn btn-danger">Löschen</a>
+                    <span class="btn btn-secondary">Nur im Designer verfügbar</span>
                 </div>
             </div>
             {% endfor %}
@@ -270,8 +252,7 @@
         {% else %}
         <div class="empty-state">
             <h3>Keine Content-Blöcke vorhanden</h3>
-            <p>Erstellen Sie Ihren ersten Content-Block für wiederverwendbare Texte.</p>
-            <a href="{% url 'deals:content_block_create' %}" class="btn btn-primary">Content-Block erstellen</a>
+            <p>Content-Blöcke werden im Designer erstellt und verwaltet.</p>
         </div>
         {% endif %}
     </div>
@@ -294,9 +275,8 @@
                     {{ media.description|default:"Keine Beschreibung"|truncatechars:150 }}
                 </div>
                 <div class="actions">
-                    <a href="#" class="btn btn-primary">Bearbeiten</a>
                     <a href="{{ media.get_file_url }}" class="btn btn-secondary" target="_blank">Anzeigen</a>
-                    <a href="#" class="btn btn-danger">Löschen</a>
+                    <span class="btn btn-secondary">Nur im Designer verfügbar</span>
                 </div>
             </div>
             {% endfor %}
@@ -304,45 +284,12 @@
         {% else %}
         <div class="empty-state">
             <h3>Keine Medien vorhanden</h3>
-            <p>Laden Sie Ihre ersten Medien für die Landingpages hoch.</p>
-            <a href="{% url 'deals:media_upload' %}" class="btn btn-primary">Medium hochladen</a>
+            <p>Medien werden im Designer hochgeladen und verwaltet.</p>
         </div>
         {% endif %}
     </div>
     
-    <!-- Layout Templates Section -->
-    <div id="layouts-section" class="library-section" style="display: none;">
-        <h2>🎨 Layout-Vorlagen</h2>
-        
-        {% if layout_templates %}
-        <div class="content-grid">
-            {% for layout in layout_templates %}
-            <div class="content-card">
-                <h3>{{ layout.title }}</h3>
-                <div class="meta">
-                    <strong>Typ:</strong> {{ layout.get_layout_type_display }} | 
-                    <strong>Kategorie:</strong> {{ layout.get_category_display }} |
-                    <strong>Verwendungen:</strong> {{ layout.usage_count }}
-                </div>
-                <div class="content">
-                    {{ layout.description|default:"Keine Beschreibung"|truncatechars:150 }}
-                </div>
-                <div class="actions">
-                    <a href="#" class="btn btn-primary">Bearbeiten</a>
-                    <a href="#" class="btn btn-secondary">Vorschau</a>
-                    <a href="#" class="btn btn-danger">Löschen</a>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="empty-state">
-            <h3>Keine Layout-Vorlagen vorhanden</h3>
-            <p>Erstellen Sie Ihre ersten Layout-Vorlagen für konsistente Designs.</p>
-            <a href="{% url 'deals:layout_template_create' %}" class="btn btn-primary">Layout erstellen</a>
-        </div>
-        {% endif %}
-    </div>
+
 </div>
 {% endblock %}
 

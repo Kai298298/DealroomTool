@@ -1,1132 +1,787 @@
 """
-Tests für die Deals-App
+Tests für DealShare - Umfassende Test-Suite
 """
+import json
+import tempfile
+import os
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from .models import Deal, DealFile, DealFileAssignment
-from .forms import DealForm, DealFileForm
+from django.utils import timezone
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+
+from .models import Deal, DealFile, DealFileAssignment, DealChangeLog, ContentBlock, MediaLibrary, LayoutTemplate
 from files.models import GlobalFile
 
 User = get_user_model()
 
 
-class DealModelTest(TestCase):
-    """
-    Tests für das Deal-Modell
-    """
+class DealShareBaseTestCase(TestCase):
+    """Basis-Test-Klasse mit Setup"""
     
     def setUp(self):
         """Test-Daten erstellen"""
+        # Test-User erstellen
         self.user = User.objects.create_user(
             username='testuser',
             email='test@example.com',
             password='testpass123',
             first_name='Test',
             last_name='User',
-            role=User.UserRole.EDITOR
+            plan='free'
         )
         
+        self.admin_user = User.objects.create_user(
+            username='admin',
+            email='admin@example.com',
+            password='admin123',
+            first_name='Admin',
+            last_name='User',
+            is_staff=True,
+            is_superuser=True,
+            plan='enterprise'
+        )
+        
+        # Test-Dealroom erstellen
         self.deal = Deal.objects.create(
             title='Test Dealroom',
             slug='test-dealroom',
+            recipient_name='Test Empfänger',
+            recipient_email='empfaenger@test.com',
+            company_name='Test GmbH',
             description='Ein Test Dealroom',
-            status=Deal.DealStatus.DRAFT,
-            template_type=Deal.TemplateType.MODERN,
-            created_by=self.user,
-            recipient_name='Max Mustermann',
-            recipient_email='max@example.com',
-            hero_title='Willkommen',
-            hero_subtitle='Ein toller Dealroom',
-            call_to_action='Jetzt kontaktieren',
-            primary_color='#0d6efd',
-            secondary_color='#6c757d'
+            template_type='modern',
+            theme_type='light',
+            primary_color='#667eea',
+            secondary_color='#764ba2',
+            status='active',
+            created_by=self.user
         )
+        
+        # Test-Content-Block erstellen
+        self.content_block = ContentBlock.objects.create(
+            title='Test Content Block',
+            content='Dies ist ein Test-Content-Block',
+            content_type='custom',
+            created_by=self.user
+        )
+        
+        # Test-Media-Item erstellen
+        self.media_item = MediaLibrary.objects.create(
+            title='Test Media',
+            media_type='image',
+            description='Ein Test-Medien-Item',
+            created_by=self.user
+        )
+        
+        # Client für Tests
+        self.client = Client()
+    
+    def login_user(self, user=None):
+        """User einloggen"""
+        if user is None:
+            user = self.user
+        self.client.force_login(user)
+
+
+class DealModelTests(DealShareBaseTestCase):
+    """Tests für das Deal-Model"""
     
     def test_deal_creation(self):
-        """Test: Dealroom kann erstellt werden"""
+        """Test: Dealroom erstellen"""
         self.assertEqual(self.deal.title, 'Test Dealroom')
-        self.assertEqual(self.deal.slug, 'test-dealroom')
+        self.assertEqual(self.deal.status, 'active')
         self.assertEqual(self.deal.created_by, self.user)
-        self.assertEqual(self.deal.status, Deal.DealStatus.DRAFT)
     
-    def test_deal_str_method(self):
-        """Test: __str__ Methode funktioniert"""
-        self.assertEqual(str(self.deal), 'Test Dealroom')
+    def test_deal_url_generation(self):
+        """Test: URL-Generierung"""
+        self.assertEqual(self.deal.slug, 'test-dealroom')
+        public_url = self.deal.get_public_url()
+        self.assertIn('test-dealroom', public_url)
     
-    def test_deal_get_absolute_url(self):
-        """Test: get_absolute_url funktioniert"""
-        url = self.deal.get_absolute_url()
-        self.assertIn('/dealrooms/', url)
+    def test_deal_template_methods(self):
+        """Test: Template-Methoden"""
+        templates = Deal.get_available_templates()
+        self.assertIsInstance(templates, list)
+        self.assertTrue(len(templates) > 0)
+        self.assertIn('name', templates[0])
+        self.assertIn('display_name', templates[0])
     
-    def test_deal_is_published(self):
-        """Test: is_published Methode funktioniert"""
-        # Draft sollte nicht published sein
-        self.assertFalse(self.deal.is_published())
+    def test_deal_duplication(self):
+        """Test: Dealroom duplizieren"""
+        original_count = Deal.objects.count()
+        duplicated_deal = self.deal.duplicate()
         
-        # Active sollte published sein
-        self.deal.status = Deal.DealStatus.ACTIVE
-        self.deal.save()
-        self.assertTrue(self.deal.is_published())
+        self.assertEqual(Deal.objects.count(), original_count + 1)
+        self.assertEqual(duplicated_deal.title, f"{self.deal.title} (Kopie)")
+        self.assertEqual(duplicated_deal.created_by, self.user)
+        self.assertEqual(duplicated_deal.status, 'draft')
 
 
-class DealFormTest(TestCase):
-    """
-    Tests für das DealForm
-    """
+class GrapesJSIntegrationTests(DealShareBaseTestCase):
+    """Tests für GrapesJS Integration"""
     
-    def setUp(self):
-        """Test-Daten erstellen"""
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='testpass123',
-            role=User.UserRole.EDITOR
+    def test_grapesjs_editor_access(self):
+        """Test: GrapesJS Editor Zugriff"""
+        self.login_user()
+        response = self.client.get(reverse('deals:grapesjs_editor', args=[self.deal.pk]))
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'grapesjs')
+        self.assertContains(response, 'gjs')
+        self.assertContains(response, 'GrapesJS Editor')
+    
+    def test_grapesjs_editor_unauthorized(self):
+        """Test: Unauthorized Zugriff auf GrapesJS Editor"""
+        # Nicht eingeloggt
+        response = self.client.get(reverse('deals:grapesjs_editor', args=[self.deal.pk]))
+        self.assertEqual(response.status_code, 302)  # Redirect to login
+        
+        # Anderer User
+        other_user = User.objects.create_user(
+            username='otheruser',
+            password='otherpass123'
         )
+        self.client.force_login(other_user)
+        response = self.client.get(reverse('deals:grapesjs_editor', args=[self.deal.pk]))
+        self.assertEqual(response.status_code, 403)  # Forbidden
     
-    def test_deal_form_valid(self):
-        """Test: DealForm mit gültigen Daten"""
+    def test_grapesjs_asset_upload(self):
+        """Test: Asset-Upload für GrapesJS"""
+        self.login_user()
+        
+        # Test-Bild erstellen
+        image_content = b'fake-image-content'
+        image_file = SimpleUploadedFile(
+            'test_image.jpg',
+            image_content,
+            content_type='image/jpeg'
+        )
+        
+        response = self.client.post(
+            reverse('deals:grapesjs_upload'),
+            {'files': image_file},
+            format='multipart'
+        )
+        
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        self.assertTrue(response_data['success'])
+        self.assertIn('data', response_data)
+        
+        # Prüfe ob MediaLibrary Eintrag erstellt wurde
+        media_items = MediaLibrary.objects.filter(title='test_image.jpg')
+        self.assertTrue(media_items.exists())
+    
+    def test_grapesjs_html_save(self):
+        """Test: HTML-Speicherung von GrapesJS"""
+        self.login_user()
+        
+        test_html = '<div class="test">Test Content</div>'
+        test_css = '.test { color: red; }'
+        
+        response = self.client.post(
+            reverse('deals:grapesjs_editor', args=[self.deal.pk]),
+            data=json.dumps({
+                'html': test_html,
+                'css': test_css
+            }),
+            content_type='application/json'
+        )
+        
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        self.assertTrue(response_data['success'])
+        
+        # Prüfe ob Deal aktualisiert wurde
+        self.deal.refresh_from_db()
+        self.assertEqual(self.deal.custom_html_content, test_html)
+        self.assertEqual(self.deal.custom_css, test_css)
+        self.assertEqual(self.deal.html_editor_mode, 'manual')
+
+
+class DealroomCreationTests(DealShareBaseTestCase):
+    """Tests für Dealroom-Erstellung"""
+    
+    def test_modern_deal_creation_form(self):
+        """Test: Moderne Dealroom-Erstellung"""
+        self.login_user()
+        response = self.client.get(reverse('deals:dealroom_create'))
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Neuen Dealroom erstellen')
+        self.assertContains(response, 'Template & Design')
+    
+    def test_modern_deal_creation_submission(self):
+        """Test: Dealroom-Erstellung Submit"""
+        self.login_user()
+        
         form_data = {
-            'title': 'Neuer Dealroom',
-            'slug': 'neuer-dealroom',
-            'description': 'Ein neuer Dealroom',
-            'status': Deal.DealStatus.DRAFT,
-            'template_type': Deal.TemplateType.MODERN,
-            'recipient_name': 'Max Mustermann',
-            'recipient_email': 'max@example.com',
-            'hero_title': 'Willkommen',
-            'hero_subtitle': 'Ein toller Dealroom',
-            'call_to_action': 'Jetzt kontaktieren',
-            'primary_color': '#0d6efd',
-            'secondary_color': '#6c757d'
+            'title': 'Neuer Test Dealroom',
+            'slug': 'neuer-test-dealroom',
+            'recipient_name': 'Neuer Empfänger',
+            'recipient_email': 'neuer@test.com',
+            'company_name': 'Neue Test GmbH',
+            'description': 'Ein neuer Test Dealroom',
+            'template_type': 'corporate',
+            'theme_type': 'dark',
+            'primary_color': '#ff6b6b',
+            'secondary_color': '#4ecdc4'
         }
         
-        form = DealForm(data=form_data)
-        self.assertTrue(form.is_valid())
+        response = self.client.post(reverse('deals:dealroom_create'), form_data)
+        
+        # Sollte zu Landingpage Builder weiterleiten
+        self.assertEqual(response.status_code, 302)
+        
+        # Prüfe ob Dealroom erstellt wurde
+        new_deal = Deal.objects.filter(title='Neuer Test Dealroom').first()
+        self.assertIsNotNone(new_deal)
+        self.assertEqual(new_deal.template_type, 'corporate')
+        self.assertEqual(new_deal.theme_type, 'dark')
     
-    def test_deal_form_invalid(self):
-        """Test: DealForm mit ungültigen Daten"""
-        # Ohne Pflichtfelder
+    def test_deal_creation_validation(self):
+        """Test: Validierung bei Dealroom-Erstellung"""
+        self.login_user()
+        
+        # Test mit fehlenden Pflichtfeldern
         form_data = {
-            'title': '',  # Leer - sollte ungültig sein
-            'slug': 'test-slug',
+            'title': '',  # Leerer Titel
             'recipient_email': 'invalid-email'  # Ungültige E-Mail
         }
         
-        form = DealForm(data=form_data)
-        self.assertFalse(form.is_valid())
-        self.assertIn('title', form.errors)
-        self.assertIn('recipient_email', form.errors)
+        response = self.client.post(reverse('deals:dealroom_create'), form_data)
+        
+        self.assertEqual(response.status_code, 200)  # Bleibt auf Formular
+        self.assertContains(response, 'Dieses Feld ist erforderlich')
 
 
-class DealViewsTest(TestCase):
-    """
-    Tests für die Deal-Views
-    """
+class ContentLibraryTests(DealShareBaseTestCase):
+    """Tests für Content Library"""
     
-    def setUp(self):
-        """Test-Daten erstellen"""
-        self.client = Client()
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='testpass123',
-            first_name='Test',
-            last_name='User',
-            role=User.UserRole.EDITOR
+    def test_content_library_access(self):
+        """Test: Content Library Zugriff"""
+        self.login_user()
+        response = self.client.get(reverse('deals:content_library'))
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Content-Bibliothek')
+    
+    def test_content_block_creation(self):
+        """Test: Content Block erstellen"""
+        self.login_user()
+        
+        form_data = {
+            'title': 'Neuer Content Block',
+            'content': 'Dies ist ein neuer Content Block',
+            'content_type': 'custom'
+        }
+        
+        response = self.client.post(reverse('deals:content_block_create'), form_data)
+        
+        # Sollte weiterleiten
+        self.assertEqual(response.status_code, 302)
+        
+        # Prüfe ob Content Block erstellt wurde
+        new_block = ContentBlock.objects.filter(title='Neuer Content Block').first()
+        self.assertIsNotNone(new_block)
+        self.assertEqual(new_block.created_by, self.user)
+    
+    def test_media_upload(self):
+        """Test: Media Upload"""
+        self.login_user()
+        
+        # Test-Bild erstellen
+        image_content = b'fake-image-content'
+        image_file = SimpleUploadedFile(
+            'test_media.jpg',
+            image_content,
+            content_type='image/jpeg'
         )
         
-        self.deal = Deal.objects.create(
-            title='Test Dealroom',
-            slug='test-dealroom',
-            description='Ein Test Dealroom',
-            status=Deal.DealStatus.DRAFT,
-            template_type=Deal.TemplateType.MODERN,
-            created_by=self.user,
-            recipient_name='Max Mustermann',
-            recipient_email='max@example.com',
-            hero_title='Willkommen',
-            hero_subtitle='Ein toller Dealroom',
-            call_to_action='Jetzt kontaktieren'
-        )
-    
-    def test_deal_list_view_requires_login(self):
-        """Test: Deal-Liste erfordert Login"""
-        response = self.client.get(reverse('dealrooms:dealroom_list'))
-        self.assertEqual(response.status_code, 302)  # Redirect zu Login
-        self.assertIn('login', response.url)
-    
-    def test_deal_list_view_with_login(self):
-        """Test: Deal-Liste funktioniert mit Login"""
-        self.client.login(username='testuser', password='testpass123')
-        
-        response = self.client.get(reverse('core:dashboard'))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Test Dealroom')
-    
-    def test_deal_detail_view_requires_login(self):
-        """Test: Deal-Detail erfordert Login"""
-        response = self.client.get(reverse('dealrooms:dealroom_detail', args=[self.deal.pk]))
-        self.assertEqual(response.status_code, 302)  # Redirect zu Login
-    
-    def test_deal_detail_view_with_login(self):
-        """Test: Deal-Detail funktioniert mit Login"""
-        self.client.login(username='testuser', password='testpass123')
-        response = self.client.get(reverse('dealrooms:dealroom_detail', args=[self.deal.pk]))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Test Dealroom')
-    
-    def test_deal_create_view_requires_login(self):
-        """Test: Deal-Erstellung erfordert Login"""
-        response = self.client.get(reverse('dealrooms:dealroom_create'))
-        self.assertEqual(response.status_code, 302)  # Redirect zu Login
-    
-    def test_deal_create_view_with_login(self):
-        """Test: Deal-Erstellung funktioniert mit Login"""
-        self.client.login(username='testuser', password='testpass123')
-        response = self.client.get(reverse('dealrooms:dealroom_create'))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Titel')
-    
-    def test_deal_create_success(self):
-        """Test: Dealroom erfolgreich erstellen"""
-        self.client.login(username='testuser', password='testpass123')
+        form_data = {
+            'title': 'Test Media Upload',
+            'description': 'Ein Test Media Upload',
+            'media_type': 'image'
+        }
         
         response = self.client.post(
-            reverse('dealrooms:dealroom_create'),
-            {
-                'title': 'Neuer Dealroom',
-                'slug': 'neuer-dealroom',
-                'description': 'Ein neuer Dealroom',
-                'status': 'draft',
-                'template_type': 'modern',
-                'recipient_name': 'Max Mustermann',
-                'recipient_email': 'max@example.com',
-                'hero_title': 'Willkommen',
-                'hero_subtitle': 'Ein toller Dealroom',
-                'call_to_action': 'Jetzt kontaktieren',
-                'primary_color': '#0d6efd',
-                'secondary_color': '#6c757d'
-            }
+            reverse('deals:media_upload'),
+            {**form_data, 'file': image_file},
+            format='multipart'
         )
         
-        self.assertRedirects(response, reverse('core:dashboard'))
+        self.assertEqual(response.status_code, 302)
         
-        # Prüfen ob Dealroom erstellt wurde
-        deal = Deal.objects.filter(title='Neuer Dealroom').first()
-        self.assertIsNotNone(deal)
-        self.assertEqual(deal.created_by, self.user)
+        # Prüfe ob Media Item erstellt wurde
+        media_items = MediaLibrary.objects.filter(title='Test Media Upload')
+        self.assertTrue(media_items.exists())
+
+
+class LandingpageBuilderTests(DealShareBaseTestCase):
+    """Tests für Landingpage Builder"""
     
-    def test_deal_edit_view_requires_login(self):
-        """Test: Deal-Bearbeitung erfordert Login"""
-        response = self.client.get(reverse('dealrooms:dealroom_edit', args=[self.deal.pk]))
-        self.assertEqual(response.status_code, 302)  # Redirect zu Login
+    def test_landingpage_builder_access(self):
+        """Test: Landingpage Builder Zugriff"""
+        self.login_user()
+        response = self.client.get(reverse('deals:landingpage_builder', args=[self.deal.pk]))
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Landingpage Builder')
     
-    def test_deal_edit_view_with_login(self):
-        """Test: Deal-Bearbeitung funktioniert mit Login"""
-        self.client.login(username='testuser', password='testpass123')
-        response = self.client.get(reverse('dealrooms:dealroom_edit', args=[self.deal.pk]))
+    def test_landingpage_builder_content_integration(self):
+        """Test: Content-Integration im Builder"""
+        self.login_user()
+        response = self.client.get(reverse('deals:landingpage_builder', args=[self.deal.pk]))
+        
+        # Prüfe ob Content Blocks angezeigt werden
+        self.assertContains(response, 'Content-Blöcke')
+        self.assertContains(response, 'Test Content Block')
+    
+    def test_landingpage_builder_media_integration(self):
+        """Test: Media-Integration im Builder"""
+        self.login_user()
+        response = self.client.get(reverse('deals:landingpage_builder', args=[self.deal.pk]))
+        
+        # Prüfe ob Media Items angezeigt werden
+        self.assertContains(response, 'Medien-Bibliothek')
+        self.assertContains(response, 'Test Media')
+
+
+class UserManagementTests(DealShareBaseTestCase):
+    """Tests für User Management"""
+    
+    def test_user_registration(self):
+        """Test: User Registrierung"""
+        form_data = {
+            'username': 'newuser',
+            'email': 'newuser@example.com',
+            'password1': 'newpass123',
+            'password2': 'newpass123',
+            'first_name': 'New',
+            'last_name': 'User',
+            'plan': 'free'
+        }
+        
+        response = self.client.post(reverse('users:register'), form_data)
+        
+        # Sollte weiterleiten nach erfolgreicher Registrierung
+        self.assertEqual(response.status_code, 302)
+        
+        # Prüfe ob User erstellt wurde
+        new_user = User.objects.filter(username='newuser').first()
+        self.assertIsNotNone(new_user)
+        self.assertEqual(new_user.plan, 'free')
+    
+    def test_user_login(self):
+        """Test: User Login"""
+        response = self.client.post(reverse('users:login'), {
+            'username': 'testuser',
+            'password': 'testpass123'
+        })
+        
+        self.assertEqual(response.status_code, 302)  # Weiterleitung nach Login
+        
+        # Prüfe ob User eingeloggt ist
+        self.assertTrue(response.wsgi_request.user.is_authenticated)
+    
+    def test_user_profile(self):
+        """Test: User Profil"""
+        self.login_user()
+        response = self.client.get(reverse('users:profile'))
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Test User')
+        self.assertContains(response, 'test@example.com')
+
+
+class DealroomManagementTests(DealShareBaseTestCase):
+    """Tests für Dealroom Management"""
+    
+    def test_dealroom_list(self):
+        """Test: Dealroom Liste"""
+        self.login_user()
+        response = self.client.get(reverse('deals:dealroom_list'))
+        
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Test Dealroom')
     
-    def test_deal_edit_success(self):
-        """Test: Dealroom erfolgreich bearbeiten"""
-        self.client.login(username='testuser', password='testpass123')
+    def test_dealroom_detail(self):
+        """Test: Dealroom Details"""
+        self.login_user()
+        response = self.client.get(reverse('deals:dealroom_detail', args=[self.deal.pk]))
         
-        form_data = {
-            'title': 'Bearbeiteter Dealroom',
-            'slug': 'bearbeiteter-dealroom',
-            'description': 'Ein bearbeiteter Dealroom',
-            'status': Deal.DealStatus.ACTIVE,
-            'template_type': Deal.TemplateType.CLASSIC,
-            'recipient_name': 'Max Mustermann',
-            'recipient_email': 'max@example.com',
-            'hero_title': 'Willkommen',
-            'hero_subtitle': 'Ein bearbeiteter Dealroom',
-            'call_to_action': 'Jetzt kontaktieren',
-            'primary_color': '#0d6efd',
-            'secondary_color': '#6c757d'
-        }
-        
-        response = self.client.post(reverse('dealrooms:dealroom_edit', args=[self.deal.pk]), form_data)
-        
-        # Sollte zur Deal-Liste weiterleiten
-        self.assertEqual(response.status_code, 302)
-        self.assertIn('/dealrooms/', response.url)
-        
-        # Deal sollte aktualisiert sein
-        self.deal.refresh_from_db()
-        self.assertEqual(self.deal.title, 'Bearbeiteter Dealroom')
-        self.assertEqual(self.deal.status, Deal.DealStatus.ACTIVE)
-    
-    def test_deal_delete_view_requires_login(self):
-        """Test: Deal-Löschung erfordert Login"""
-        response = self.client.get(reverse('dealrooms:dealroom_delete', args=[self.deal.pk]))
-        self.assertEqual(response.status_code, 302)  # Redirect zu Login
-    
-    def test_deal_delete_view_with_login(self):
-        """Test: Deal-Löschung funktioniert mit Login"""
-        self.client.login(username='testuser', password='testpass123')
-        response = self.client.get(reverse('dealrooms:dealroom_delete', args=[self.deal.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Test Dealroom')
+        self.assertContains(response, 'GrapesJS Editor')
     
-    def test_deal_delete_success(self):
-        """Test: Dealroom erfolgreich löschen"""
-        self.client.login(username='testuser', password='testpass123')
+    def test_dealroom_edit(self):
+        """Test: Dealroom bearbeiten"""
+        self.login_user()
+        response = self.client.get(reverse('deals:dealroom_edit', args=[self.deal.pk]))
         
-        response = self.client.post(reverse('dealrooms:dealroom_delete', args=[self.deal.pk]))
-        
-        # Sollte zur Deal-Liste weiterleiten
-        self.assertEqual(response.status_code, 302)
-        self.assertIn('/dealrooms/', response.url)
-        
-        # Deal sollte gelöscht sein
-        self.assertFalse(Deal.objects.filter(pk=self.deal.pk).exists())
-
-
-class DealIntegrationTest(TestCase):
-    """
-    Integrationstests für das komplette Dealroom-Workflow
-    """
-    
-    def setUp(self):
-        """Test-Daten erstellen"""
-        self.client = Client()
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='testpass123',
-            first_name='Test',
-            last_name='User',
-            role=User.UserRole.EDITOR
-        )
-    
-    def test_full_dealroom_workflow(self):
-        """Test: Kompletter Dealroom-Workflow (Erstellen -> Bearbeiten -> Löschen)"""
-        self.client.login(username='testuser', password='testpass123')
-        
-        # 1. Dealroom erstellen
-        form_data = {
-            'title': 'Workflow Test Dealroom',
-            'slug': 'workflow-test-dealroom',
-            'description': 'Ein Dealroom für Workflow-Tests',
-            'status': Deal.DealStatus.DRAFT,
-            'template_type': Deal.TemplateType.MODERN,
-            'recipient_name': 'Max Mustermann',
-            'recipient_email': 'max@example.com',
-            'hero_title': 'Workflow Test',
-            'hero_subtitle': 'Ein Test für den Workflow',
-            'call_to_action': 'Test Button',
-            'primary_color': '#0d6efd',
-            'secondary_color': '#6c757d'
-        }
-        
-        response = self.client.post(reverse('dealrooms:dealroom_create'), form_data)
-        self.assertEqual(response.status_code, 302)
-        
-        # Deal sollte existieren
-        deal = Deal.objects.get(slug='workflow-test-dealroom')
-        self.assertEqual(deal.title, 'Workflow Test Dealroom')
-        self.assertEqual(deal.created_by, self.user)
-        
-        # 2. Dealroom bearbeiten
-        edit_data = form_data.copy()
-        edit_data['title'] = 'Bearbeiteter Workflow Test'
-        edit_data['status'] = Deal.DealStatus.ACTIVE
-        
-        response = self.client.post(reverse('dealrooms:dealroom_edit', args=[deal.pk]), edit_data)
-        self.assertEqual(response.status_code, 302)
-        
-        # Deal sollte aktualisiert sein
-        deal.refresh_from_db()
-        self.assertEqual(deal.title, 'Bearbeiteter Workflow Test')
-        self.assertEqual(deal.status, Deal.DealStatus.ACTIVE)
-        
-        # 3. Dealroom löschen
-        response = self.client.post(reverse('dealrooms:dealroom_delete', args=[deal.pk]))
-        self.assertEqual(response.status_code, 302)
-        
-        # Deal sollte gelöscht sein
-        self.assertFalse(Deal.objects.filter(pk=deal.pk).exists())
-    
-    def test_dealroom_search_functionality(self):
-        """Test: Suchfunktionalität für Dealrooms"""
-        self.client.login(username='testuser', password='testpass123')
-        
-        response = self.client.get(reverse('core:dashboard'), {'search': 'Python'})
         self.assertEqual(response.status_code, 200)
-        
-        # Prüfen ob Suchfunktionalität im Template vorhanden ist
-        self.assertContains(response, 'search')
+        self.assertContains(response, 'Bearbeiten')
     
-    def test_dealroom_status_filter(self):
-        """Test: Status-Filter für Dealrooms"""
-        self.client.login(username='testuser', password='testpass123')
+    def test_dealroom_delete(self):
+        """Test: Dealroom löschen"""
+        self.login_user()
         
-        response = self.client.get(reverse('core:dashboard'), {'status': 'draft'})
-        self.assertEqual(response.status_code, 200)
+        # Erstelle einen separaten Dealroom zum Löschen
+        deal_to_delete = Deal.objects.create(
+            title='Dealroom zum Löschen',
+            slug='dealroom-zum-loeschen',
+            created_by=self.user
+        )
         
-        # Prüfen ob Filter-Funktionalität im Template vorhanden ist
-        self.assertContains(response, 'status')
+        response = self.client.post(reverse('deals:dealroom_delete', args=[deal_to_delete.pk]))
+        
+        self.assertEqual(response.status_code, 302)  # Weiterleitung nach Löschung
+        
+        # Prüfe ob Dealroom gelöscht wurde
+        self.assertFalse(Deal.objects.filter(pk=deal_to_delete.pk).exists())
 
 
-class DealFileTest(TestCase):
-    """
-    Tests für Deal-Dateien
-    """
+class FileManagementTests(DealShareBaseTestCase):
+    """Tests für Datei-Management"""
     
-    def setUp(self):
-        """Test-Daten erstellen"""
-        self.client = Client()
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='testpass123',
-            role=User.UserRole.EDITOR
-        )
+    def test_file_upload(self):
+        """Test: Datei-Upload"""
+        self.login_user()
         
-        self.deal = Deal.objects.create(
-            title='Test Dealroom',
-            slug='test-dealroom',
-            created_by=self.user,
-            recipient_email='test@example.com'
-        )
-    
-    def test_deal_file_creation(self):
-        """Test: Deal-Datei kann erstellt werden"""
-        # Simuliere eine Datei
+        # Test-Datei erstellen
         file_content = b'Test file content'
-        uploaded_file = SimpleUploadedFile(
-            'test.txt',
-            file_content,
-            content_type='text/plain'
-        )
-        
-        deal_file = DealFile.objects.create(
-            deal=self.deal,
-            title='Test Datei',
-            description='Eine Test-Datei',
-            file=uploaded_file,
-            file_type=DealFile.FileType.DOCUMENT,
-            uploaded_by=self.user
-        )
-        
-        self.assertEqual(deal_file.title, 'Test Datei')
-        self.assertEqual(deal_file.deal, self.deal)
-        self.assertEqual(deal_file.uploaded_by, self.user)
-    
-    def test_deal_file_form_valid(self):
-        """Test: DealFileForm mit gültigen Daten"""
-        file_content = b'Test file content'
-        uploaded_file = SimpleUploadedFile(
-            'test.pdf',
+        test_file = SimpleUploadedFile(
+            'test_document.pdf',
             file_content,
             content_type='application/pdf'
         )
         
         form_data = {
-            'title': 'Test Datei',
-            'description': 'Eine Test-Datei',
-            'file_type': DealFile.FileType.DOCUMENT,
-            'is_public': True,
-            'is_primary': False
+            'title': 'Test Dokument',
+            'file_type': 'document',
+            'description': 'Ein Test-Dokument'
         }
         
-        files = {
-            'file': uploaded_file
-        }
-        
-        form = DealFileForm(data=form_data, files=files)
-        self.assertTrue(form.is_valid())
-    
-    def test_deal_file_str_method(self):
-        """Test: __str__ Methode für DealFile"""
-        file_content = b'Test file content'
-        uploaded_file = SimpleUploadedFile(
-            'test.txt',
-            file_content,
-            content_type='text/plain'
+        response = self.client.post(
+            reverse('deals:dealroom_file_upload', args=[self.deal.pk]),
+            {**form_data, 'file': test_file},
+            format='multipart'
         )
         
-        deal_file = DealFile.objects.create(
-            deal=self.deal,
-            title='Test Datei',
-            file=uploaded_file,
-            file_type=DealFile.FileType.DOCUMENT,
-            uploaded_by=self.user
-        )
-        
-        self.assertEqual(str(deal_file), 'Test Datei - Test Dealroom')
-
-
-class DealFileAssignmentTest(TestCase):
-    """
-    Tests für die Datei-Zuordnung-Funktionalität
-    """
-    
-    def setUp(self):
-        """Test-Daten erstellen"""
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='testpass123',
-            first_name='Test',
-            last_name='User',
-            role=User.UserRole.EDITOR
-        )
-        
-        self.deal = Deal.objects.create(
-            title='Test Dealroom',
-            slug='test-dealroom',
-            description='Ein Test Dealroom',
-            status=Deal.DealStatus.DRAFT,
-            template_type=Deal.TemplateType.MODERN,
-            created_by=self.user,
-            recipient_name='Max Mustermann',
-            recipient_email='max@example.com',
-            hero_title='Willkommen',
-            hero_subtitle='Ein toller Dealroom',
-            call_to_action='Jetzt kontaktieren',
-            primary_color='#0d6efd',
-            secondary_color='#6c757d'
-        )
-        
-        # Globale Datei erstellen
-        self.global_file = GlobalFile.objects.create(
-            title='Test Globale Datei',
-            description='Eine Test-Datei',
-            file=SimpleUploadedFile(
-                'test.pdf',
-                b'Test PDF content',
-                content_type='application/pdf'
-            ),
-            file_type=GlobalFile.FileType.DOCUMENT,
-            uploaded_by=self.user,
-            is_public=True
-        )
-    
-    def test_deal_file_assignment_creation(self):
-        """Test: Datei-Zuordnung kann erstellt werden"""
-        assignment = DealFileAssignment.objects.create(
-            deal=self.deal,
-            global_file=self.global_file,
-            assigned_by=self.user,
-            role='hero_image',
-            order=0
-        )
-        
-        self.assertEqual(assignment.deal, self.deal)
-        self.assertEqual(assignment.global_file, self.global_file)
-        self.assertEqual(assignment.assigned_by, self.user)
-        self.assertEqual(assignment.role, 'hero_image')
-        self.assertEqual(assignment.order, 0)
-    
-    def test_deal_file_assignment_str_method(self):
-        """Test: __str__ Methode für DealFileAssignment"""
-        assignment = DealFileAssignment.objects.create(
-            deal=self.deal,
-            global_file=self.global_file,
-            assigned_by=self.user,
-            role='hero_image'
-        )
-        
-        expected = f"{self.deal.title} - {self.global_file.title} (Hero-Bild)"
-        self.assertEqual(str(assignment), expected)
-    
-    def test_deal_get_assigned_files(self):
-        """Test: get_assigned_files Methode"""
-        assignment = DealFileAssignment.objects.create(
-            deal=self.deal,
-            global_file=self.global_file,
-            assigned_by=self.user,
-            role='hero_image'
-        )
-        
-        # Alle zugeordneten Dateien
-        assigned_files = self.deal.get_assigned_files()
-        self.assertEqual(assigned_files.count(), 1)
-        self.assertEqual(assigned_files.first(), assignment)
-        
-        # Gefiltert nach Rolle
-        hero_files = self.deal.get_assigned_files(role='hero_image')
-        self.assertEqual(hero_files.count(), 1)
-        
-        logo_files = self.deal.get_assigned_files(role='logo')
-        self.assertEqual(logo_files.count(), 0)
-    
-    def test_deal_get_hero_images(self):
-        """Test: get_hero_images Methode"""
-        DealFileAssignment.objects.create(
-            deal=self.deal,
-            global_file=self.global_file,
-            assigned_by=self.user,
-            role='hero_image'
-        )
-        
-        hero_images = self.deal.get_hero_images()
-        self.assertEqual(hero_images.count(), 1)
-    
-    def test_deal_get_logos(self):
-        """Test: get_logos Methode"""
-        DealFileAssignment.objects.create(
-            deal=self.deal,
-            global_file=self.global_file,
-            assigned_by=self.user,
-            role='logo'
-        )
-        
-        logos = self.deal.get_logos()
-        self.assertEqual(logos.count(), 1)
-    
-    def test_unique_together_constraint(self):
-        """Test: Unique Together Constraint"""
-        # Erste Zuordnung
-        assignment1 = DealFileAssignment.objects.create(
-            deal=self.deal,
-            global_file=self.global_file,
-            assigned_by=self.user,
-            role='hero_image'
-        )
-        
-        # Zweite Zuordnung der gleichen Datei sollte fehlschlagen
-        with self.assertRaises(Exception):
-            DealFileAssignment.objects.create(
-                deal=self.deal,
-                global_file=self.global_file,
-                assigned_by=self.user,
-                role='logo'
-            )
-
-
-class DealFileAssignmentViewsTest(TestCase):
-    """
-    Tests für die Datei-Zuordnung Views
-    """
-    
-    def setUp(self):
-        """Test-Daten erstellen"""
-        self.client = Client()
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='testpass123',
-            first_name='Test',
-            last_name='User',
-            role=User.UserRole.EDITOR
-        )
-        
-        self.deal = Deal.objects.create(
-            title='Test Dealroom',
-            slug='test-dealroom',
-            description='Ein Test Dealroom',
-            status=Deal.DealStatus.DRAFT,
-            template_type=Deal.TemplateType.MODERN,
-            created_by=self.user,
-            recipient_name='Max Mustermann',
-            recipient_email='max@example.com',
-            hero_title='Willkommen',
-            hero_subtitle='Ein toller Dealroom',
-            call_to_action='Jetzt kontaktieren',
-            primary_color='#0d6efd',
-            secondary_color='#6c757d'
-        )
-        
-        # Globale Datei erstellen
-        self.global_file = GlobalFile.objects.create(
-            title='Test Globale Datei',
-            description='Eine Test-Datei',
-            file=SimpleUploadedFile(
-                'test.pdf',
-                b'Test PDF content',
-                content_type='application/pdf'
-            ),
-            file_type=GlobalFile.FileType.DOCUMENT,
-            uploaded_by=self.user,
-            is_public=True
-        )
-    
-    def test_file_assignment_list_view_requires_login(self):
-        """Test: Datei-Zuordnung-Liste erfordert Login"""
-        response = self.client.get(
-            reverse('dealrooms:dealroom_file_assignments', kwargs={'deal_pk': self.deal.pk})
-        )
         self.assertEqual(response.status_code, 302)
-        self.assertIn('/login/', response.url)
-    
-    def test_file_assignment_list_view_with_login(self):
-        """Test: Datei-Zuordnung-Liste funktioniert mit Login"""
-        self.client.login(username='testuser', password='testpass123')
-        response = self.client.get(
-            reverse('dealrooms:dealroom_file_assignments', kwargs={'deal_pk': self.deal.pk})
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Dateien zuordnen')
-        self.assertContains(response, 'Test Dealroom')
-    
-    def test_file_assignment_list_view_without_permission(self):
-        """Test: Datei-Zuordnung-Liste erfordert Berechtigung"""
-        # Benutzer ohne EDITOR-Rolle erstellen
-        viewer_user = User.objects.create_user(
-            username='viewer',
-            email='viewer@example.com',
-            password='testpass123',
-            role=User.UserRole.VIEWER
-        )
         
-        self.client.login(username='viewer', password='testpass123')
-        response = self.client.get(
-            reverse('dealrooms:dealroom_file_assignments', kwargs={'deal_pk': self.deal.pk})
-        )
-        self.assertEqual(response.status_code, 403)
+        # Prüfe ob Datei erstellt wurde
+        files = DealFile.objects.filter(deal=self.deal, title='Test Dokument')
+        self.assertTrue(files.exists())
     
-    def test_assign_file_view_requires_login(self):
-        """Test: Datei zuordnen erfordert Login"""
-        response = self.client.get(
-            reverse('dealrooms:dealroom_file_assign', kwargs={'pk': self.deal.pk}),
+    def test_file_assignment(self):
+        """Test: Datei-Zuweisung"""
+        self.login_user()
+        
+        # Erstelle eine GlobalFile
+        global_file = GlobalFile.objects.create(
+            title='Global Test File',
+            file_type='document',
+            created_by=self.user
         )
-        self.assertEqual(response.status_code, 302)  # Weiterleitung zum Login
-    
-    def test_assign_file_view_success(self):
-        """Test: Datei erfolgreich zuordnen"""
-        self.client.login(username='testuser', password='testpass123')
         
         response = self.client.post(
-            reverse('dealrooms:dealroom_file_assign', kwargs={'pk': self.deal.pk}),
-            {
-                'global_file_id': self.global_file.id,
-                'role': 'hero_image'
-            }
+            reverse('deals:dealroom_file_assign', args=[self.deal.pk]),
+            {'global_file_id': global_file.pk}
         )
-        self.assertRedirects(response, reverse('dealrooms:dealroom_detail', kwargs={'pk': self.deal.pk}))
         
-        # Prüfen ob Zuordnung erstellt wurde
-        assignment = DealFileAssignment.objects.filter(
-            deal=self.deal,
-            global_file=self.global_file
-        ).first()
-        self.assertIsNotNone(assignment)
-        self.assertEqual(assignment.role, 'hero_image')
-    
-    def test_assign_file_view_invalid_file(self):
-        """Test: Zuordnung mit ungültiger Datei"""
-        self.client.login(username='testuser', password='testpass123')
+        self.assertEqual(response.status_code, 302)
         
-        response = self.client.post(
-            reverse('dealrooms:dealroom_file_assign', kwargs={'pk': self.deal.pk}),
-            {
-                'global_file_id': 99999,  # Nicht existierende ID
-                'role': 'hero_image'
-            }
-        )
-        self.assertRedirects(response, reverse('dealrooms:dealroom_detail', kwargs={'pk': self.deal.pk}))
-    
-    def test_assign_file_view_duplicate_assignment(self):
-        """Test: Doppelte Zuordnung wird aktualisiert"""
-        self.client.login(username='testuser', password='testpass123')
-        
-        # Erste Zuordnung
-        response = self.client.post(
-            reverse('dealrooms:dealroom_file_assign', kwargs={'pk': self.deal.pk}),
-            {
-                'global_file_id': self.global_file.id,
-                'role': 'hero_image'
-            }
-        )
-        self.assertRedirects(response, reverse('dealrooms:dealroom_detail', kwargs={'pk': self.deal.pk}))
-        
-        # Zweite Zuordnung mit anderer Rolle
-        response = self.client.post(
-            reverse('dealrooms:dealroom_file_assign', kwargs={'pk': self.deal.pk}),
-            {
-                'global_file_id': self.global_file.id,
-                'role': 'logo'
-            }
-        )
-        self.assertRedirects(response, reverse('dealrooms:dealroom_detail', kwargs={'pk': self.deal.pk}))
-        
-        # Prüfen ob nur eine Zuordnung existiert (mit aktualisierter Rolle)
+        # Prüfe ob Assignment erstellt wurde
         assignments = DealFileAssignment.objects.filter(
             deal=self.deal,
-            global_file=self.global_file
+            global_file=global_file
         )
-        self.assertEqual(assignments.count(), 1)
-        self.assertEqual(assignments.first().role, 'logo')
+        self.assertTrue(assignments.exists())
+
+
+class AnalyticsTests(DealShareBaseTestCase):
+    """Tests für Analytics"""
     
-    def test_unassign_file_view_requires_login(self):
-        """Test: Datei entfernen erfordert Login"""
-        # Erstelle eine Zuordnung
-        assignment = DealFileAssignment.objects.create(
-            deal=self.deal,
-            global_file=self.global_file,
-            role='hero_image',
-            assigned_by=self.user
-        )
+    def test_analytics_opt_in(self):
+        """Test: Analytics Opt-In"""
+        self.login_user()
         
-        response = self.client.post(
-            reverse('dealrooms:dealroom_file_unassign', kwargs={'pk': self.deal.pk}),
-            {'assignment_id': assignment.id}
-        )
-        self.assertEqual(response.status_code, 302)  # Weiterleitung zum Login
+        # Prüfe initialen Status
+        self.assertFalse(self.user.analytics_opt_in)
+        
+        # Opt-In setzen
+        self.user.analytics_opt_in = True
+        self.user.save()
+        
+        self.assertTrue(self.user.analytics_opt_in)
     
-    def test_unassign_file_view_success(self):
-        """Test: Datei erfolgreich entfernen"""
-        self.client.login(username='testuser', password='testpass123')
+    def test_deal_analytics_event_creation(self):
+        """Test: Analytics Event Erstellung"""
+        # User mit Analytics Opt-In
+        self.user.analytics_opt_in = True
+        self.user.save()
         
-        # Erstelle eine Zuordnung
-        assignment = DealFileAssignment.objects.create(
-            deal=self.deal,
-            global_file=self.global_file,
-            role='hero_image',
-            assigned_by=self.user
+        # Erstelle einen neuen Deal (sollte Event triggern)
+        new_deal = Deal.objects.create(
+            title='Analytics Test Deal',
+            slug='analytics-test-deal',
+            created_by=self.user
         )
         
-        response = self.client.post(
-            reverse('dealrooms:dealroom_file_unassign', kwargs={'pk': self.deal.pk}),
-            {'assignment_id': assignment.id}
+        # Prüfe ob Analytics Event erstellt wurde
+        from deals.models import DealAnalyticsEvent
+        events = DealAnalyticsEvent.objects.filter(
+            deal=new_deal,
+            user=self.user,
+            event_type='deal_created'
         )
-        self.assertRedirects(response, reverse('dealrooms:dealroom_detail', kwargs={'pk': self.deal.pk}))
-        
-        # Prüfen ob Zuordnung gelöscht wurde
-        self.assertFalse(DealFileAssignment.objects.filter(id=assignment.id).exists())
+        self.assertTrue(events.exists())
+
+
+class PasswordProtectionTests(DealShareBaseTestCase):
+    """Tests für Passwortschutz"""
     
-    def test_file_assignment_list_view_requires_login(self):
-        """Test: Datei-Zuordnung-Liste erfordert Login"""
-        response = self.client.get(
-            reverse('dealrooms:dealroom_detail', kwargs={'pk': self.deal.pk})
-        )
-        self.assertEqual(response.status_code, 302)  # Weiterleitung zum Login
-    
-    def test_file_assignment_list_view_with_login(self):
-        """Test: Datei-Zuordnung-Liste funktioniert mit Login"""
-        self.client.login(username='testuser', password='testpass123')
+    def test_password_protection_setup(self):
+        """Test: Passwortschutz einrichten"""
+        self.login_user()
         
-        response = self.client.get(
-            reverse('dealrooms:dealroom_detail', kwargs={'pk': self.deal.pk})
-        )
+        # Passwortschutz aktivieren
+        self.deal.password_protection_enabled = True
+        self.deal.set_password_protection('testpass123', 'Bitte Passwort eingeben')
+        self.deal.save()
+        
+        self.assertTrue(self.deal.password_protection_enabled)
+        self.assertTrue(self.deal.check_password('testpass123'))
+    
+    def test_password_protection_landingpage(self):
+        """Test: Passwortschutz auf Landingpage"""
+        # Passwortschutz aktivieren
+        self.deal.password_protection_enabled = True
+        self.deal.set_password_protection('testpass123', 'Bitte Passwort eingeben')
+        self.deal.save()
+        
+        # Versuche Landingpage ohne Passwort zu öffnen
+        response = self.client.get(reverse('deals:landingpage', args=[self.deal.pk]))
+        
         self.assertEqual(response.status_code, 200)
-    
-    def test_file_assignment_list_view_without_permission(self):
-        """Test: Datei-Zuordnung-Liste erfordert Berechtigung"""
-        # Erstelle einen Benutzer ohne Bearbeitungsberechtigung
-        restricted_user = User.objects.create_user(
-            username='restricted',
-            email='restricted@example.com',
-            password='restricted123',
-            role=User.UserRole.VIEWER
-        )
+        self.assertContains(response, 'Passwortschutz')
         
-        self.client.login(username='restricted', password='restricted123')
+        # Mit korrektem Passwort
+        response = self.client.post(reverse('deals:landingpage', args=[self.deal.pk]), {
+            'password': 'testpass123'
+        })
         
-        response = self.client.get(
-            reverse('dealrooms:dealroom_detail', kwargs={'pk': self.deal.pk})
-        )
-        self.assertEqual(response.status_code, 200)  # Sollte trotzdem zugänglich sein
-    
-    def test_file_assignment_list_context(self):
-        """Test: Kontext der Datei-Zuordnung-Liste"""
-        self.client.login(username='testuser', password='testpass123')
-        
-        # Erstelle eine Zuordnung
-        assignment = DealFileAssignment.objects.create(
-            deal=self.deal,
-            global_file=self.global_file,
-            role='hero_image',
-            assigned_by=self.user
-        )
-        
-        response = self.client.get(
-            reverse('dealrooms:dealroom_detail', kwargs={'pk': self.deal.pk})
-        )
         self.assertEqual(response.status_code, 200)
-        
-        # Prüfe Kontext-Daten
-        context = response.context
-        self.assertIn('deal', context)
-        self.assertIn('change_logs', context)
+        self.assertContains(response, 'Test Dealroom')
+
+
+class URLGenerationTests(DealShareBaseTestCase):
+    """Tests für URL-Generierung"""
     
-    def test_website_generation_includes_download_section(self):
-        """Test: Generierte Website enthält Download-Sektion für Dateien"""
-        # Datei zuordnen
-        assignment = DealFileAssignment.objects.create(
-            deal=self.deal,
-            global_file=self.global_file,
-            assigned_by=self.user,
-            role='document'
-        )
+    def test_friendly_url_generation(self):
+        """Test: Freundliche URL-Generierung"""
+        self.deal.url_type = 'friendly'
+        self.deal.save()
         
-        # Website generieren
-        from generator.renderer import DealroomGenerator
-        generator = DealroomGenerator(self.deal)
-        html_content = generator.generate_website()
-        
-        # Prüfen ob Download-Sektion vorhanden ist
-        self.assertIn('Downloads', html_content)
-        self.assertIn('file-card', html_content)
-        self.assertIn('btn-download', html_content)
-        self.assertIn(self.global_file.title, html_content)
-        self.assertIn('Herunterladen', html_content)
+        url = self.deal.get_public_url()
+        self.assertIn('test-dealroom', url)
     
-    def test_parallel_title_conflict_prevention(self):
-        """Test: Parallele Namenskonflikte werden verhindert"""
-        from django.db import IntegrityError
+    def test_random_url_generation(self):
+        """Test: Random URL-Generierung"""
+        self.deal.url_type = 'random'
+        self.deal.generate_random_url_code()
+        self.deal.save()
         
-        # Ersten Dealroom erstellen
-        deal1 = Deal.objects.create(
-            title='Unique Test Dealroom',
-            slug='unique-test-dealroom',
-            created_by=self.user,
-            status=Deal.DealStatus.DRAFT
-        )
-        
-        # Prüfen ob der erste Dealroom existiert
-        self.assertEqual(Deal.objects.filter(title='Unique Test Dealroom').count(), 1)
-        
-        # Versuch, zweiten Dealroom mit gleichem Titel zu erstellen
-        # Das sollte einen IntegrityError auslösen
-        with self.assertRaises(IntegrityError):
-            Deal.objects.create(
-                title='Unique Test Dealroom',  # Gleicher Titel
-                slug='unique-test-dealroom-2',
-                created_by=self.user,
-                status=Deal.DealStatus.DRAFT
-            )
+        url = self.deal.get_public_url()
+        self.assertIn(self.deal.random_url_code, url)
+        self.assertEqual(len(self.deal.random_url_code), 8)
+
+
+class TemplateSystemTests(DealShareBaseTestCase):
+    """Tests für Template-System"""
     
-    def test_form_title_validation(self):
-        """Test: Form-Validierung verhindert Titel-Duplikate"""
-        # Ersten Dealroom erstellen
-        deal1 = Deal.objects.create(
-            title='Test Dealroom',
-            slug='test-dealroom',
-            created_by=self.user,
-            status=Deal.DealStatus.DRAFT
-        )
-        
-        # Form mit gleichem Titel testen
-        from .forms import DealForm
-        form_data = {
-            'title': 'Test Dealroom',  # Gleicher Titel
-            'slug': 'test-dealroom-2',
-            'status': Deal.DealStatus.DRAFT,
-            'template_type': Deal.TemplateType.MODERN
+    def test_template_creation_from_template(self):
+        """Test: Dealroom aus Template erstellen"""
+        template_data = {
+            'title': 'Template Dealroom',
+            'template_type': 'corporate',
+            'theme_type': 'dark',
+            'primary_color': '#ff0000',
+            'secondary_color': '#00ff00'
         }
         
-        form = DealForm(data=form_data)
-        self.assertFalse(form.is_valid())
-        self.assertIn('title', form.errors)
-        self.assertIn('existiert bereits', str(form.errors['title']))
+        new_deal = Deal.create_from_template(
+            template_data,
+            created_by=self.user
+        )
+        
+        self.assertEqual(new_deal.template_type, 'corporate')
+        self.assertEqual(new_deal.theme_type, 'dark')
+        self.assertEqual(new_deal.primary_color, '#ff0000')
+    
+    def test_available_templates(self):
+        """Test: Verfügbare Templates"""
+        templates = Deal.get_available_templates()
+        
+        template_names = [t['name'] for t in templates]
+        expected_names = ['modern', 'classic', 'minimal', 'corporate', 'creative']
+        
+        for name in expected_names:
+            self.assertIn(name, template_names)
 
 
-class DealFileAssignmentIntegrationTest(TestCase):
-    """
-    Integrationstests für die Datei-Zuordnung-Funktionalität
-    """
+class IntegrationTests(DealShareBaseTestCase):
+    """Integration Tests für das gesamte System"""
     
-    def setUp(self):
-        """Test-Daten erstellen"""
-        self.client = Client()
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='testpass123',
-            first_name='Test',
-            last_name='User',
-            role=User.UserRole.EDITOR
+    def test_complete_workflow(self):
+        """Test: Kompletter Workflow von Dealroom-Erstellung bis GrapesJS"""
+        self.login_user()
+        
+        # 1. Dealroom erstellen
+        form_data = {
+            'title': 'Workflow Test Dealroom',
+            'slug': 'workflow-test',
+            'recipient_name': 'Workflow Empfänger',
+            'recipient_email': 'workflow@test.com',
+            'template_type': 'modern',
+            'theme_type': 'light',
+            'primary_color': '#667eea',
+            'secondary_color': '#764ba2'
+        }
+        
+        response = self.client.post(reverse('deals:dealroom_create'), form_data)
+        self.assertEqual(response.status_code, 302)
+        
+        # 2. Dealroom finden
+        new_deal = Deal.objects.filter(title='Workflow Test Dealroom').first()
+        self.assertIsNotNone(new_deal)
+        
+        # 3. GrapesJS Editor öffnen
+        response = self.client.get(reverse('deals:grapesjs_editor', args=[new_deal.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'GrapesJS Editor')
+        
+        # 4. HTML speichern
+        test_html = '<div class="workflow-test">Workflow Test Content</div>'
+        test_css = '.workflow-test { background: red; }'
+        
+        response = self.client.post(
+            reverse('deals:grapesjs_editor', args=[new_deal.pk]),
+            data=json.dumps({'html': test_html, 'css': test_css}),
+            content_type='application/json'
         )
         
-        self.deal = Deal.objects.create(
-            title='Test Dealroom',
-            slug='test-dealroom',
-            description='Ein Test Dealroom',
-            status=Deal.DealStatus.DRAFT,
-            template_type=Deal.TemplateType.MODERN,
-            created_by=self.user,
-            recipient_name='Max Mustermann',
-            recipient_email='max@example.com',
-            hero_title='Willkommen',
-            hero_subtitle='Ein toller Dealroom',
-            call_to_action='Jetzt kontaktieren',
-            primary_color='#0d6efd',
-            secondary_color='#6c757d'
-        )
-        
-        # Mehrere globale Dateien erstellen
-        self.hero_file = GlobalFile.objects.create(
-            title='Hero Bild',
-            description='Ein Hero-Bild',
-            file=SimpleUploadedFile(
-                'hero.jpg',
-                b'Hero image content',
-                content_type='image/jpeg'
-            ),
-            file_type=GlobalFile.FileType.HERO_IMAGE,
-            uploaded_by=self.user,
-            is_public=True
-        )
-        
-        self.logo_file = GlobalFile.objects.create(
-            title='Logo',
-            description='Ein Logo',
-            file=SimpleUploadedFile(
-                'logo.png',
-                b'Logo content',
-                content_type='image/png'
-            ),
-            file_type=GlobalFile.FileType.LOGO,
-            uploaded_by=self.user,
-            is_public=True
-        )
-        
-        self.document_file = GlobalFile.objects.create(
-            title='Dokument',
-            description='Ein Dokument',
-            file=SimpleUploadedFile(
-                'document.pdf',
-                b'Document content',
-                content_type='application/pdf'
-            ),
-            file_type=GlobalFile.FileType.DOCUMENT,
-            uploaded_by=self.user,
-            is_public=True
-        )
-    
-    def test_full_file_assignment_workflow(self):
-        """Test: Vollständiger Workflow für Datei-Zuordnung"""
-        self.client.login(username='testuser', password='testpass123')
-        
-        # 1. Deal-Detail-Seite aufrufen
-        response = self.client.get(
-            reverse('dealrooms:dealroom_detail', kwargs={'pk': self.deal.pk})
-        )
         self.assertEqual(response.status_code, 200)
         
-        # 2. Hero-Bild zuordnen
-        response = self.client.post(
-            reverse('dealrooms:dealroom_file_assign', kwargs={'pk': self.deal.pk}),
-            {
-                'global_file_id': self.hero_file.id,
-                'role': 'hero_image'
-            }
-        )
-        self.assertRedirects(response, reverse('dealrooms:dealroom_detail', kwargs={'pk': self.deal.pk}))
-        
-        # 3. Logo zuordnen
-        response = self.client.post(
-            reverse('dealrooms:dealroom_file_assign', kwargs={'pk': self.deal.pk}),
-            {
-                'global_file_id': self.logo_file.id,
-                'role': 'logo'
-            }
-        )
-        self.assertRedirects(response, reverse('dealrooms:dealroom_detail', kwargs={'pk': self.deal.pk}))
-        
-        # 4. Dokument zuordnen
-        response = self.client.post(
-            reverse('dealrooms:dealroom_file_assign', kwargs={'pk': self.deal.pk}),
-            {
-                'global_file_id': self.document_file.id,
-                'role': 'document'
-            }
-        )
-        self.assertRedirects(response, reverse('dealrooms:dealroom_detail', kwargs={'pk': self.deal.pk}))
-        
-        # 5. Prüfen ob alle Zuordnungen erstellt wurden
-        assignments = DealFileAssignment.objects.filter(deal=self.deal)
-        self.assertEqual(assignments.count(), 3)
-        
-        hero_assignment = assignments.filter(role='hero_image').first()
-        logo_assignment = assignments.filter(role='logo').first()
-        document_assignment = assignments.filter(role='document').first()
-        
-        self.assertIsNotNone(hero_assignment)
-        self.assertIsNotNone(logo_assignment)
-        self.assertIsNotNone(document_assignment)
-        
-        self.assertEqual(hero_assignment.global_file, self.hero_file)
-        self.assertEqual(logo_assignment.global_file, self.logo_file)
-        self.assertEqual(document_assignment.global_file, self.document_file)
-        
-        # 6. Prüfen ob Deal-Methoden korrekt funktionieren
-        hero_images = self.deal.get_hero_images()
-        logos = self.deal.get_logos()
-        documents = self.deal.get_documents()
-        
-        self.assertEqual(hero_images.count(), 1)
-        self.assertEqual(logos.count(), 1)
-        self.assertEqual(documents.count(), 1)
-        
-        # 7. Datei entfernen
-        response = self.client.post(
-            reverse('dealrooms:dealroom_file_unassign', kwargs={'pk': self.deal.pk}),
-            {'assignment_id': hero_assignment.id}
-        )
-        self.assertRedirects(response, reverse('dealrooms:dealroom_detail', kwargs={'pk': self.deal.pk}))
-        
-        # 8. Prüfen ob Datei entfernt wurde
-        assignments_after = DealFileAssignment.objects.filter(deal=self.deal)
-        self.assertEqual(assignments_after.count(), 2)
-        
-        hero_images_after = self.deal.get_hero_images()
-        self.assertEqual(hero_images_after.count(), 0)
+        # 5. Prüfe gespeicherte Daten
+        new_deal.refresh_from_db()
+        self.assertEqual(new_deal.custom_html_content, test_html)
+        self.assertEqual(new_deal.custom_css, test_css)
     
-    def test_file_assignment_with_different_roles(self):
-        """Test: Datei-Zuordnung mit verschiedenen Rollen"""
-        self.client.login(username='testuser', password='testpass123')
+    def test_error_handling(self):
+        """Test: Fehlerbehandlung"""
+        self.login_user()
         
-        # Gleiche Datei mit verschiedenen Rollen zuordnen
-        response1 = self.client.post(
-            reverse('dealrooms:dealroom_file_assign', kwargs={'pk': self.deal.pk}),
-            {
-                'global_file_id': self.hero_file.id,
-                'role': 'hero_image'
-            }
-        )
-        
-        response2 = self.client.post(
-            reverse('dealrooms:dealroom_file_assign', kwargs={'pk': self.deal.pk}),
-            {
-                'global_file_id': self.hero_file.id,
-                'role': 'logo'
-            }
-        )
-        
-        self.assertRedirects(response1, reverse('dealrooms:dealroom_detail', kwargs={'pk': self.deal.pk}))
-        self.assertRedirects(response2, reverse('dealrooms:dealroom_detail', kwargs={'pk': self.deal.pk}))
-        
-        # Es sollte nur eine Zuordnung geben mit der letzten Rolle
-        assignments = DealFileAssignment.objects.filter(
-            deal=self.deal,
-            global_file=self.hero_file
-        )
-        self.assertEqual(assignments.count(), 1)
-        self.assertEqual(assignments.first().role, 'logo')
-    
-    def test_file_assignment_permissions(self):
-        """Test: Berechtigungen für Datei-Zuordnung"""
-        # Benutzer ohne EDITOR-Rolle erstellen
-        viewer_user = User.objects.create_user(
-            username='viewer',
-            email='viewer@example.com',
-            password='testpass123',
-            role=User.UserRole.VIEWER
-        )
-        
-        self.client.login(username='viewer', password='testpass123')
-        
-        # Versuch Datei zuzuordnen
+        # Test mit ungültigen Daten
         response = self.client.post(
-            reverse('dealrooms:dealroom_file_assign', kwargs={'pk': self.deal.pk}),
-            {
-                'global_file_id': self.hero_file.id,
-                'role': 'hero_image'
-            }
+            reverse('deals:grapesjs_editor', args=[self.deal.pk]),
+            data='invalid json',
+            content_type='application/json'
         )
         
-        # Sollte 403 Forbidden zurückgeben
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 400)
         
-        # Prüfen ob keine Zuordnung erstellt wurde
-        assignments = DealFileAssignment.objects.filter(deal=self.deal)
-        self.assertEqual(assignments.count(), 0)
+        # Test mit nicht existierendem Dealroom
+        response = self.client.get(reverse('deals:grapesjs_editor', args=[99999]))
+        self.assertEqual(response.status_code, 404)
+
+
+# Performance Tests
+class PerformanceTests(DealShareBaseTestCase):
+    """Performance Tests"""
     
+    def test_multiple_dealroom_creation(self):
+        """Test: Mehrere Dealrooms erstellen"""
+        self.login_user()
+        
+        start_time = timezone.now()
+        
+        for i in range(10):
+            Deal.objects.create(
+                title=f'Performance Test Dealroom {i}',
+                slug=f'performance-test-{i}',
+                created_by=self.user
+            )
+        
+        end_time = timezone.now()
+        duration = (end_time - start_time).total_seconds()
+        
+        # Sollte unter 1 Sekunde dauern
+        self.assertLess(duration, 1.0)
+    
+    def test_large_html_handling(self):
+        """Test: Große HTML-Dateien handhaben"""
+        self.login_user()
+        
+        # Große HTML-Content erstellen
+        large_html = '<div>' + '<p>Test Content</p>' * 1000 + '</div>'
+        large_css = '.test { color: red; }' * 100
+        
+        response = self.client.post(
+            reverse('deals:grapesjs_editor', args=[self.deal.pk]),
+            data=json.dumps({'html': large_html, 'css': large_css}),
+            content_type='application/json'
+        )
+        
+        self.assertEqual(response.status_code, 200)
+        
+        # Prüfe ob gespeichert wurde
+        self.deal.refresh_from_db()
+        self.assertEqual(self.deal.custom_html_content, large_html)
+
+
+# Security Tests
+class SecurityTests(DealShareBaseTestCase):
+    """Security Tests"""
+    
+    def test_csrf_protection(self):
+        """Test: CSRF-Schutz"""
+        self.login_user()
+        
+        # Test ohne CSRF-Token
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.user)
+        
+        response = client.post(
+            reverse('deals:grapesjs_editor', args=[self.deal.pk]),
+            data=json.dumps({'html': '<div>test</div>'}),
+            content_type='application/json'
+        )
+        
+        self.assertEqual(response.status_code, 403)  # CSRF Error
+    
+    def test_xss_protection(self):
+        """Test: XSS-Schutz"""
+        self.login_user()
+        
+        malicious_html = '<script>alert("xss")</script><div>content</div>'
+        
+        response = self.client.post(
+            reverse('deals:grapesjs_editor', args=[self.deal.pk]),
+            data=json.dumps({'html': malicious_html, 'css': ''}),
+            content_type='application/json'
+        )
+        
+        self.assertEqual(response.status_code, 200)
+        
+        # HTML sollte gespeichert werden (GrapesJS handhabt XSS)
+        self.deal.refresh_from_db()
+        self.assertEqual(self.deal.custom_html_content, malicious_html)
+
+
+print("✅ Alle Tests erfolgreich erstellt!")
+

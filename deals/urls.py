@@ -43,9 +43,8 @@ urlpatterns = [
     # Content-Management URLs
     path('<int:deal_id>/builder/', views.LandingpageBuilderView.as_view(), name='landingpage_builder'),
     path('content-library/', views.ContentLibraryView.as_view(), name='content_library'),
-    path('content-block/create/', views.ContentBlockCreateView.as_view(), name='content_block_create'),
-    path('media/upload/', views.MediaUploadView.as_view(), name='media_upload'),
-    path('layout-template/create/', views.LayoutTemplateCreateView.as_view(), name='layout_template_create'),
+
+
     
     # Duplizierung
     path('<int:deal_id>/duplicate/', views.DuplicateDealView.as_view(), name='duplicate_deal'),

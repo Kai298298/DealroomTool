@@ -28,16 +28,16 @@
         </form>
     </div>
     <div class="col-md-4 text-end">
-        {% if user.can_edit_deals %}
         <div class="btn-group" role="group">
-                            <a href="{% url 'deals:dealroom_create' %}" class="btn btn-success">
-                    <i class="bi bi-magic"></i> Neuen Dealroom mit Designer erstellen
-                </a>
+            <a href="{% url 'deals:dealroom_create' %}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Neuer Dealroom
+            </a>
+            {% if user.can_edit_deals %}
             <a href="{% url 'deals:dealroom_batch_create' %}" class="btn btn-info">
                 <i class="bi bi-upload"></i> Batch Import
             </a>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
 </div>
 

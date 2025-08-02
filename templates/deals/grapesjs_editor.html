@@ -54,15 +54,33 @@
         cursor: pointer;
     }
     
-    .btn-back {
-        background: #6c757d;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 5px;
-        cursor: pointer;
-        text-decoration: none;
-    }
+               .btn-back {
+               background: #6c757d;
+               color: white;
+               border: none;
+               padding: 0.5rem 1rem;
+               border-radius: 5px;
+               cursor: pointer;
+               text-decoration: none;
+           }
+           
+           .btn-content-library {
+               background: #17a2b8;
+               color: white;
+               border: none;
+               padding: 0.5rem 1rem;
+               border-radius: 5px;
+               cursor: pointer;
+           }
+           
+           .btn-quick-add {
+               background: #28a745;
+               color: white;
+               border: none;
+               padding: 0.5rem 1rem;
+               border-radius: 5px;
+               cursor: pointer;
+           }
     
     /* GrapesJS Custom Styles */
     .gjs-cv-canvas {
@@ -84,17 +102,23 @@
     <!-- Editor Header -->
     <div class="editor-header">
         <h1>🎨 GrapesJS Editor - {{ deal.title }}</h1>
-        <div class="editor-actions">
-            <button class="btn-save" onclick="saveContent()">
-                <i class="bi bi-save"></i> Speichern
-            </button>
-            <button class="btn-preview" onclick="previewContent()">
-                <i class="bi bi-eye"></i> Vorschau
-            </button>
-            <a href="{% url 'deals:dealroom_detail' deal.pk %}" class="btn-back">
-                <i class="bi bi-arrow-left"></i> Zurück
-            </a>
-        </div>
+                   <div class="editor-actions">
+               <button class="btn-save" onclick="saveContent()">
+                   <i class="bi bi-save"></i> Speichern
+               </button>
+               <button class="btn-preview" onclick="previewContent()">
+                   <i class="bi bi-eye"></i> Vorschau
+               </button>
+               <button class="btn-content-library" onclick="openContentLibrary()">
+                   <i class="bi bi-collection"></i> Content-Bibliothek
+               </button>
+               <button class="btn-quick-add" onclick="openQuickAdd()">
+                   <i class="bi bi-plus-circle"></i> Schnell hinzufügen
+               </button>
+               <a href="{% url 'deals:dealroom_detail' deal.pk %}" class="btn-back">
+                   <i class="bi bi-arrow-left"></i> Zurück
+               </a>
+           </div>
     </div>
     
     <!-- GrapesJS Editor Container -->
@@ -238,6 +262,298 @@ function previewContent() {
         </html>
     `);
     previewWindow.document.close();
+}
+
+// Content Library Integration
+function openContentLibrary() {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 800px; max-height: 80vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>📚 Content-Bibliothek</h2>
+                <button onclick="this.closest('.modal').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <h3>📝 Content-Blöcke</h3>
+                    <div id="content-blocks-list" style="max-height: 300px; overflow-y: auto;">
+                        <div style="background: #f8f9fa; padding: 1rem; margin: 0.5rem 0; border-radius: 4px; cursor: pointer;" onclick="addContentBlock('Call-to-Action Standard', 'Jetzt anfragen')">
+                            <strong>Call-to-Action Standard</strong><br>
+                            <small>Jetzt anfragen</small>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 1rem; margin: 0.5rem 0; border-radius: 4px; cursor: pointer;" onclick="addContentBlock('Standard-Begrüßung', 'Willkommen in Ihrem persönlichen Dealroom! Wir freuen uns, Ihnen eine maßgeschneiderte Lösung anzubieten.')">
+                            <strong>Standard-Begrüßung</strong><br>
+                            <small>Willkommen in Ihrem persönlichen Dealroom!</small>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 1rem; margin: 0.5rem 0; border-radius: 4px; cursor: pointer;" onclick="addContentBlock('Software-Produktbeschreibung', 'Eine umfassende Software-Lösung für Ihr Unternehmen mit modernster Technologie und benutzerfreundlicher Oberfläche.')">
+                            <strong>Software-Produktbeschreibung</strong><br>
+                            <small>Eine umfassende Software-Lösung...</small>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3>🖼️ Verfügbare Medien</h3>
+                    <div id="media-list" style="max-height: 300px; overflow-y: auto;">
+                        <div style="background: #f8f9fa; padding: 1rem; margin: 0.5rem 0; border-radius: 4px; cursor: pointer;" onclick="addMediaPlaceholder('Logo')">
+                            <strong>Logo</strong><br>
+                            <small>Unternehmenslogo</small>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 1rem; margin: 0.5rem 0; border-radius: 4px; cursor: pointer;" onclick="addMediaPlaceholder('Hero-Bild')">
+                            <strong>Hero-Bild</strong><br>
+                            <small>Hauptbild für Landingpage</small>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 1rem; margin: 0.5rem 0; border-radius: 4px; cursor: pointer;" onclick="addMediaPlaceholder('Produktbild')">
+                            <strong>Produktbild</strong><br>
+                            <small>Produktabbildung</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.className = 'modal';
+    document.body.appendChild(modal);
+}
+
+function addContentBlock(title, content) {
+    editor.addComponent(`
+        <div style="padding: 1rem; background: #f8f9fa; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #667eea;">
+            <h3 style="margin-bottom: 0.5rem; color: #333;">${title}</h3>
+            <p style="margin: 0; line-height: 1.5; color: #666;">${content}</p>
+        </div>
+    `);
+    document.querySelector('.modal').remove();
+}
+
+function addMediaPlaceholder(title) {
+    editor.addComponent(`
+        <div style="text-align: center; padding: 2rem; background: #f8f9fa; border: 2px dashed #ddd; border-radius: 8px; margin: 1rem 0;">
+            <div style="width: 100px; height: 100px; background: #e9ecef; border-radius: 8px; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; color: #999;">
+                <i style="font-size: 2rem;">🖼️</i>
+            </div>
+            <h4 style="margin-bottom: 0.5rem; color: #333;">${title}</h4>
+            <p style="margin: 0; color: #666; font-size: 0.9rem;">Klicken Sie hier, um ein Bild hochzuladen</p>
+        </div>
+    `);
+    document.querySelector('.modal').remove();
+}
+
+// Quick Add Function
+function openQuickAdd() {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>⚡ Schnell hinzufügen</h2>
+                <button onclick="this.closest('.modal').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                <button onclick="addHeroSection()" style="padding: 1rem; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; text-align: center;">
+                    <h4>🎯 Hero-Sektion</h4>
+                    <small>Große Überschrift mit Call-to-Action</small>
+                </button>
+                
+                <button onclick="addInfoCard()" style="padding: 1rem; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; text-align: center;">
+                    <h4>📋 Info-Karte</h4>
+                    <small>Produktinformationen in Karten</small>
+                </button>
+                
+                <button onclick="addContactForm()" style="padding: 1rem; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; text-align: center;">
+                    <h4>📞 Kontaktformular</h4>
+                    <small>Formular für Kundenkontakt</small>
+                </button>
+                
+                <button onclick="addTestimonial()" style="padding: 1rem; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; text-align: center;">
+                    <h4>💬 Testimonial</h4>
+                    <small>Kundenbewertung</small>
+                </button>
+                
+                <button onclick="addPricingTable()" style="padding: 1rem; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; text-align: center;">
+                    <h4>💰 Preistabelle</h4>
+                    <small>Preise und Features</small>
+                </button>
+                
+                <button onclick="addFAQ()" style="padding: 1rem; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; text-align: center;">
+                    <h4>❓ FAQ</h4>
+                    <small>Häufige Fragen</small>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    modal.className = 'modal';
+    document.body.appendChild(modal);
+}
+
+function addHeroSection() {
+    editor.addComponent(`
+        <section style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 80px 20px; text-align: center;">
+            <div style="max-width: 800px; margin: 0 auto;">
+                <h1 style="font-size: 3rem; margin-bottom: 1rem;">Ihr Dealroom Titel</h1>
+                <p style="font-size: 1.2rem; margin-bottom: 2rem; opacity: 0.9;">Professionelle Präsentation Ihrer Lösung</p>
+                <button style="background: white; color: #667eea; border: none; padding: 1rem 2rem; border-radius: 8px; font-size: 1.1rem; cursor: pointer;">Jetzt anfragen</button>
+            </div>
+        </section>
+    `);
+    document.querySelector('.modal').remove();
+}
+
+function addInfoCard() {
+    editor.addComponent(`
+        <div style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin: 2rem 0;">
+            <h3 style="color: #333; margin-bottom: 1rem;">Produktübersicht</h3>
+            <p style="line-height: 1.6; color: #666;">Beschreiben Sie hier Ihre Lösung und die wichtigsten Features.</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1.5rem;">
+                <div style="text-align: center; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <h4 style="color: #667eea; margin-bottom: 0.5rem;">Feature 1</h4>
+                    <p style="margin: 0; font-size: 0.9rem;">Beschreibung</p>
+                </div>
+                <div style="text-align: center; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <h4 style="color: #667eea; margin-bottom: 0.5rem;">Feature 2</h4>
+                    <p style="margin: 0; font-size: 0.9rem;">Beschreibung</p>
+                </div>
+                <div style="text-align: center; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <h4 style="color: #667eea; margin-bottom: 0.5rem;">Feature 3</h4>
+                    <p style="margin: 0; font-size: 0.9rem;">Beschreibung</p>
+                </div>
+            </div>
+        </div>
+    `);
+    document.querySelector('.modal').remove();
+}
+
+function addContactForm() {
+    editor.addComponent(`
+        <div style="background: #f8f9fa; padding: 3rem 2rem; border-radius: 12px; margin: 2rem 0;">
+            <div style="max-width: 600px; margin: 0 auto;">
+                <h3 style="text-align: center; margin-bottom: 2rem;">Kontaktieren Sie uns</h3>
+                <form style="display: grid; gap: 1rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <input type="text" placeholder="Vorname" style="padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px;">
+                        <input type="text" placeholder="Nachname" style="padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px;">
+                    </div>
+                    <input type="email" placeholder="E-Mail" style="padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px;">
+                    <textarea placeholder="Ihre Nachricht" rows="4" style="padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; resize: vertical;"></textarea>
+                    <button type="submit" style="background: #667eea; color: white; border: none; padding: 1rem; border-radius: 6px; cursor: pointer;">Nachricht senden</button>
+                </form>
+            </div>
+        </div>
+    `);
+    document.querySelector('.modal').remove();
+}
+
+function addTestimonial() {
+    editor.addComponent(`
+        <div style="background: white; padding: 3rem 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin: 2rem 0;">
+            <div style="max-width: 800px; margin: 0 auto; text-align: center;">
+                <h3 style="margin-bottom: 2rem;">Was unsere Kunden sagen</h3>
+                <div style="background: #f8f9fa; padding: 2rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <p style="font-style: italic; font-size: 1.1rem; margin-bottom: 1rem;">"Ausgezeichnete Lösung! Hat unsere Erwartungen übertroffen."</p>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
+                        <div style="width: 50px; height: 50px; background: #667eea; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">JD</div>
+                        <div>
+                            <strong>Max Mustermann</strong><br>
+                            <small style="color: #666;">Geschäftsführer, Muster GmbH</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `);
+    document.querySelector('.modal').remove();
+}
+
+function addPricingTable() {
+    editor.addComponent(`
+        <div style="background: #f8f9fa; padding: 3rem 2rem; border-radius: 12px; margin: 2rem 0;">
+            <div style="max-width: 1000px; margin: 0 auto;">
+                <h3 style="text-align: center; margin-bottom: 2rem;">Unsere Preise</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                    <div style="background: white; padding: 2rem; border-radius: 8px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h4 style="color: #667eea; margin-bottom: 1rem;">Starter</h4>
+                        <div style="font-size: 2rem; font-weight: bold; margin-bottom: 1rem;">€99<span style="font-size: 1rem;">/Monat</span></div>
+                        <ul style="list-style: none; padding: 0; margin-bottom: 2rem;">
+                            <li style="padding: 0.5rem 0;">✓ Feature 1</li>
+                            <li style="padding: 0.5rem 0;">✓ Feature 2</li>
+                            <li style="padding: 0.5rem 0;">✓ Feature 3</li>
+                        </ul>
+                        <button style="background: #667eea; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer;">Jetzt wählen</button>
+                    </div>
+                    <div style="background: white; padding: 2rem; border-radius: 8px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border: 2px solid #667eea;">
+                        <h4 style="color: #667eea; margin-bottom: 1rem;">Professional</h4>
+                        <div style="font-size: 2rem; font-weight: bold; margin-bottom: 1rem;">€199<span style="font-size: 1rem;">/Monat</span></div>
+                        <ul style="list-style: none; padding: 0; margin-bottom: 2rem;">
+                            <li style="padding: 0.5rem 0;">✓ Alle Starter Features</li>
+                            <li style="padding: 0.5rem 0;">✓ Premium Support</li>
+                            <li style="padding: 0.5rem 0;">✓ Erweiterte Funktionen</li>
+                        </ul>
+                        <button style="background: #667eea; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer;">Jetzt wählen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `);
+    document.querySelector('.modal').remove();
+}
+
+function addFAQ() {
+    editor.addComponent(`
+        <div style="background: white; padding: 3rem 2rem; border-radius: 12px; margin: 2rem 0;">
+            <div style="max-width: 800px; margin: 0 auto;">
+                <h3 style="text-align: center; margin-bottom: 2rem;">Häufige Fragen</h3>
+                <div style="display: grid; gap: 1rem;">
+                    <div style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+                        <button style="width: 100%; padding: 1rem; background: #f8f9fa; border: none; text-align: left; cursor: pointer; font-weight: bold;">Wie funktioniert das System?</button>
+                        <div style="padding: 1rem; border-top: 1px solid #ddd;">
+                            <p>Hier steht die Antwort auf die häufig gestellte Frage.</p>
+                        </div>
+                    </div>
+                    <div style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+                        <button style="width: 100%; padding: 1rem; background: #f8f9fa; border: none; text-align: left; cursor: pointer; font-weight: bold;">Was kostet die Lösung?</button>
+                        <div style="padding: 1rem; border-top: 1px solid #ddd;">
+                            <p>Unsere Preise sind transparent und fair. Kontaktieren Sie uns für ein individuelles Angebot.</p>
+                        </div>
+                    </div>
+                    <div style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+                        <button style="width: 100%; padding: 1rem; background: #f8f9fa; border: none; text-align: left; cursor: pointer; font-weight: bold;">Gibt es Support?</button>
+                        <div style="padding: 1rem; border-top: 1px solid #ddd;">
+                            <p>Ja, wir bieten umfassenden Support für alle unsere Kunden.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `);
+    document.querySelector('.modal').remove();
 }
 
 // Auto-save every 30 seconds
