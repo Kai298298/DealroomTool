@@ -102,23 +102,26 @@
     <!-- Editor Header -->
     <div class="editor-header">
         <h1>🎨 GrapesJS Editor - {{ deal.title }}</h1>
-                   <div class="editor-actions">
-               <button class="btn-save" onclick="saveContent()">
-                   <i class="bi bi-save"></i> Speichern
-               </button>
-               <button class="btn-preview" onclick="previewContent()">
-                   <i class="bi bi-eye"></i> Vorschau
-               </button>
-               <button class="btn-content-library" onclick="openContentLibrary()">
-                   <i class="bi bi-collection"></i> Content-Bibliothek
-               </button>
-               <button class="btn-quick-add" onclick="openQuickAdd()">
-                   <i class="bi bi-plus-circle"></i> Schnell hinzufügen
-               </button>
-               <a href="{% url 'deals:dealroom_detail' deal.pk %}" class="btn-back">
-                   <i class="bi bi-arrow-left"></i> Zurück
-               </a>
-           </div>
+        <div class="editor-actions">
+            <button class="btn-save" onclick="saveContent()">
+                <i class="bi bi-save"></i> Speichern
+            </button>
+            <button class="btn-preview" onclick="previewContent()">
+                <i class="bi bi-eye"></i> Vorschau
+            </button>
+            <button class="btn-elements" onclick="openElementLibrary()">
+                <i class="bi bi-grid-3x3"></i> Elemente
+            </button>
+            <button class="btn-content-library" onclick="openContentLibrary()">
+                <i class="bi bi-collection"></i> Content
+            </button>
+            <button class="btn-quick-add" onclick="openQuickAdd()">
+                <i class="bi bi-plus-circle"></i> Schnell
+            </button>
+            <a href="{% url 'deals:dealroom_detail' deal.pk %}" class="btn-back">
+                <i class="bi bi-arrow-left"></i> Zurück
+            </a>
+        </div>
     </div>
     
     <!-- GrapesJS Editor Container -->
@@ -266,6 +269,11 @@ function previewContent() {
 
 // Content Library Integration
 function openContentLibrary() {
+    if (typeof editor === 'undefined') {
+        alert('Editor wird noch geladen... Bitte warten Sie einen Moment.');
+        return;
+    }
+    
     const modal = document.createElement('div');
     modal.style.cssText = `
         position: fixed;
@@ -331,16 +339,27 @@ function openContentLibrary() {
 }
 
 function addContentBlock(title, content) {
+    if (typeof editor === 'undefined') {
+        alert('Editor wird noch geladen... Bitte warten Sie einen Moment.');
+        return;
+    }
+    
     editor.addComponent(`
         <div style="padding: 1rem; background: #f8f9fa; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #667eea;">
             <h3 style="margin-bottom: 0.5rem; color: #333;">${title}</h3>
             <p style="margin: 0; line-height: 1.5; color: #666;">${content}</p>
         </div>
     `);
-    document.querySelector('.modal').remove();
+    const modal = document.querySelector('.modal');
+    if (modal) modal.remove();
 }
 
 function addMediaPlaceholder(title) {
+    if (typeof editor === 'undefined') {
+        alert('Editor wird noch geladen... Bitte warten Sie einen Moment.');
+        return;
+    }
+    
     editor.addComponent(`
         <div style="text-align: center; padding: 2rem; background: #f8f9fa; border: 2px dashed #ddd; border-radius: 8px; margin: 1rem 0;">
             <div style="width: 100px; height: 100px; background: #e9ecef; border-radius: 8px; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; color: #999;">
@@ -350,11 +369,105 @@ function addMediaPlaceholder(title) {
             <p style="margin: 0; color: #666; font-size: 0.9rem;">Klicken Sie hier, um ein Bild hochzuladen</p>
         </div>
     `);
-    document.querySelector('.modal').remove();
+    const modal = document.querySelector('.modal');
+    if (modal) modal.remove();
+}
+
+// Element Library Function
+function openElementLibrary() {
+    if (typeof editor === 'undefined') {
+        alert('Editor wird noch geladen... Bitte warten Sie einen Moment.');
+        return;
+    }
+    
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 1200px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>🧩 CMS-Element-Bibliothek</h2>
+                <button onclick="this.closest('.modal').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                <!-- CMS-Elemente aus der Datenbank -->
+                {% for element in cms_elements %}
+                <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background: #f8f9fa;">
+                    <h4 style="margin-bottom: 0.5rem;">{{ element.get_category_display }}</h4>
+                    <button onclick="addCMSElement('{{ element.id }}')" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">
+                        {{ element.title }}
+                    </button>
+                    <small style="color: #666;">{{ element.description|default:"" }}</small>
+                </div>
+                {% endfor %}
+                
+                <!-- Statische Elemente als Fallback -->
+                <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background: #f8f9fa;">
+                    <h4 style="margin-bottom: 0.5rem;">📐 Layout</h4>
+                    <button onclick="addContainer()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Container</button>
+                    <button onclick="addRow()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Zeile</button>
+                    <button onclick="addColumn()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Spalte</button>
+                    <button onclick="addSection()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Sektion</button>
+                </div>
+                
+                <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background: #f8f9fa;">
+                    <h4 style="margin-bottom: 0.5rem;">📝 Text</h4>
+                    <button onclick="addHeading()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Überschrift</button>
+                    <button onclick="addParagraph()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Absatz</button>
+                    <button onclick="addList()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Liste</button>
+                    <button onclick="addQuote()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Zitat</button>
+                </div>
+                
+                <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background: #f8f9fa;">
+                    <h4 style="margin-bottom: 0.5rem;">🖼️ Medien</h4>
+                    <button onclick="addImage()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Bild</button>
+                    <button onclick="addVideo()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Video</button>
+                    <button onclick="addIcon()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Icon</button>
+                    <button onclick="addGallery()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Galerie</button>
+                </div>
+                
+                <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background: #f8f9fa;">
+                    <h4 style="margin-bottom: 0.5rem;">💼 Business</h4>
+                    <button onclick="addCard()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Karte</button>
+                    <button onclick="addTable()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Tabelle</button>
+                    <button onclick="addTimeline()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Zeitlinie</button>
+                    <button onclick="addStats()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Statistiken</button>
+                </div>
+                
+                <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background: #f8f9fa;">
+                    <h4 style="margin-bottom: 0.5rem;">📁 Dateien & Daten</h4>
+                    <button onclick="addFileDownload()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Datei-Download</button>
+                    <button onclick="addDocumentViewer()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Dokument-Viewer</button>
+                    <button onclick="addDataTable()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Daten-Tabelle</button>
+                    <button onclick="addProgressTracker()" style="width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">Fortschritt-Tracker</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.className = 'modal';
+    document.body.appendChild(modal);
 }
 
 // Quick Add Function
 function openQuickAdd() {
+    if (typeof editor === 'undefined') {
+        alert('Editor wird noch geladen... Bitte warten Sie einen Moment.');
+        return;
+    }
+    
     const modal = document.createElement('div');
     modal.style.cssText = `
         position: fixed;
@@ -415,6 +528,11 @@ function openQuickAdd() {
 }
 
 function addHeroSection() {
+    if (typeof editor === 'undefined') {
+        alert('Editor wird noch geladen... Bitte warten Sie einen Moment.');
+        return;
+    }
+    
     editor.addComponent(`
         <section style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 80px 20px; text-align: center;">
             <div style="max-width: 800px; margin: 0 auto;">
@@ -424,10 +542,16 @@ function addHeroSection() {
             </div>
         </section>
     `);
-    document.querySelector('.modal').remove();
+    const modal = document.querySelector('.modal');
+    if (modal) modal.remove();
 }
 
 function addInfoCard() {
+    if (typeof editor === 'undefined') {
+        alert('Editor wird noch geladen... Bitte warten Sie einen Moment.');
+        return;
+    }
+    
     editor.addComponent(`
         <div style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin: 2rem 0;">
             <h3 style="color: #333; margin-bottom: 1rem;">Produktübersicht</h3>
@@ -448,10 +572,16 @@ function addInfoCard() {
             </div>
         </div>
     `);
-    document.querySelector('.modal').remove();
+    const modal = document.querySelector('.modal');
+    if (modal) modal.remove();
 }
 
 function addContactForm() {
+    if (typeof editor === 'undefined') {
+        alert('Editor wird noch geladen... Bitte warten Sie einen Moment.');
+        return;
+    }
+    
     editor.addComponent(`
         <div style="background: #f8f9fa; padding: 3rem 2rem; border-radius: 12px; margin: 2rem 0;">
             <div style="max-width: 600px; margin: 0 auto;">
@@ -468,10 +598,16 @@ function addContactForm() {
             </div>
         </div>
     `);
-    document.querySelector('.modal').remove();
+    const modal = document.querySelector('.modal');
+    if (modal) modal.remove();
 }
 
 function addTestimonial() {
+    if (typeof editor === 'undefined') {
+        alert('Editor wird noch geladen... Bitte warten Sie einen Moment.');
+        return;
+    }
+    
     editor.addComponent(`
         <div style="background: white; padding: 3rem 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin: 2rem 0;">
             <div style="max-width: 800px; margin: 0 auto; text-align: center;">
@@ -489,10 +625,16 @@ function addTestimonial() {
             </div>
         </div>
     `);
-    document.querySelector('.modal').remove();
+    const modal = document.querySelector('.modal');
+    if (modal) modal.remove();
 }
 
 function addPricingTable() {
+    if (typeof editor === 'undefined') {
+        alert('Editor wird noch geladen... Bitte warten Sie einen Moment.');
+        return;
+    }
+    
     editor.addComponent(`
         <div style="background: #f8f9fa; padding: 3rem 2rem; border-radius: 12px; margin: 2rem 0;">
             <div style="max-width: 1000px; margin: 0 auto;">
@@ -522,10 +664,16 @@ function addPricingTable() {
             </div>
         </div>
     `);
-    document.querySelector('.modal').remove();
+    const modal = document.querySelector('.modal');
+    if (modal) modal.remove();
 }
 
 function addFAQ() {
+    if (typeof editor === 'undefined') {
+        alert('Editor wird noch geladen... Bitte warten Sie einen Moment.');
+        return;
+    }
+    
     editor.addComponent(`
         <div style="background: white; padding: 3rem 2rem; border-radius: 12px; margin: 2rem 0;">
             <div style="max-width: 800px; margin: 0 auto;">
@@ -553,7 +701,459 @@ function addFAQ() {
             </div>
         </div>
     `);
-    document.querySelector('.modal').remove();
+    const modal = document.querySelector('.modal');
+    if (modal) modal.remove();
+}
+
+// Layout Elements
+function addContainer() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`<div style="max-width: 1200px; margin: 0 auto; padding: 2rem;">Container Inhalt</div>`);
+    closeModal();
+}
+
+function addRow() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`<div style="display: flex; gap: 1rem; margin: 1rem 0;">Zeile Inhalt</div>`);
+    closeModal();
+}
+
+function addColumn() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`<div style="flex: 1; padding: 1rem;">Spalte Inhalt</div>`);
+    closeModal();
+}
+
+function addSection() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`<section style="padding: 3rem 2rem; margin: 2rem 0;">Sektion Inhalt</section>`);
+    closeModal();
+}
+
+// Text Elements
+function addHeading() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`<h2 style="margin: 1rem 0;">Neue Überschrift</h2>`);
+    closeModal();
+}
+
+function addParagraph() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`<p style="line-height: 1.6; margin: 1rem 0;">Neuer Absatz mit Text.</p>`);
+    closeModal();
+}
+
+function addList() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <ul style="margin: 1rem 0; padding-left: 2rem;">
+            <li>Liste Punkt 1</li>
+            <li>Liste Punkt 2</li>
+            <li>Liste Punkt 3</li>
+        </ul>
+    `);
+    closeModal();
+}
+
+function addQuote() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <blockquote style="border-left: 4px solid #667eea; padding-left: 1rem; margin: 1rem 0; font-style: italic;">
+            "Ein inspirierendes Zitat hier."
+        </blockquote>
+    `);
+    closeModal();
+}
+
+// Media Elements
+function addImage() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <div style="text-align: center; margin: 1rem 0;">
+            <img src="https://via.placeholder.com/400x300" alt="Bild" style="max-width: 100%; height: auto; border-radius: 8px;">
+        </div>
+    `);
+    closeModal();
+}
+
+function addVideo() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <div style="text-align: center; margin: 1rem 0;">
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen style="max-width: 100%; border-radius: 8px;"></iframe>
+        </div>
+    `);
+    closeModal();
+}
+
+function addIcon() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <div style="text-align: center; margin: 1rem 0;">
+            <i style="font-size: 3rem; color: #667eea;">⭐</i>
+        </div>
+    `);
+    closeModal();
+}
+
+function addGallery() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0;">
+            <img src="https://via.placeholder.com/200x150" alt="Galerie 1" style="width: 100%; height: auto; border-radius: 8px;">
+            <img src="https://via.placeholder.com/200x150" alt="Galerie 2" style="width: 100%; height: auto; border-radius: 8px;">
+            <img src="https://via.placeholder.com/200x150" alt="Galerie 3" style="width: 100%; height: auto; border-radius: 8px;">
+        </div>
+    `);
+    closeModal();
+}
+
+// Interactive Elements
+function addButton() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`<button style="background: #667eea; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; margin: 1rem 0;">Button</button>`);
+    closeModal();
+}
+
+function addLink() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`<a href="#" style="color: #667eea; text-decoration: none; margin: 1rem 0;">Link</a>`);
+    closeModal();
+}
+
+function addForm() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <form style="max-width: 500px; margin: 1rem 0;">
+            <input type="text" placeholder="Name" style="width: 100%; padding: 0.75rem; margin: 0.5rem 0; border: 1px solid #ddd; border-radius: 4px;">
+            <input type="email" placeholder="E-Mail" style="width: 100%; padding: 0.75rem; margin: 0.5rem 0; border: 1px solid #ddd; border-radius: 4px;">
+            <button type="submit" style="background: #667eea; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer;">Senden</button>
+        </form>
+    `);
+    closeModal();
+}
+
+function addMap() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <div style="text-align: center; margin: 1rem 0;">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2428.4093281497!2d13.3777059!3d52.5162746!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNTLCsDMwJzU4LjYiTiAxM8KwMjInNDAuMCJF!5e0!3m2!1sde!2sde!4v1234567890" width="600" height="450" style="border:0; max-width: 100%; border-radius: 8px;" allowfullscreen="" loading="lazy"></iframe>
+        </div>
+    `);
+    closeModal();
+}
+
+// Business Elements
+function addCard() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <div style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin: 1rem 0;">
+            <h3 style="margin-bottom: 1rem;">Karten Titel</h3>
+            <p style="line-height: 1.6; color: #666;">Karten Inhalt hier.</p>
+        </div>
+    `);
+    closeModal();
+}
+
+function addTable() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <table style="width: 100%; border-collapse: collapse; margin: 1rem 0;">
+            <thead>
+                <tr style="background: #f8f9fa;">
+                    <th style="padding: 0.75rem; border: 1px solid #ddd;">Spalte 1</th>
+                    <th style="padding: 0.75rem; border: 1px solid #ddd;">Spalte 2</th>
+                    <th style="padding: 0.75rem; border: 1px solid #ddd;">Spalte 3</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">Daten 1</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">Daten 2</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">Daten 3</td>
+                </tr>
+            </tbody>
+        </table>
+    `);
+    closeModal();
+}
+
+function addTimeline() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <div style="margin: 1rem 0;">
+            <div style="border-left: 2px solid #667eea; padding-left: 2rem; margin: 1rem 0;">
+                <h4 style="margin-bottom: 0.5rem;">2023</h4>
+                <p>Timeline Ereignis 1</p>
+            </div>
+            <div style="border-left: 2px solid #667eea; padding-left: 2rem; margin: 1rem 0;">
+                <h4 style="margin-bottom: 0.5rem;">2024</h4>
+                <p>Timeline Ereignis 2</p>
+            </div>
+        </div>
+    `);
+    closeModal();
+}
+
+function addStats() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin: 1rem 0;">
+            <div style="text-align: center; padding: 1rem;">
+                <div style="font-size: 2rem; font-weight: bold; color: #667eea;">100%</div>
+                <div>Zufriedenheit</div>
+            </div>
+            <div style="text-align: center; padding: 1rem;">
+                <div style="font-size: 2rem; font-weight: bold; color: #667eea;">500+</div>
+                <div>Kunden</div>
+            </div>
+        </div>
+    `);
+    closeModal();
+}
+
+// Social Elements
+function addSocialShare() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <div style="text-align: center; margin: 1rem 0;">
+            <button style="background: #1877f2; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; margin: 0.25rem; cursor: pointer;">Facebook</button>
+            <button style="background: #1da1f2; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; margin: 0.25rem; cursor: pointer;">Twitter</button>
+            <button style="background: #0077b5; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; margin: 0.25rem; cursor: pointer;">LinkedIn</button>
+        </div>
+    `);
+    closeModal();
+}
+
+function addComments() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <div style="margin: 1rem 0;">
+            <h4>Kommentare</h4>
+            <textarea placeholder="Kommentar hinzufügen..." style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; margin: 0.5rem 0;"></textarea>
+            <button style="background: #667eea; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Kommentieren</button>
+        </div>
+    `);
+    closeModal();
+}
+
+function addRating() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <div style="text-align: center; margin: 1rem 0;">
+            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">⭐⭐⭐⭐⭐</div>
+            <div>Bewertung (5/5)</div>
+        </div>
+    `);
+    closeModal();
+}
+
+function addFollow() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <div style="text-align: center; margin: 1rem 0;">
+            <button style="background: #667eea; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer;">Folgen</button>
+        </div>
+    `);
+    closeModal();
+}
+
+// Advanced Elements
+function addAccordion() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <div style="margin: 1rem 0;">
+            <details style="border: 1px solid #ddd; border-radius: 4px; margin: 0.5rem 0;">
+                <summary style="padding: 1rem; cursor: pointer; background: #f8f9fa;">Akkordeon Titel</summary>
+                <div style="padding: 1rem;">Akkordeon Inhalt hier.</div>
+            </details>
+        </div>
+    `);
+    closeModal();
+}
+
+function addTabs() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <div style="margin: 1rem 0;">
+            <div style="border-bottom: 1px solid #ddd;">
+                <button style="padding: 0.75rem 1rem; border: none; background: none; cursor: pointer; border-bottom: 2px solid #667eea;">Tab 1</button>
+                <button style="padding: 0.75rem 1rem; border: none; background: none; cursor: pointer;">Tab 2</button>
+            </div>
+            <div style="padding: 1rem;">Tab Inhalt hier.</div>
+        </div>
+    `);
+    closeModal();
+}
+
+function addModal() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <div style="margin: 1rem 0;">
+            <button style="background: #667eea; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer;">Modal öffnen</button>
+            <div style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+                <div style="background: white; margin: 10% auto; padding: 2rem; max-width: 500px; border-radius: 8px;">
+                    <h3>Modal Titel</h3>
+                    <p>Modal Inhalt hier.</p>
+                    <button style="background: #667eea; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Schließen</button>
+                </div>
+            </div>
+        </div>
+    `);
+    closeModal();
+}
+
+function addSlider() {
+    if (typeof editor === 'undefined') return;
+    editor.addComponent(`
+        <div style="margin: 1rem 0;">
+            <div style="position: relative; overflow: hidden; border-radius: 8px;">
+                <div style="display: flex; transition: transform 0.3s;">
+                    <div style="min-width: 100%; text-align: center; padding: 2rem;">
+                        <h3>Slide 1</h3>
+                        <p>Slider Inhalt 1</p>
+                    </div>
+                    <div style="min-width: 100%; text-align: center; padding: 2rem;">
+                        <h3>Slide 2</h3>
+                        <p>Slider Inhalt 2</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `);
+    closeModal();
+}
+
+// CMS-Element Funktionen
+function addCMSElement(elementId) {
+    if (typeof editor === 'undefined') return;
+    
+    // AJAX-Request für CMS-Element-Daten
+    fetch(`/dealrooms/api/cms-element/${elementId}/`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            editor.addComponent(data.html);
+            closeModal();
+        } else {
+            alert('Fehler beim Laden des CMS-Elements: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Fehler beim Laden des CMS-Elements');
+    });
+}
+
+// Datei-bezogene Elemente
+function addFileDownload() {
+    if (typeof editor === 'undefined') return;
+    
+    const files = {{ deal_files|safe }};
+    let fileList = '';
+    
+    if (files && files.length > 0) {
+        fileList = files.map(file => `
+            <div style="padding: 1rem; border: 1px solid #ddd; border-radius: 8px; margin: 0.5rem 0;">
+                <h4 style="margin-bottom: 0.5rem;">${file.title}</h4>
+                <p style="margin-bottom: 0.5rem; color: #666;">${file.description || ''}</p>
+                <a href="${file.file_url}" download style="background: #667eea; color: white; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none;">Download</a>
+            </div>
+        `).join('');
+    } else {
+        fileList = '<p style="color: #666;">Keine Dateien verfügbar</p>';
+    }
+    
+    editor.addComponent(`
+        <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin: 1rem 0;">
+            <h3 style="margin-bottom: 1rem;">📁 Verfügbare Dateien</h3>
+            ${fileList}
+        </div>
+    `);
+    closeModal();
+}
+
+function addDocumentViewer() {
+    if (typeof editor === 'undefined') return;
+    
+    editor.addComponent(`
+        <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin: 1rem 0;">
+            <h3 style="margin-bottom: 1rem;">📄 Dokument-Viewer</h3>
+            <div style="border: 2px dashed #ddd; border-radius: 8px; padding: 2rem; text-align: center;">
+                <p style="color: #666;">Dokument wird hier angezeigt</p>
+                <button style="background: #667eea; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; margin-top: 1rem;">Dokument öffnen</button>
+            </div>
+        </div>
+    `);
+    closeModal();
+}
+
+function addDataTable() {
+    if (typeof editor === 'undefined') return;
+    
+    editor.addComponent(`
+        <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin: 1rem 0;">
+            <h3 style="margin-bottom: 1rem;">📊 Daten-Tabelle</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8f9fa;">
+                        <th style="padding: 0.75rem; border: 1px solid #ddd;">Datum</th>
+                        <th style="padding: 0.75rem; border: 1px solid #ddd;">Status</th>
+                        <th style="padding: 0.75rem; border: 1px solid #ddd;">Aktion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd;">01.01.2024</td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd;">Aktiv</td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd;">Details</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `);
+    closeModal();
+}
+
+function addProgressTracker() {
+    if (typeof editor === 'undefined') return;
+    
+    editor.addComponent(`
+        <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin: 1rem 0;">
+            <h3 style="margin-bottom: 1rem;">📈 Fortschritt-Tracker</h3>
+            <div style="background: #f8f9fa; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Deal-Fortschritt</span>
+                    <span>75%</span>
+                </div>
+                <div style="background: #e9ecef; border-radius: 4px; height: 8px;">
+                    <div style="background: #667eea; height: 100%; width: 75%; border-radius: 4px;"></div>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div style="text-align: center; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <div style="font-size: 1.5rem; font-weight: bold; color: #667eea;">3</div>
+                    <div>Schritte</div>
+                </div>
+                <div style="text-align: center; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <div style="font-size: 1.5rem; font-weight: bold; color: #667eea;">2</div>
+                    <div>Abgeschlossen</div>
+                </div>
+            </div>
+        </div>
+    `);
+    closeModal();
+}
+
+// Helper function to close modal
+function closeModal() {
+    const modal = document.querySelector('.modal');
+    if (modal) modal.remove();
 }
 
 // Auto-save every 30 seconds

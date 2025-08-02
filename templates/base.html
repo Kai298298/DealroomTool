@@ -1,11 +1,10 @@
 {% load static %}
-{% load static %}
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>DealShare{% block title %}{% endblock %}</title>
+    <title>{% block title %}DealShare{% endblock %}</title>
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -34,8 +33,21 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'deals:dealroom_list' %}">🎯 Dealrooms</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'deals:content_library' %}">📚 Content-Bibliothek</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="resourcesDropdown" role="button" data-bs-toggle="dropdown">
+                            📚 Ressourcen
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'files:global_file_list' %}">
+                                <i class="bi bi-folder"></i> Globale Dateien
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'deals:content_block_list' %}">
+                                <i class="bi bi-file-text"></i> Content-Blöcke
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'deals:media_library_list' %}">
+                                <i class="bi bi-images"></i> Media-Bibliothek
+                            </a></li>
+                        </ul>
                     </li>
                 </ul>
                 

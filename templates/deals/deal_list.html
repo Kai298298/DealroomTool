@@ -32,7 +32,7 @@
             <a href="{% url 'deals:dealroom_create' %}" class="btn btn-success">
                 <i class="bi bi-plus-circle"></i> Neuer Dealroom
             </a>
-            {% if user.can_edit_deals %}
+            {% if user.is_staff %}
             <a href="{% url 'deals:dealroom_batch_create' %}" class="btn btn-info">
                 <i class="bi bi-upload"></i> Batch Import
             </a>
@@ -64,7 +64,7 @@
                                 <a href="{% url 'deals:dealroom_detail' deal.pk %}" class="text-decoration-none me-2">
                                     {{ deal.title }}
                                 </a>
-                                {% if user.can_edit_deals %}
+                                {% if user.is_staff or user == deal.created_by %}
                                 <a href="{% url 'deals:dealroom_delete' deal.pk %}" class="btn btn-sm btn-outline-danger btn-delete" title="Löschen" style="padding: 0.125rem 0.25rem;">
                                     <i class="bi bi-trash" style="font-size: 0.75rem;"></i>
                                 </a>
@@ -131,7 +131,7 @@
 <div class="alert alert-info">
     <i class="bi bi-info-circle me-2"></i>
     Noch keine Dealrooms vorhanden. 
-    {% if user.can_edit_deals %}
+    {% if user.is_staff %}
     <a href="{% url 'deals:dealroom_create' %}" class="alert-link">Erstellen Sie den ersten Dealroom mit Designer</a>.
     {% endif %}
 </div>

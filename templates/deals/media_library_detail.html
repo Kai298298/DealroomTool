@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ media_item.title }} - Media-Datei - DealShare{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-image me-2"></i>{{ media_item.title }}
+                    </h2>
+                    <p class="text-muted mb-0">Media-Datei Details</p>
+                </div>
+                <div>
+                    <a href="{% url 'deals:media_library_edit' media_item.pk %}" class="btn btn-primary me-2">
+                        <i class="bi bi-pencil me-2"></i>Bearbeiten
+                    </a>
+                    <a href="{% url 'deals:media_library_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Zurück zur Übersicht
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-file-earmark-image me-2"></i>Media-Details
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Media-Typ:</strong>
+                                    <span class="badge bg-primary ms-2">{{ media_item.get_media_type_display }}</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Kategorie:</strong>
+                                    <span class="badge bg-secondary ms-2">{{ media_item.get_category_display }}</span>
+                                </div>
+                            </div>
+
+                            {% if media_item.description %}
+                            <div class="mb-3">
+                                <strong>Beschreibung:</strong>
+                                <p class="mt-2">{{ media_item.description }}</p>
+                            </div>
+                            {% endif %}
+
+                            {% if media_item.alt_text %}
+                            <div class="mb-3">
+                                <strong>Alt-Text:</strong>
+                                <p class="mt-2">{{ media_item.alt_text }}</p>
+                            </div>
+                            {% endif %}
+
+                            <!-- Media Preview -->
+                            <div class="mb-3">
+                                <strong>Vorschau:</strong>
+                                <div class="mt-2">
+                                    {% if media_item.media_type == 'image' %}
+                                        <img src="{{ media_item.file.url }}" class="img-fluid rounded" 
+                                             alt="{{ media_item.alt_text|default:media_item.title }}"
+                                             style="max-height: 400px; object-fit: contain;">
+                                    {% elif media_item.media_type == 'video' %}
+                                        <video controls class="img-fluid rounded" style="max-height: 400px;">
+                                            <source src="{{ media_item.file.url }}" type="video/mp4">
+                                            <source src="{{ media_item.file.url }}" type="video/webm">
+                                            Ihr Browser unterstützt keine Video-Wiedergabe.
+                                        </video>
+                                    {% elif media_item.media_type == 'document' %}
+                                        <div class="bg-light p-4 rounded text-center">
+                                            <i class="bi bi-file-earmark-text display-1 text-muted"></i>
+                                            <h5 class="mt-3">{{ media_item.title }}</h5>
+                                            <p class="text-muted">{{ media_item.file.name }}</p>
+                                            <a href="{{ media_item.file.url }}" class="btn btn-primary" target="_blank">
+                                                <i class="bi bi-download me-2"></i>Herunterladen
+                                            </a>
+                                        </div>
+                                    {% elif media_item.media_type == 'logo' %}
+                                        <div class="bg-light p-4 rounded text-center">
+                                            <img src="{{ media_item.file.url }}" class="img-fluid" 
+                                                 alt="{{ media_item.alt_text|default:media_item.title }}"
+                                                 style="max-height: 200px; object-fit: contain;">
+                                        </div>
+                                    {% elif media_item.media_type == 'icon' %}
+                                        <div class="bg-light p-4 rounded text-center">
+                                            <img src="{{ media_item.file.url }}" class="img-fluid" 
+                                                 alt="{{ media_item.alt_text|default:media_item.title }}"
+                                                 style="max-height: 150px; object-fit: contain;">
+                                        </div>
+                                    {% else %}
+                                        <div class="bg-light p-4 rounded text-center">
+                                            <i class="bi bi-file-earmark display-1 text-muted"></i>
+                                            <h5 class="mt-3">{{ media_item.title }}</h5>
+                                            <p class="text-muted">{{ media_item.file.name }}</p>
+                                            <a href="{{ media_item.file.url }}" class="btn btn-primary" target="_blank">
+                                                <i class="bi bi-download me-2"></i>Herunterladen
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            {% if media_item.tags %}
+                            <div class="mb-3">
+                                <strong>Tags:</strong>
+                                <div class="mt-2">
+                                    {% for tag in media_item.tags %}
+                                        <span class="badge bg-info me-1">{{ tag }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Status:</strong>
+                                    {% if media_item.is_active %}
+                                        <span class="badge bg-success ms-2">Aktiv</span>
+                                    {% else %}
+                                        <span class="badge bg-danger ms-2">Inaktiv</span>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Verwendungen:</strong>
+                                    <span class="badge bg-primary ms-2">{{ media_item.usage_count }}</span>
+                                </div>
+                            </div>
+
+                            {% if media_item.file %}
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <strong>Dateigröße:</strong>
+                                    <span class="ms-2">{{ media_item.file.size|filesizeformat }}</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Dateiname:</strong>
+                                    <span class="ms-2">{{ media_item.file.name }}</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <!-- Statistiken -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-graph-up me-2"></i>Statistiken
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <h4 class="text-primary">{{ media_item.usage_count }}</h4>
+                                    <small class="text-muted">Verwendungen</small>
+                                </div>
+                                <div class="col-6">
+                                    <h4 class="text-success">{{ media_item.created_at|date:"d.m.Y" }}</h4>
+                                    <small class="text-muted">Erstellt am</small>
+                                </div>
+                            </div>
+                            {% if media_item.file %}
+                            <div class="row text-center mt-3">
+                                <div class="col-12">
+                                    <h4 class="text-info">{{ media_item.file.size|filesizeformat }}</h4>
+                                    <small class="text-muted">Dateigröße</small>
+                                </div>
+                            </div>
+                            {% endif %}
+                            <div class="row text-center mt-3">
+                                <div class="col-6">
+                                    <h4 class="text-warning">{{ media_item.created_by.get_full_name|default:media_item.created_by.username }}</h4>
+                                    <small class="text-muted">Erstellt von</small>
+                                </div>
+                                <div class="col-6">
+                                    <h4 class="text-secondary">{{ media_item.get_media_type_display }}</h4>
+                                    <small class="text-muted">Media-Typ</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Aktionen -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-gear me-2"></i>Aktionen
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'deals:media_library_edit' media_item.pk %}" class="btn btn-primary">
+                                    <i class="bi bi-pencil me-2"></i>Bearbeiten
+                                </a>
+                                {% if media_item.file %}
+                                <a href="{{ media_item.file.url }}" class="btn btn-success" target="_blank">
+                                    <i class="bi bi-download me-2"></i>Herunterladen
+                                </a>
+                                {% endif %}
+                                <a href="{% url 'deals:media_library_delete' media_item.pk %}" class="btn btn-danger">
+                                    <i class="bi bi-trash me-2"></i>Löschen
+                                </a>
+                                <a href="{% url 'deals:media_library_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>Zurück zur Übersicht
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

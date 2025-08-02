@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ content_block.title }} - Content-Block - DealShare{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-file-text me-2"></i>{{ content_block.title }}
+                    </h2>
+                    <p class="text-muted mb-0">Content-Block Details</p>
+                </div>
+                <div>
+                    <a href="{% url 'deals:content_block_edit' content_block.pk %}" class="btn btn-primary me-2">
+                        <i class="bi bi-pencil me-2"></i>Bearbeiten
+                    </a>
+                    <a href="{% url 'deals:content_block_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Zurück zur Übersicht
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-file-earmark-text me-2"></i>Content-Details
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Content-Typ:</strong>
+                                    <span class="badge bg-primary ms-2">{{ content_block.get_content_type_display }}</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Kategorie:</strong>
+                                    <span class="badge bg-secondary ms-2">{{ content_block.get_category_display }}</span>
+                                </div>
+                            </div>
+
+                            {% if content_block.description %}
+                            <div class="mb-3">
+                                <strong>Beschreibung:</strong>
+                                <p class="mt-2">{{ content_block.description }}</p>
+                            </div>
+                            {% endif %}
+
+                            <div class="mb-3">
+                                <strong>Inhalt:</strong>
+                                <div class="mt-2 p-3 bg-light rounded">
+                                    {{ content_block.content|linebreaks }}
+                                </div>
+                            </div>
+
+                            {% if content_block.tags %}
+                            <div class="mb-3">
+                                <strong>Tags:</strong>
+                                <div class="mt-2">
+                                    {% for tag in content_block.tags %}
+                                        <span class="badge bg-info me-1">{{ tag }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Status:</strong>
+                                    {% if content_block.is_active %}
+                                        <span class="badge bg-success ms-2">Aktiv</span>
+                                    {% else %}
+                                        <span class="badge bg-danger ms-2">Inaktiv</span>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Verwendungen:</strong>
+                                    <span class="badge bg-primary ms-2">{{ content_block.usage_count }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <!-- Statistiken -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-graph-up me-2"></i>Statistiken
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <h4 class="text-primary">{{ content_block.usage_count }}</h4>
+                                    <small class="text-muted">Verwendungen</small>
+                                </div>
+                                <div class="col-6">
+                                    <h4 class="text-success">{{ content_block.created_at|date:"d.m.Y" }}</h4>
+                                    <small class="text-muted">Erstellt am</small>
+                                </div>
+                            </div>
+                            <div class="row text-center mt-3">
+                                <div class="col-6">
+                                    <h4 class="text-info">{{ content_block.updated_at|date:"d.m.Y" }}</h4>
+                                    <small class="text-muted">Aktualisiert am</small>
+                                </div>
+                                <div class="col-6">
+                                    <h4 class="text-warning">{{ content_block.created_by.get_full_name|default:content_block.created_by.username }}</h4>
+                                    <small class="text-muted">Erstellt von</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Aktionen -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-gear me-2"></i>Aktionen
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'deals:content_block_edit' content_block.pk %}" class="btn btn-primary">
+                                    <i class="bi bi-pencil me-2"></i>Bearbeiten
+                                </a>
+                                <a href="{% url 'deals:content_block_delete' content_block.pk %}" class="btn btn-danger">
+                                    <i class="bi bi-trash me-2"></i>Löschen
+                                </a>
+                                <a href="{% url 'deals:content_block_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>Zurück zur Übersicht
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Globale Dateien - DealShare{% endblock %}
+{% block title %}Media-Bibliothek - DealShare{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -10,13 +10,13 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 class="mb-1">
-                        <i class="bi bi-folder me-2"></i>Globale Dateien
+                        <i class="bi bi-images me-2"></i>Media-Bibliothek
                     </h2>
-                    <p class="text-muted mb-0">Zentrale Dateiverwaltung für alle Projekte</p>
+                    <p class="text-muted mb-0">Verwalten Sie Ihre Medien-Dateien für Landingpages</p>
                 </div>
                 <div>
-                    <a href="{% url 'files:global_file_upload' %}" class="btn btn-primary">
-                        <i class="bi bi-plus me-2"></i>Neue Datei
+                    <a href="{% url 'deals:media_upload' %}" class="btn btn-primary">
+                        <i class="bi bi-plus me-2"></i>Neue Media-Datei
                     </a>
                 </div>
             </div>
@@ -24,15 +24,15 @@
             <!-- Erklärung -->
             <div class="alert alert-info mb-4">
                 <h6 class="alert-heading">
-                    <i class="bi bi-info-circle me-2"></i>Was sind globale Dateien?
+                    <i class="bi bi-info-circle me-2"></i>Was ist die Media-Bibliothek?
                 </h6>
                 <p class="mb-2">
-                    <strong>Globale Dateien</strong> sind Ihr zentraler Dateispeicher für alle Projekte. 
-                    Hier können Sie Dateien hochladen, die in mehreren Dealrooms verwendet werden können.
+                    <strong>Media-Bibliothek</strong> ist Ihr zentraler Speicher für alle Medien-Dateien (Bilder, Videos, Dokumente, Logos). 
+                    Hier können Sie Dateien hochladen, organisieren und für Ihre Landingpages verwenden.
                 </p>
                 <p class="mb-0">
-                    <strong>Unterschied zu Media-Bibliothek:</strong> Globale Dateien sind für allgemeine Dateiverwaltung, 
-                    während die Media-Bibliothek speziell für Landingpage-Medien optimiert ist.
+                    <strong>Unterschied zu globalen Dateien:</strong> Media-Bibliothek ist speziell für Landingpage-Medien optimiert, 
+                    während globale Dateien für allgemeine Dateiverwaltung verwendet werden.
                 </p>
             </div>
 
@@ -43,26 +43,26 @@
                         <div class="col-md-4">
                             <label for="search" class="form-label">Suche</label>
                             <input type="text" class="form-control" id="search" name="search" 
-                                   value="{{ request.GET.search }}" placeholder="Titel oder Beschreibung...">
+                                   value="{{ request.GET.search }}" placeholder="Titel, Beschreibung oder Alt-Text...">
                         </div>
                         <div class="col-md-3">
-                            <label for="file_type" class="form-label">Dateityp</label>
-                            <select class="form-select" id="file_type" name="file_type">
+                            <label for="media_type" class="form-label">Media-Typ</label>
+                            <select class="form-select" id="media_type" name="media_type">
                                 <option value="">Alle Typen</option>
-                                {% for value, label in file_types %}
-                                    <option value="{{ value }}" {% if request.GET.file_type == value %}selected{% endif %}>
+                                {% for value, label in media_types %}
+                                    <option value="{{ value }}" {% if request.GET.media_type == value %}selected{% endif %}>
                                         {{ label }}
                                     </option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label for="folder" class="form-label">Ordner</label>
-                            <select class="form-select" id="folder" name="folder">
-                                <option value="">Alle Ordner</option>
-                                {% for folder in folders %}
-                                    <option value="{{ folder.id }}" {% if request.GET.folder == folder.id|stringformat:"s" %}selected{% endif %}>
-                                        {{ folder.name }}
+                            <label for="category" class="form-label">Kategorie</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="">Alle Kategorien</option>
+                                {% for value, label in categories %}
+                                    <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>
+                                        {{ label }}
                                     </option>
                                 {% endfor %}
                             </select>
@@ -79,17 +79,15 @@
                 </div>
             </div>
 
-            <!-- Dateien -->
+            <!-- Media-Dateien -->
             <div class="row">
-                {% for file in files %}
+                {% for media_item in media_items %}
                 <div class="col-lg-4 col-xl-3 mb-4">
                     <div class="card h-100">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <div>
-                                <span class="badge bg-primary me-2">{{ file.get_file_type_display }}</span>
-                                {% if file.folder %}
-                                    <span class="badge bg-secondary">{{ file.folder.name }}</span>
-                                {% endif %}
+                                <span class="badge bg-primary me-2">{{ media_item.get_media_type_display }}</span>
+                                <span class="badge bg-secondary">{{ media_item.get_category_display }}</span>
                             </div>
                             <div class="dropdown">
                                 <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
@@ -98,18 +96,18 @@
                                 </button>
                                 <ul class="dropdown-menu">
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'files:global_file_detail' file.pk %}">
+                                        <a class="dropdown-item" href="{% url 'deals:media_library_detail' media_item.pk %}">
                                             <i class="bi bi-eye me-2"></i>Anzeigen
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'files:global_file_edit' file.pk %}">
+                                        <a class="dropdown-item" href="{% url 'deals:media_library_edit' media_item.pk %}">
                                             <i class="bi bi-pencil me-2"></i>Bearbeiten
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
-                                        <a class="dropdown-item text-danger" href="{% url 'files:global_file_delete' file.pk %}">
+                                        <a class="dropdown-item text-danger" href="{% url 'deals:media_library_delete' media_item.pk %}">
                                             <i class="bi bi-trash me-2"></i>Löschen
                                         </a>
                                     </li>
@@ -117,20 +115,30 @@
                             </div>
                         </div>
                         
-                        <!-- File Preview -->
-                        <div class="file-preview">
-                            {% if file.is_image %}
-                                <img src="{{ file.file.url }}" class="card-img-top" alt="{{ file.title }}"
+                        <!-- Media Preview -->
+                        <div class="media-preview">
+                            {% if media_item.media_type == 'image' %}
+                                <img src="{{ media_item.file.url }}" class="card-img-top" alt="{{ media_item.alt_text|default:media_item.title }}"
                                      style="height: 200px; object-fit: cover;">
-                            {% elif file.is_document %}
+                            {% elif media_item.media_type == 'video' %}
+                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                                     style="height: 200px;">
+                                    <i class="bi bi-play-circle display-4 text-muted"></i>
+                                </div>
+                            {% elif media_item.media_type == 'document' %}
                                 <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
                                      style="height: 200px;">
                                     <i class="bi bi-file-earmark-text display-4 text-muted"></i>
                                 </div>
-                            {% elif file.is_video %}
+                            {% elif media_item.media_type == 'logo' %}
                                 <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
                                      style="height: 200px;">
-                                    <i class="bi bi-play-circle display-4 text-muted"></i>
+                                    <i class="bi bi-image display-4 text-muted"></i>
+                                </div>
+                            {% elif media_item.media_type == 'icon' %}
+                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                                     style="height: 200px;">
+                                    <i class="bi bi-star display-4 text-muted"></i>
                                 </div>
                             {% else %}
                                 <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
@@ -141,40 +149,52 @@
                         </div>
                         
                         <div class="card-body">
-                            <h5 class="card-title">{{ file.title }}</h5>
-                            {% if file.description %}
-                                <p class="card-text text-muted">{{ file.description }}</p>
+                            <h5 class="card-title">{{ media_item.title }}</h5>
+                            {% if media_item.description %}
+                                <p class="card-text text-muted">{{ media_item.description }}</p>
+                            {% endif %}
+                            {% if media_item.alt_text %}
+                                <small class="text-muted">
+                                    <strong>Alt-Text:</strong> {{ media_item.alt_text }}
+                                </small>
                             {% endif %}
                         </div>
                         <div class="card-footer">
                             <div class="row text-center">
                                 <div class="col-4">
                                     <small class="text-muted">
-                                        <i class="bi bi-calendar me-1"></i>{{ file.uploaded_at|date:"d.m.Y" }}
+                                        <i class="bi bi-eye me-1"></i>{{ media_item.usage_count }}
                                     </small>
                                 </div>
                                 <div class="col-4">
                                     <small class="text-muted">
-                                        <i class="bi bi-person me-1"></i>{{ file.uploaded_by.get_full_name|default:file.uploaded_by.username }}
+                                        <i class="bi bi-calendar me-1"></i>{{ media_item.created_at|date:"d.m.Y" }}
                                     </small>
                                 </div>
                                 <div class="col-4">
                                     <small class="text-muted">
-                                        <i class="bi bi-file-earmark me-1"></i>{{ file.file.size|filesizeformat }}
+                                        <i class="bi bi-person me-1"></i>{{ media_item.created_by.get_full_name|default:media_item.created_by.username }}
                                     </small>
                                 </div>
                             </div>
+                            {% if media_item.file %}
+                            <div class="mt-2 text-center">
+                                <small class="text-muted">
+                                    <i class="bi bi-file-earmark me-1"></i>{{ media_item.file.size|filesizeformat }}
+                                </small>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
                 {% empty %}
                 <div class="col-12">
                     <div class="text-center py-5">
-                        <i class="bi bi-folder display-1 text-muted"></i>
-                        <h4 class="mt-3">Keine Dateien gefunden</h4>
-                        <p class="text-muted">Laden Sie Ihre erste Datei hoch.</p>
-                        <a href="{% url 'files:global_file_upload' %}" class="btn btn-primary">
-                            <i class="bi bi-plus me-2"></i>Erste Datei hochladen
+                        <i class="bi bi-images display-1 text-muted"></i>
+                        <h4 class="mt-3">Keine Media-Dateien gefunden</h4>
+                        <p class="text-muted">Laden Sie Ihre erste Media-Datei in die Bibliothek hoch.</p>
+                        <a href="{% url 'deals:media_upload' %}" class="btn btn-primary">
+                            <i class="bi bi-plus me-2"></i>Erste Media-Datei hochladen
                         </a>
                     </div>
                 </div>
@@ -183,16 +203,16 @@
 
             <!-- Pagination -->
             {% if is_paginated %}
-            <nav aria-label="Global File Pagination" class="mt-4">
+            <nav aria-label="Media Library Pagination" class="mt-4">
                 <ul class="pagination justify-content-center">
                     {% if page_obj.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.file_type %}&file_type={{ request.GET.file_type }}{% endif %}{% if request.GET.folder %}&folder={{ request.GET.folder }}{% endif %}">
+                            <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.media_type %}&media_type={{ request.GET.media_type }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">
                                 <i class="bi bi-chevron-double-left"></i>
                             </a>
                         </li>
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.file_type %}&file_type={{ request.GET.file_type }}{% endif %}{% if request.GET.folder %}&folder={{ request.GET.folder }}{% endif %}">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.media_type %}&media_type={{ request.GET.media_type }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">
                                 <i class="bi bi-chevron-left"></i>
                             </a>
                         </li>
@@ -205,19 +225,19 @@
                             </li>
                         {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.file_type %}&file_type={{ request.GET.file_type }}{% endif %}{% if request.GET.folder %}&folder={{ request.GET.folder }}{% endif %}">{{ num }}</a>
+                                <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.media_type %}&media_type={{ request.GET.media_type }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">{{ num }}</a>
                             </li>
                         {% endif %}
                     {% endfor %}
 
                     {% if page_obj.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.file_type %}&file_type={{ request.GET.file_type }}{% endif %}{% if request.GET.folder %}&folder={{ request.GET.folder }}{% endif %}">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.media_type %}&media_type={{ request.GET.media_type }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">
                                 <i class="bi bi-chevron-right"></i>
                             </a>
                         </li>
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.file_type %}&file_type={{ request.GET.file_type }}{% endif %}{% if request.GET.folder %}&folder={{ request.GET.folder }}{% endif %}">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.media_type %}&media_type={{ request.GET.media_type }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">
                                 <i class="bi bi-chevron-double-right"></i>
                             </a>
                         </li>

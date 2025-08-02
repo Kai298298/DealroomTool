@@ -38,7 +38,7 @@ import json
 from .models import Deal, DealFile, DealFileAssignment
 from .forms import DealForm
 from django.contrib.auth.hashers import check_password
-from .models import ContentBlock, MediaLibrary
+from .models import ContentBlock, MediaLibrary, CMSElement
 
 
 # Dealroom Views
@@ -330,7 +330,7 @@ class DealUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     
     def test_func(self):
         deal = self.get_object()
-        return self.request.user.can_edit_deals() or deal.created_by == self.request.user
+        return self.request.user.is_staff or deal.created_by == self.request.user
     
     @transaction.atomic
     def form_valid(self, form):
@@ -441,7 +441,7 @@ class DealDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     success_url = reverse_lazy('dealrooms:dealroom_list')
     
     def test_func(self):
-        return self.request.user.can_edit_deals()
+        return self.request.user.is_staff
     
     def delete(self, request, *args, **kwargs):
         messages.success(request, _('Dealroom erfolgreich gelöscht.'))
@@ -477,11 +477,11 @@ class DealFileUploadView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     template_name = 'deals/deal_file_upload.html'
     
     def test_func(self):
-        return self.request.user.can_edit_deals()
+        return self.request.user.is_staff
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['deal'] = get_object_or_404(Deal, pk=self.kwargs['deal_pk'])
+        context['deal'] = get_object_or_404(Deal, pk=self.kwargs['pk'])
         
         # Globale Dateien für die Sidebar hinzufügen
         from files.models import GlobalFile
@@ -490,13 +490,13 @@ class DealFileUploadView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return context
     
     def form_valid(self, form):
-        form.instance.deal = get_object_or_404(Deal, pk=self.kwargs['deal_pk'])
+        form.instance.deal = get_object_or_404(Deal, pk=self.kwargs['pk'])
         form.instance.uploaded_by = self.request.user
         messages.success(self.request, _('Datei erfolgreich hochgeladen.'))
         return super().form_valid(form)
     
     def get_success_url(self):
-        return reverse_lazy('dealrooms:dealroom_files', kwargs={'deal_pk': self.kwargs['deal_pk']})
+        return reverse_lazy('dealrooms:dealroom_files', kwargs={'deal_pk': self.kwargs['pk']})
 
 
 class DealFileDetailView(LoginRequiredMixin, DetailView):
@@ -517,7 +517,7 @@ class DealFileEditView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     template_name = 'deals/deal_file_form.html'
     
     def test_func(self):
-        return self.request.user.can_edit_deals()
+        return self.request.user.is_staff
     
     def get_success_url(self):
         return reverse_lazy('dealrooms:dealroom_file_detail', kwargs={'pk': self.object.pk})
@@ -535,7 +535,7 @@ class DealFileDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     template_name = 'deals/deal_file_confirm_delete.html'
     
     def test_func(self):
-        return self.request.user.can_edit_deals()
+        return self.request.user.is_staff
     
     def get_success_url(self):
         return reverse_lazy('dealrooms:dealroom_files', kwargs={'deal_pk': self.object.deal.pk})
@@ -728,7 +728,7 @@ class DealFileAssignmentView(LoginRequiredMixin, UserPassesTestMixin, View):
     
     def test_func(self):
         deal = get_object_or_404(Deal, pk=self.kwargs['pk'])
-        return self.request.user.can_edit_deals()
+        return self.request.user.is_staff or deal.created_by == self.request.user
     
     def post(self, request, pk):
         deal = get_object_or_404(Deal, pk=pk)
@@ -779,7 +779,7 @@ class DealFileUnassignmentView(LoginRequiredMixin, UserPassesTestMixin, View):
     
     def test_func(self):
         deal = get_object_or_404(Deal, pk=self.kwargs['pk'])
-        return self.request.user.can_edit_deals()
+        return self.request.user.is_staff or deal.created_by == self.request.user
     
     def post(self, request, pk):
         deal = get_object_or_404(Deal, pk=pk)
@@ -808,7 +808,7 @@ class DealFileAssignmentListView(LoginRequiredMixin, UserPassesTestMixin, Templa
     
     def test_func(self):
         deal = get_object_or_404(Deal, pk=self.kwargs['pk'])
-        return self.request.user.can_edit_deals()
+        return self.request.user.is_staff or deal.created_by == self.request.user
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -962,21 +962,7 @@ class LandingpageBuilderView(LoginRequiredMixin, UserPassesTestMixin, View):
         return redirect('deals:grapesjs_editor', deal_id=deal_id)
 
 
-class ContentLibraryView(View):
-    """Content-Bibliothek Übersicht - nur für Designer verfügbar"""
-    def get(self, request):
-        from .models import ContentBlock, MediaLibrary
-        
-        content_blocks = ContentBlock.objects.all().order_by('category', 'title')
-        media_library = MediaLibrary.objects.all().order_by('category', 'title')
-        
-        context = {
-            'content_blocks': content_blocks,
-            'media_library': media_library,
-            'active_tab': request.GET.get('tab', 'content')
-        }
-        
-        return render(request, 'deals/content_library.html', context)
+# ContentLibraryView wurde entfernt - verwirrende Überschneidung mit direkten Views
 
 
 
@@ -1251,9 +1237,25 @@ class GrapesJSView(LoginRequiredMixin, UserPassesTestMixin, View):
         # Initial HTML für GrapesJS
         initial_html = self._get_initial_html(deal)
         
+        # CMS-Elemente laden
+        cms_elements = CMSElement.objects.filter(is_active=True).order_by('category', 'title')
+        
+        # Content-Blöcke laden
+        content_blocks = ContentBlock.objects.filter(is_active=True).order_by('category', 'title')
+        
+        # Medien laden
+        media_items = MediaLibrary.objects.filter(is_active=True).order_by('category', 'title')
+        
+        # Dateien für diesen Deal
+        deal_files = deal.get_assigned_files()
+        
         return render(request, 'deals/grapesjs_editor.html', {
             'deal': deal,
             'initial_html': initial_html,
+            'cms_elements': cms_elements,
+            'content_blocks': content_blocks,
+            'media_items': media_items,
+            'deal_files': deal_files,
         })
     
     def post(self, request, deal_id):
@@ -1383,3 +1385,252 @@ class GrapesJSAssetUploadView(LoginRequiredMixin, View):
             return 'document'
         else:
             return 'other'
+
+
+class CMSElementAPIView(LoginRequiredMixin, View):
+    """
+    API für CMS-Elemente
+    """
+    
+    def get(self, request, element_id):
+        """Gibt CMS-Element-Daten zurück"""
+        try:
+            element = CMSElement.objects.get(id=element_id, is_active=True)
+            deal_id = request.GET.get('deal_id')
+            
+            if deal_id:
+                deal = Deal.objects.get(id=deal_id)
+                html = element.get_rendered_html(deal=deal)
+            else:
+                html = element.html_template
+            
+            # Verwendungsanzahl erhöhen
+            element.increment_usage()
+            
+            return JsonResponse({
+                'success': True,
+                'html': html,
+                'css': element.css_styles or '',
+                'javascript': element.javascript_code or '',
+                'title': element.title,
+                'description': element.description
+            })
+            
+        except CMSElement.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Element nicht gefunden'}, status=404)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+class ContentBlockCreateView(LoginRequiredMixin, CreateView):
+    """
+    View für das Erstellen von Content-Blöcken
+    """
+    model = ContentBlock
+    template_name = 'deals/content_block_form.html'
+    fields = ['title', 'content_type', 'category', 'content', 'description', 'tags']
+    
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        response = super().form_valid(form)
+        
+        # Erfolgs-Nachricht
+        messages.success(self.request, f'Content-Block "{form.instance.title}" wurde erfolgreich erstellt.')
+        
+        return response
+    
+    def get_success_url(self):
+        return reverse('deals:content_library')
+
+
+class MediaUploadView(LoginRequiredMixin, CreateView):
+    """
+    View für das Hochladen von Media-Dateien
+    """
+    model = MediaLibrary
+    template_name = 'deals/media_upload_form.html'
+    fields = ['title', 'media_type', 'category', 'file', 'description', 'alt_text', 'tags']
+    
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        response = super().form_valid(form)
+        
+        # Erfolgs-Nachricht
+        messages.success(self.request, f'Media-Datei "{form.instance.title}" wurde erfolgreich hochgeladen.')
+        
+        return response
+    
+    def get_success_url(self):
+        return reverse('deals:content_library')
+
+
+class ContentBlockListView(LoginRequiredMixin, ListView):
+    """
+    View für die Anzeige aller Content-Blöcke
+    """
+    model = ContentBlock
+    template_name = 'deals/content_block_list.html'
+    context_object_name = 'content_blocks'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        queryset = ContentBlock.objects.filter(is_active=True)
+        
+        # Filter nach Content-Typ
+        content_type = self.request.GET.get('content_type')
+        if content_type:
+            queryset = queryset.filter(content_type=content_type)
+        
+        # Filter nach Kategorie
+        category = self.request.GET.get('category')
+        if category:
+            queryset = queryset.filter(category=category)
+        
+        # Suche
+        search = self.request.GET.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) |
+                Q(description__icontains=search) |
+                Q(content__icontains=search)
+            )
+        
+        return queryset.order_by('-created_at')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['content_types'] = ContentBlock.ContentType.choices
+        context['categories'] = ContentBlock.Category.choices
+        return context
+
+
+class MediaLibraryListView(LoginRequiredMixin, ListView):
+    """
+    View für die Anzeige aller Media-Dateien
+    """
+    model = MediaLibrary
+    template_name = 'deals/media_library_list.html'
+    context_object_name = 'media_items'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        queryset = MediaLibrary.objects.filter(is_active=True)
+        
+        # Filter nach Media-Typ
+        media_type = self.request.GET.get('media_type')
+        if media_type:
+            queryset = queryset.filter(media_type=media_type)
+        
+        # Filter nach Kategorie
+        category = self.request.GET.get('category')
+        if category:
+            queryset = queryset.filter(category=category)
+        
+        # Suche
+        search = self.request.GET.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) |
+                Q(description__icontains=search) |
+                Q(alt_text__icontains=search)
+            )
+        
+        return queryset.order_by('-created_at')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['media_types'] = MediaLibrary.MediaType.choices
+        context['categories'] = MediaLibrary.Category.choices
+        return context
+
+
+class ContentBlockDetailView(LoginRequiredMixin, DetailView):
+    """
+    View für die Detailansicht eines Content-Blocks
+    """
+    model = ContentBlock
+    template_name = 'deals/content_block_detail.html'
+    context_object_name = 'content_block'
+
+
+class MediaLibraryDetailView(LoginRequiredMixin, DetailView):
+    """
+    View für die Detailansicht einer Media-Datei
+    """
+    model = MediaLibrary
+    template_name = 'deals/media_library_detail.html'
+    context_object_name = 'media_item'
+
+
+class ContentBlockUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    """
+    View für das Bearbeiten von Content-Blöcken
+    """
+    model = ContentBlock
+    template_name = 'deals/content_block_form.html'
+    fields = ['title', 'content_type', 'category', 'content', 'description', 'tags', 'is_active']
+    
+    def test_func(self):
+        content_block = self.get_object()
+        return self.request.user == content_block.created_by or self.request.user.is_staff
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, f'Content-Block "{form.instance.title}" wurde erfolgreich aktualisiert.')
+        return response
+    
+    def get_success_url(self):
+        return reverse('deals:content_block_detail', kwargs={'pk': self.object.pk})
+
+
+class MediaLibraryUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    """
+    View für das Bearbeiten von Media-Dateien
+    """
+    model = MediaLibrary
+    template_name = 'deals/media_upload_form.html'
+    fields = ['title', 'media_type', 'category', 'file', 'description', 'alt_text', 'tags', 'is_active']
+    
+    def test_func(self):
+        media_item = self.get_object()
+        return self.request.user == media_item.created_by or self.request.user.is_staff
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, f'Media-Datei "{form.instance.title}" wurde erfolgreich aktualisiert.')
+        return response
+    
+    def get_success_url(self):
+        return reverse('deals:media_library_detail', kwargs={'pk': self.object.pk})
+
+
+class ContentBlockDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """
+    View für das Löschen von Content-Blöcken
+    """
+    model = ContentBlock
+    template_name = 'deals/content_block_confirm_delete.html'
+    
+    def test_func(self):
+        content_block = self.get_object()
+        return self.request.user == content_block.created_by or self.request.user.is_staff
+    
+    def get_success_url(self):
+        messages.success(self.request, f'Content-Block "{self.object.title}" wurde erfolgreich gelöscht.')
+        return reverse('deals:content_block_list')
+
+
+class MediaLibraryDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """
+    View für das Löschen von Media-Dateien
+    """
+    model = MediaLibrary
+    template_name = 'deals/media_library_confirm_delete.html'
+    
+    def test_func(self):
+        media_item = self.get_object()
+        return self.request.user == media_item.created_by or self.request.user.is_staff
+    
+    def get_success_url(self):
+        messages.success(self.request, f'Media-Datei "{self.object.title}" wurde erfolgreich gelöscht.')
+        return reverse('deals:media_library_list')

@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Content-Block löschen - DealShare{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-trash me-2"></i>Content-Block löschen
+                    </h2>
+                    <p class="text-muted mb-0">Bestätigen Sie das Löschen des Content-Blocks</p>
+                </div>
+                <div>
+                    <a href="{% url 'deals:content_block_detail' object.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Zurück
+                    </a>
+                </div>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-6">
+                    <div class="card border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-exclamation-triangle me-2"></i>Lösch-Bestätigung
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning">
+                                <h6 class="alert-heading">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>Achtung!
+                                </h6>
+                                <p class="mb-0">
+                                    Sie sind dabei, den Content-Block <strong>"{{ object.title }}"</strong> zu löschen. 
+                                    Diese Aktion kann nicht rückgängig gemacht werden.
+                                </p>
+                            </div>
+
+                            <div class="content-preview mb-3">
+                                <h6>Content-Block Details:</h6>
+                                <div class="p-3 bg-light rounded">
+                                    <p><strong>Titel:</strong> {{ object.title }}</p>
+                                    <p><strong>Content-Typ:</strong> {{ object.get_content_type_display }}</p>
+                                    <p><strong>Kategorie:</strong> {{ object.get_category_display }}</p>
+                                    <p><strong>Verwendungen:</strong> {{ object.usage_count }}</p>
+                                    {% if object.description %}
+                                        <p><strong>Beschreibung:</strong> {{ object.description }}</p>
+                                    {% endif %}
+                                    <p><strong>Inhalt:</strong></p>
+                                    <div class="p-2 bg-white rounded border">
+                                        {{ object.content|truncatewords:50 }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if object.usage_count > 0 %}
+                            <div class="alert alert-info">
+                                <h6 class="alert-heading">
+                                    <i class="bi bi-info-circle me-2"></i>Verwendung
+                                </h6>
+                                <p class="mb-0">
+                                    Dieser Content-Block wurde {{ object.usage_count }} mal verwendet. 
+                                    Das Löschen könnte Auswirkungen auf bestehende Landingpages haben.
+                                </p>
+                            </div>
+                            {% endif %}
+
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="bi bi-trash me-2"></i>Endgültig löschen
+                                    </button>
+                                    <a href="{% url 'deals:content_block_detail' object.pk %}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-x me-2"></i>Abbrechen
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

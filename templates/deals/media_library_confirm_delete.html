@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Media-Datei löschen - DealShare{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-trash me-2"></i>Media-Datei löschen
+                    </h2>
+                    <p class="text-muted mb-0">Bestätigen Sie das Löschen der Media-Datei</p>
+                </div>
+                <div>
+                    <a href="{% url 'deals:media_library_detail' object.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Zurück
+                    </a>
+                </div>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-6">
+                    <div class="card border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-exclamation-triangle me-2"></i>Lösch-Bestätigung
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning">
+                                <h6 class="alert-heading">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>Achtung!
+                                </h6>
+                                <p class="mb-0">
+                                    Sie sind dabei, die Media-Datei <strong>"{{ object.title }}"</strong> zu löschen. 
+                                    Diese Aktion kann nicht rückgängig gemacht werden.
+                                </p>
+                            </div>
+
+                            <div class="media-preview mb-3">
+                                <h6>Media-Datei Details:</h6>
+                                <div class="p-3 bg-light rounded">
+                                    <p><strong>Titel:</strong> {{ object.title }}</p>
+                                    <p><strong>Media-Typ:</strong> {{ object.get_media_type_display }}</p>
+                                    <p><strong>Kategorie:</strong> {{ object.get_category_display }}</p>
+                                    <p><strong>Verwendungen:</strong> {{ object.usage_count }}</p>
+                                    {% if object.description %}
+                                        <p><strong>Beschreibung:</strong> {{ object.description }}</p>
+                                    {% endif %}
+                                    {% if object.alt_text %}
+                                        <p><strong>Alt-Text:</strong> {{ object.alt_text }}</p>
+                                    {% endif %}
+                                    {% if object.file %}
+                                        <p><strong>Dateigröße:</strong> {{ object.file.size|filesizeformat }}</p>
+                                        <p><strong>Dateiname:</strong> {{ object.file.name }}</p>
+                                    {% endif %}
+                                    
+                                    <!-- Media Preview -->
+                                    <p><strong>Vorschau:</strong></p>
+                                    <div class="text-center">
+                                        {% if object.media_type == 'image' %}
+                                            <img src="{{ object.file.url }}" class="img-fluid rounded" 
+                                                 alt="{{ object.alt_text|default:object.title }}"
+                                                 style="max-height: 200px; object-fit: contain;">
+                                        {% elif object.media_type == 'video' %}
+                                            <div class="bg-light p-3 rounded">
+                                                <i class="bi bi-play-circle display-4 text-muted"></i>
+                                                <p class="mt-2 mb-0">Video-Datei</p>
+                                            </div>
+                                        {% elif object.media_type == 'document' %}
+                                            <div class="bg-light p-3 rounded">
+                                                <i class="bi bi-file-earmark-text display-4 text-muted"></i>
+                                                <p class="mt-2 mb-0">Dokument</p>
+                                            </div>
+                                        {% elif object.media_type == 'logo' %}
+                                            <div class="bg-light p-3 rounded">
+                                                <i class="bi bi-image display-4 text-muted"></i>
+                                                <p class="mt-2 mb-0">Logo</p>
+                                            </div>
+                                        {% elif object.media_type == 'icon' %}
+                                            <div class="bg-light p-3 rounded">
+                                                <i class="bi bi-star display-4 text-muted"></i>
+                                                <p class="mt-2 mb-0">Icon</p>
+                                            </div>
+                                        {% else %}
+                                            <div class="bg-light p-3 rounded">
+                                                <i class="bi bi-file-earmark display-4 text-muted"></i>
+                                                <p class="mt-2 mb-0">Datei</p>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if object.usage_count > 0 %}
+                            <div class="alert alert-info">
+                                <h6 class="alert-heading">
+                                    <i class="bi bi-info-circle me-2"></i>Verwendung
+                                </h6>
+                                <p class="mb-0">
+                                    Diese Media-Datei wurde {{ object.usage_count }} mal verwendet. 
+                                    Das Löschen könnte Auswirkungen auf bestehende Landingpages haben.
+                                </p>
+                            </div>
+                            {% endif %}
+
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="bi bi-trash me-2"></i>Endgültig löschen
+                                    </button>
+                                    <a href="{% url 'deals:media_library_detail' object.pk %}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-x me-2"></i>Abbrechen
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

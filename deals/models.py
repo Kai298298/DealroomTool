@@ -540,13 +540,13 @@ class Deal(models.Model):
         return self.title
     
     def get_absolute_url(self):
-        return reverse('dealrooms:dealroom_detail', kwargs={'pk': self.pk})
+        return reverse('deals:dealroom_detail', kwargs={'pk': self.pk})
     
     def get_landingpage_url(self):
         """Gibt die öffentliche Landingpage-URL zurück"""
         if self.public_url:
             return self.public_url
-        return f"/landingpage/{self.slug}/"
+        return reverse('deals:landingpage', kwargs={'deal_id': self.pk})
     
     def get_files_count(self):
         """Gibt die Anzahl der zugehörigen Dateien zurück"""
@@ -1922,3 +1922,224 @@ class DealAnalyticsEvent(models.Model):
 
     def __str__(self):
         return f"{self.get_event_type_display()} ({self.deal.title}) am {self.timestamp:%d.%m.%Y %H:%M}"
+
+
+class CMSElement(models.Model):
+    """
+    CMS-Elemente für die Element-Bibliothek
+    """
+    class ElementType(models.TextChoices):
+        # Layout Elements
+        CONTAINER = 'container', _('Container')
+        ROW = 'row', _('Zeile')
+        COLUMN = 'column', _('Spalte')
+        SECTION = 'section', _('Sektion')
+        
+        # Text Elements
+        HEADING = 'heading', _('Überschrift')
+        PARAGRAPH = 'paragraph', _('Absatz')
+        LIST = 'list', _('Liste')
+        QUOTE = 'quote', _('Zitat')
+        
+        # Media Elements
+        IMAGE = 'image', _('Bild')
+        VIDEO = 'video', _('Video')
+        ICON = 'icon', _('Icon')
+        GALLERY = 'gallery', _('Galerie')
+        
+        # Interactive Elements
+        BUTTON = 'button', _('Button')
+        LINK = 'link', _('Link')
+        FORM = 'form', _('Formular')
+        MAP = 'map', _('Karte')
+        
+        # Business Elements
+        CARD = 'card', _('Karte')
+        TABLE = 'table', _('Tabelle')
+        TIMELINE = 'timeline', _('Zeitlinie')
+        STATS = 'stats', _('Statistiken')
+        
+        # Social Elements
+        SOCIAL_SHARE = 'social_share', _('Social Share')
+        COMMENTS = 'comments', _('Kommentare')
+        RATING = 'rating', _('Bewertung')
+        FOLLOW = 'follow', _('Follow')
+        
+        # Advanced Elements
+        ACCORDION = 'accordion', _('Akkordeon')
+        TABS = 'tabs', _('Tabs')
+        MODAL = 'modal', _('Modal')
+        SLIDER = 'slider', _('Slider')
+        
+        # Data Elements
+        FILE_DOWNLOAD = 'file_download', _('Datei-Download')
+        DOCUMENT_VIEWER = 'document_viewer', _('Dokument-Viewer')
+        DATA_TABLE = 'data_table', _('Daten-Tabelle')
+        PROGRESS_TRACKER = 'progress_tracker', _('Fortschritt-Tracker')
+    
+    class Category(models.TextChoices):
+        LAYOUT = 'layout', _('Layout')
+        TEXT = 'text', _('Text')
+        MEDIA = 'media', _('Medien')
+        INTERACTIVE = 'interactive', _('Interaktiv')
+        BUSINESS = 'business', _('Business')
+        SOCIAL = 'social', _('Social')
+        ADVANCED = 'advanced', _('Erweitert')
+        DATA = 'data', _('Daten & Dateien')
+    
+    title = models.CharField(
+        max_length=200,
+        verbose_name=_('Titel')
+    )
+    
+    element_type = models.CharField(
+        max_length=50,
+        choices=ElementType.choices,
+        verbose_name=_('Element-Typ')
+    )
+    
+    category = models.CharField(
+        max_length=50,
+        choices=Category.choices,
+        verbose_name=_('Kategorie')
+    )
+    
+    description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_('Beschreibung')
+    )
+    
+    html_template = models.TextField(
+        verbose_name=_('HTML-Template'),
+        help_text=_('HTML-Code für das Element')
+    )
+    
+    css_styles = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_('CSS-Styles'),
+        help_text=_('Zusätzliche CSS-Styles')
+    )
+    
+    javascript_code = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_('JavaScript-Code'),
+        help_text=_('JavaScript für Interaktivität')
+    )
+    
+    # Daten-Integration
+    data_source = models.CharField(
+        max_length=50,
+        choices=[
+            ('static', _('Statisch')),
+            ('deal_data', _('Deal-Daten')),
+            ('file_library', _('Datei-Bibliothek')),
+            ('content_blocks', _('Content-Blöcke')),
+            ('media_library', _('Medien-Bibliothek')),
+            ('custom', _('Benutzerdefiniert')),
+        ],
+        default='static',
+        verbose_name=_('Datenquelle')
+    )
+    
+    data_mapping = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name=_('Daten-Mapping'),
+        help_text=_('Mapping für dynamische Daten')
+    )
+    
+    # Datei-Integration
+    file_types = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name=_('Unterstützte Dateitypen'),
+        help_text=_('Liste der unterstützten Dateitypen')
+    )
+    
+    file_upload_enabled = models.BooleanField(
+        default=False,
+        verbose_name=_('Datei-Upload aktiviert')
+    )
+    
+    file_display_mode = models.CharField(
+        max_length=20,
+        choices=[
+            ('inline', _('Inline')),
+            ('download', _('Download')),
+            ('preview', _('Vorschau')),
+            ('gallery', _('Galerie')),
+        ],
+        default='inline',
+        verbose_name=_('Datei-Anzeigemodus')
+    )
+    
+    # Konfiguration
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name=_('Aktiv')
+    )
+    
+    usage_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_('Verwendungsanzahl')
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name=_('Erstellt von')
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('Erstellt am')
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_('Aktualisiert am')
+    )
+    
+    class Meta:
+        verbose_name = _('CMS-Element')
+        verbose_name_plural = _('CMS-Elemente')
+        ordering = ['category', 'title']
+    
+    def __str__(self):
+        return f"{self.title} ({self.get_element_type_display()})"
+    
+    def increment_usage(self):
+        """Erhöht die Verwendungsanzahl"""
+        self.usage_count += 1
+        self.save(update_fields=['usage_count'])
+    
+    def get_rendered_html(self, deal=None, context=None):
+        """Rendert das HTML-Template mit Deal-Daten"""
+        html = self.html_template
+        
+        if deal and self.data_source == 'deal_data':
+            # Deal-spezifische Daten einsetzen
+            html = html.replace('{{ deal.title }}', deal.title or '')
+            html = html.replace('{{ deal.description }}', deal.description or '')
+            html = html.replace('{{ deal.company_name }}', deal.company_name or '')
+            html = html.replace('{{ deal.recipient_name }}', deal.recipient_name or '')
+            html = html.replace('{{ deal.product_name }}', deal.product_name or '')
+            html = html.replace('{{ deal.product_description }}', deal.product_description or '')
+            html = html.replace('{{ deal.call_to_action }}', deal.call_to_action or '')
+        
+        if context:
+            for key, value in context.items():
+                html = html.replace(f'{{{{ {key} }}}}', str(value))
+        
+        return html
+    
+    def get_files_for_deal(self, deal):
+        """Holt Dateien für das Element basierend auf Deal"""
+        if self.data_source == 'file_library':
+            return deal.get_assigned_files()
+        elif self.data_source == 'media_library':
+            return MediaLibrary.objects.filter(is_active=True)
+        return []
