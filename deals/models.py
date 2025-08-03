@@ -704,7 +704,19 @@ class Deal(models.Model):
         }
         
         if template_name not in templates:
-            raise ValueError(f"Template '{template_name}' nicht gefunden. Verfügbare Templates: {list(templates.keys())}")
+            available_templates = list(templates.keys())
+            raise ValueError(f"Template '{template_name}' nicht gefunden. Verfügbare Templates: {available_templates}")
+        
+        # Erstelle unique slug falls nicht vorhanden
+        if 'slug' not in kwargs:
+            from django.utils.text import slugify
+            base_slug = slugify(kwargs.get('title', 'template'))
+            slug = base_slug
+            counter = 1
+            while cls.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            kwargs['slug'] = slug
         
         # Template-Daten mit kwargs überschreiben
         template_data = templates[template_name].copy()
@@ -812,7 +824,13 @@ class Deal(models.Model):
         import random
         import string
         chars = string.ascii_letters + string.digits
-        return ''.join(random.choice(chars) for _ in range(12))
+        code = ''.join(random.choice(chars) for _ in range(8))
+        
+        # Stelle sicher, dass der Code eindeutig ist
+        while Deal.objects.filter(random_url_code=code).exists():
+            code = ''.join(random.choice(chars) for _ in range(8))
+        
+        return code
     
     def get_public_url(self):
         """Gibt die öffentliche URL basierend auf URL-Typ zurück"""

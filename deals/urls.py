@@ -73,6 +73,13 @@ urlpatterns = [
     path('content-blocks/<int:pk>/edit/', views.ContentBlockUpdateView.as_view(), name='content_block_edit'),
     path('content-blocks/<int:pk>/delete/', views.ContentBlockDeleteView.as_view(), name='content_block_delete'),
     
+    # Layout Template URLs
+    path('layout-templates/', views.LayoutTemplateListView.as_view(), name='layout_template_list'),
+    path('layout-templates/create/', views.LayoutTemplateCreateView.as_view(), name='layout_template_create'),
+    path('layout-templates/<int:pk>/', views.LayoutTemplateDetailView.as_view(), name='layout_template_detail'),
+    path('layout-templates/<int:pk>/edit/', views.LayoutTemplateUpdateView.as_view(), name='layout_template_edit'),
+    path('layout-templates/<int:pk>/delete/', views.LayoutTemplateDeleteView.as_view(), name='layout_template_delete'),
+    
     # Media-Library URLs
     path('media/', views.MediaLibraryListView.as_view(), name='media_library_list'),
     path('media/upload/', views.MediaUploadView.as_view(), name='media_upload'),
@@ -80,7 +87,8 @@ urlpatterns = [
     path('media/<int:pk>/edit/', views.MediaLibraryUpdateView.as_view(), name='media_library_edit'),
     path('media/<int:pk>/delete/', views.MediaLibraryDeleteView.as_view(), name='media_library_delete'),
 
-
+    # Content Library
+    path('content-library/', views.ContentLibraryView.as_view(), name='content_library'),
     
     # Duplizierung
     path('<int:deal_id>/duplicate/', views.DuplicateDealView.as_view(), name='duplicate_deal'),

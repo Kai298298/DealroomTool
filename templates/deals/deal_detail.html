@@ -286,7 +286,7 @@
                             <div class="d-grid gap-2">
                                 {% if user.is_staff or user == deal.created_by %}
                                 <a href="{% url 'deals:grapesjs_editor' deal.pk %}" class="btn btn-success btn-lg">
-                                    <i class="bi bi-palette me-2"></i>🎨 Designer öffnen
+                                    <i class="bi bi-palette me-2"></i>🎨 GrapesJS Editor
                                 </a>
                                 <a href="{% url 'deals:template_editor' deal.pk %}" class="btn btn-outline-success">
                                     <i class="bi bi-layout-text-window me-2"></i>Template Editor

@@ -156,6 +156,15 @@ class GlobalFile(models.Model):
         verbose_name=_('Hochgeladen von')
     )
     
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name=_('Erstellt von'),
+        related_name='created_global_files',
+        null=True,
+        blank=True
+    )
+    
     uploaded_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name=_('Hochgeladen am')

@@ -65,11 +65,11 @@ class CustomUserCreationForm(UserCreationForm):
         
         # Aktualisiere Plan-Features basierend auf dem Plan
         plan_info = user.get_plan_info()
-        user.can_use_premium_templates = plan_info['can_use_premium_templates']
-        user.can_use_content_library = plan_info['can_use_content_library']
-        user.can_use_analytics = plan_info['can_use_analytics']
-        user.can_use_white_label = plan_info['can_use_white_label']
-        user.can_use_api = plan_info['can_use_api']
+        user.can_use_premium_templates = plan_info.get('can_use_premium_templates', False)
+        user.can_use_content_library = plan_info.get('can_use_content_library', False)
+        user.can_use_analytics = plan_info.get('can_use_analytics', False)
+        user.can_use_white_label = plan_info.get('can_use_white_label', False)
+        user.can_use_api = plan_info.get('can_use_api', False)
         
         if commit:
             user.save()

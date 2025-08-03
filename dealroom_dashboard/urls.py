@@ -20,7 +20,7 @@ urlpatterns = [
     path('users/', include('users.urls')),
     
     # Dealrooms-App
-    path('dealrooms/', include('deals.urls')),
+    path('deals/', include('deals.urls')),
     
     # Files-App
     path('files/', include('files.urls')),

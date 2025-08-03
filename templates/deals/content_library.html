@@ -1,0 +1,358 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Content-Bibliothek" %} - Dealroom Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .content-library {
+        padding: 2rem 0;
+    }
+    
+    .library-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 3rem 0;
+        margin-bottom: 2rem;
+    }
+    
+    .content-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+    
+    .content-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .content-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    .content-card-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .content-card-body {
+        padding: 1.5rem;
+    }
+    
+    .content-type-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .content-type-welcome { background: #e3f2fd; color: #1976d2; }
+    .content-type-product_description { background: #f3e5f5; color: #7b1fa2; }
+    .content-type-faq_item { background: #e8f5e8; color: #388e3c; }
+    .content-type-cta_text { background: #fff3e0; color: #f57c00; }
+    .content-type-footer_info { background: #fce4ec; color: #c2185b; }
+    .content-type-contact_info { background: #f1f8e9; color: #689f38; }
+    .content-type-deal_status { background: #e0f2f1; color: #00796b; }
+    .content-type-task_description { background: #fafafa; color: #424242; }
+    .content-type-timeline_event { background: #fff8e1; color: #f57f17; }
+    .content-type-custom { background: #f5f5f5; color: #616161; }
+    
+    .filter-section {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .search-box {
+        position: relative;
+        margin-bottom: 1rem;
+    }
+    
+    .search-box input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+    
+    .search-box input:focus {
+        border-color: #667eea;
+        outline: none;
+    }
+    
+    .search-box i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #666;
+    }
+    
+    .filter-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .filter-btn {
+        padding: 0.5rem 1rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 20px;
+        background: white;
+        color: #666;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .filter-btn:hover,
+    .filter-btn.active {
+        border-color: #667eea;
+        background: #667eea;
+        color: white;
+    }
+    
+    .content-preview {
+        max-height: 100px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .content-preview::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 20px;
+        background: linear-gradient(transparent, white);
+    }
+    
+    .usage-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        background: #f0f0f0;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #666;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: #ddd;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-library">
+    <!-- Header -->
+    <div class="library-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-4 mb-3">
+                        <i class="bi bi-collection me-3"></i>
+                        {% trans "Content-Bibliothek" %}
+                    </h1>
+                    <p class="lead mb-0">
+                        {% trans "Wiederverwendbare Content-Blöcke für Ihre Landingpages" %}
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{% url 'deals:content_block_create' %}" class="btn btn-light btn-lg">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        {% trans "Neuer Content-Block" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <div class="search-box">
+                        <i class="bi bi-search"></i>
+                        <input type="text" name="search" value="{{ request.GET.search }}" 
+                               placeholder="{% trans 'Content-Blöcke durchsuchen...' %}" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="content_type" class="form-select">
+                        <option value="">{% trans "Alle Content-Typen" %}</option>
+                        {% for value, label in content_types %}
+                            <option value="{{ value }}" {% if request.GET.content_type == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="category" class="form-select">
+                        <option value="">{% trans "Alle Kategorien" %}</option>
+                        {% for value, label in categories %}
+                            <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        <!-- Content Grid -->
+        {% if content_blocks %}
+            <div class="content-grid">
+                {% for block in content_blocks %}
+                    <div class="content-card">
+                        <div class="content-card-header">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="mb-0">{{ block.title }}</h5>
+                                <span class="content-type-badge content-type-{{ block.content_type }}">
+                                    {{ block.get_content_type_display }}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted small">{{ block.get_category_display }}</span>
+                                <span class="usage-count">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                    {{ block.usage_count }} {% trans "Verwendungen" %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="content-card-body">
+                            {% if block.description %}
+                                <p class="text-muted mb-3">{{ block.description }}</p>
+                            {% endif %}
+                            
+                            <div class="content-preview mb-3">
+                                {{ block.content|truncatewords:30 }}
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="bi bi-person me-1"></i>
+                                    {{ block.created_by.get_full_name|default:block.created_by.username }}
+                                </small>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'deals:content_block_detail' block.pk %}" 
+                                       class="btn btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'deals:content_block_edit' block.pk %}" 
+                                       class="btn btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+                <nav aria-label="Content Library Pagination" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.content_type %}&content_type={{ request.GET.content_type }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.content_type %}&content_type={{ request.GET.content_type }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.content_type %}&content_type={{ request.GET.content_type }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.content_type %}&content_type={{ request.GET.content_type }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.content_type %}&content_type={{ request.GET.content_type }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+
+        {% else %}
+            <!-- Empty State -->
+            <div class="empty-state">
+                <i class="bi bi-collection"></i>
+                <h3>{% trans "Keine Content-Blöcke gefunden" %}</h3>
+                <p class="lead">{% trans "Erstellen Sie Ihren ersten Content-Block und beginnen Sie mit dem Aufbau Ihrer Bibliothek." %}</p>
+                <a href="{% url 'deals:content_block_create' %}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    {% trans "Ersten Content-Block erstellen" %}
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-submit form on filter change
+    document.querySelectorAll('select[name="content_type"], select[name="category"]').forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+
+    // Search with debounce
+    let searchTimeout;
+    document.querySelector('input[name="search"]').addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            this.form.submit();
+        }, 500);
+    });
+</script>
+{% endblock %} 

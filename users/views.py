@@ -139,7 +139,7 @@ class RegisterView(CreateView):
         messages.success(self.request, _('🎉 Registrierung erfolgreich! Willkommen im Dealroom Dashboard.'))
         messages.info(self.request, _('💡 Tipp: Upgrade auf Professional für unbegrenzte Dealrooms und Premium-Features!'))
         
-        return redirect('core:dashboard')
+        return HttpResponseRedirect(reverse_lazy('core:dashboard'))
 
 
 class UpgradeView(LoginRequiredMixin, TemplateView):

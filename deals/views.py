@@ -15,7 +15,7 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models import Q, Avg, Count
 from django.db import transaction
 from django.core.exceptions import ValidationError
-from .models import Deal, DealFile, DealFileAssignment, DealAnalyticsEvent, ABTest
+from .models import Deal, DealFile, DealFileAssignment, DealAnalyticsEvent, ABTest, ContentBlock, MediaLibrary, CMSElement, LayoutTemplate
 from .forms import DealForm, DealFileForm, ModernDealForm
 from files.models import GlobalFile
 from .utils import (
@@ -37,7 +37,6 @@ import json
 from .models import Deal, DealFile, DealFileAssignment, ContentBlock, MediaLibrary, CMSElement
 from .forms import DealForm
 from django.contrib.auth.hashers import check_password
-from .models import ContentBlock, MediaLibrary, CMSElement
 
 
 # Dealroom Views
@@ -304,7 +303,7 @@ class DealBatchCreateView(LoginRequiredMixin, TemplateView):
                 # Fehler in Session speichern für Anzeige
                 request.session['batch_errors'] = errors[:10]  # Max 10 Fehler anzeigen
             
-            return redirect('dealrooms:dealroom_list')
+            return redirect('deals:dealroom_list')
             
         except Exception as e:
             messages.error(request, _('Fehler beim Verarbeiten der CSV-Datei: {}').format(str(e)))
@@ -495,7 +494,7 @@ class DealFileUploadView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return super().form_valid(form)
     
     def get_success_url(self):
-        return reverse_lazy('dealrooms:dealroom_files', kwargs={'deal_pk': self.kwargs['pk']})
+        return reverse_lazy('deals:dealroom_file_list', kwargs={'pk': self.kwargs['pk']})
 
 
 class DealFileDetailView(LoginRequiredMixin, DetailView):
@@ -519,7 +518,7 @@ class DealFileEditView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return self.request.user.is_staff
     
     def get_success_url(self):
-        return reverse_lazy('dealrooms:dealroom_file_detail', kwargs={'pk': self.object.pk})
+        return reverse_lazy('deals:dealroom_file_detail', kwargs={'pk': self.object.pk})
     
     def form_valid(self, form):
         messages.success(self.request, _('Datei erfolgreich aktualisiert.'))
@@ -537,7 +536,7 @@ class DealFileDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return self.request.user.is_staff
     
     def get_success_url(self):
-        return reverse_lazy('dealrooms:dealroom_files', kwargs={'deal_pk': self.object.deal.pk})
+        return reverse_lazy('deals:dealroom_file_list', kwargs={'pk': self.object.deal.pk})
     
     def delete(self, request, *args, **kwargs):
         messages.success(request, _('Datei erfolgreich gelöscht.'))
@@ -602,11 +601,11 @@ class WebsitePreviewView(LoginRequiredMixin, View):
                 )
             
             # Zurück zur Dealroom-Detail-Seite
-            return HttpResponseRedirect(reverse('dealrooms:dealroom_detail', kwargs={'pk': pk}))
+            return HttpResponseRedirect(reverse('deals:dealroom_detail', kwargs={'pk': pk}))
             
         except Deal.DoesNotExist:
             messages.error(request, "Dealroom nicht gefunden.")
-            return HttpResponseRedirect(reverse('dealrooms:dealroom_list'))
+            return HttpResponseRedirect(reverse('deals:dealroom_list'))
 
 
 class RegenerateWebsiteView(LoginRequiredMixin, View):
@@ -671,7 +670,7 @@ class RegenerateWebsiteView(LoginRequiredMixin, View):
             )
         
         # Zurück zur vorherigen Seite
-        return HttpResponseRedirect(request.META.get('HTTP_REFERER', reverse('dealrooms:dealroom_list')))
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER', reverse('deals:dealroom_list')))
 
 
 class DeleteWebsiteView(LoginRequiredMixin, View):
@@ -717,7 +716,7 @@ class DeleteWebsiteView(LoginRequiredMixin, View):
             )
         
         # Zurück zur vorherigen Seite
-        return HttpResponseRedirect(request.META.get('HTTP_REFERER', reverse('dealrooms:dealroom_list')))
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER', reverse('deals:dealroom_list')))
 
 
 class DealFileAssignmentView(LoginRequiredMixin, UserPassesTestMixin, View):
@@ -731,7 +730,7 @@ class DealFileAssignmentView(LoginRequiredMixin, UserPassesTestMixin, View):
     
     def post(self, request, pk):
         deal = get_object_or_404(Deal, pk=pk)
-        file_id = request.POST.get('file_id')
+        file_id = request.POST.get('file_id') or request.POST.get('global_file_id')
         role = request.POST.get('role', 'other')
         
         if not file_id:
@@ -918,6 +917,10 @@ class LandingpageView(View):
             
         except Exception as e:
             return HttpResponse(f'<html><body><h1>Fehler</h1><p>{str(e)}</p></body></html>')
+    
+    def post(self, request, deal_id):
+        """POST-Anfragen werden zu GET weitergeleitet"""
+        return self.get(request, deal_id)
 
 
 class PasswordProtectionAdminView(View):
@@ -964,7 +967,25 @@ class LandingpageBuilderView(LoginRequiredMixin, UserPassesTestMixin, View):
         return redirect('deals:grapesjs_editor', deal_id=deal_id)
 
 
-# ContentLibraryView wurde entfernt - verwirrende Überschneidung mit direkten Views
+class ContentLibraryView(LoginRequiredMixin, ListView):
+    """
+    Content Library View für wiederverwendbare Content-Blöcke
+    """
+    model = ContentBlock
+    template_name = 'deals/content_library.html'
+    context_object_name = 'content_blocks'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        return ContentBlock.objects.filter(
+            is_active=True
+        ).order_by('category', 'title')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = ContentBlock.Category.choices
+        context['content_types'] = ContentBlock.ContentType.choices
+        return context
 
 
 
@@ -1635,6 +1656,84 @@ class MediaLibraryDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView
     def get_success_url(self):
         messages.success(self.request, f'Media-Datei "{self.object.title}" wurde erfolgreich gelöscht.')
         return reverse('deals:media_library_list')
+
+
+# Layout Template Views
+class LayoutTemplateListView(LoginRequiredMixin, ListView):
+    """
+    View für die Anzeige aller Layout-Vorlagen
+    """
+    model = LayoutTemplate
+    template_name = 'deals/layout_template_list.html'
+    context_object_name = 'layout_templates'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        return LayoutTemplate.objects.filter(is_active=True).order_by('category', 'title')
+
+
+class LayoutTemplateCreateView(LoginRequiredMixin, CreateView):
+    """
+    View für das Erstellen von Layout-Vorlagen
+    """
+    model = LayoutTemplate
+    template_name = 'deals/layout_template_form.html'
+    fields = ['title', 'layout_type', 'category', 'description', 'css_classes', 'html_structure', 'preview_image']
+    
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, f'Layout-Vorlage "{form.instance.title}" wurde erfolgreich erstellt.')
+        return response
+    
+    def get_success_url(self):
+        return reverse('deals:layout_template_detail', kwargs={'pk': self.object.pk})
+
+
+class LayoutTemplateDetailView(LoginRequiredMixin, DetailView):
+    """
+    View für die Detailansicht einer Layout-Vorlage
+    """
+    model = LayoutTemplate
+    template_name = 'deals/layout_template_detail.html'
+    context_object_name = 'layout_template'
+
+
+class LayoutTemplateUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    """
+    View für das Bearbeiten von Layout-Vorlagen
+    """
+    model = LayoutTemplate
+    template_name = 'deals/layout_template_form.html'
+    fields = ['title', 'layout_type', 'category', 'description', 'css_classes', 'html_structure', 'preview_image', 'is_active']
+    
+    def test_func(self):
+        layout_template = self.get_object()
+        return self.request.user == layout_template.created_by or self.request.user.is_staff
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, f'Layout-Vorlage "{form.instance.title}" wurde erfolgreich aktualisiert.')
+        return response
+    
+    def get_success_url(self):
+        return reverse('deals:layout_template_detail', kwargs={'pk': self.object.pk})
+
+
+class LayoutTemplateDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """
+    View für das Löschen von Layout-Vorlagen
+    """
+    model = LayoutTemplate
+    template_name = 'deals/layout_template_confirm_delete.html'
+    
+    def test_func(self):
+        layout_template = self.get_object()
+        return self.request.user == layout_template.created_by or self.request.user.is_staff
+    
+    def get_success_url(self):
+        messages.success(self.request, f'Layout-Vorlage "{self.object.title}" wurde erfolgreich gelöscht.')
+        return reverse('deals:layout_template_list')
 
 
 class DealAnalyticsView(LoginRequiredMixin, UserPassesTestMixin, DetailView):

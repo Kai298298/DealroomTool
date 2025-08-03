@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Landingpage Builder - {{ deal.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .builder-container {
+        padding: 2rem 0;
+    }
+    .content-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .content-block {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .content-block:hover {
+        border-color: #007bff;
+        box-shadow: 0 2px 4px rgba(0,123,255,0.1);
+    }
+    .media-item {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    .media-item img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 4px;
+    }
+    .builder-sidebar {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1.5rem;
+    }
+    .preview-area {
+        background: white;
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        min-height: 400px;
+        padding: 2rem;
+        text-align: center;
+    }
+    .preview-area.dragover {
+        border-color: #007bff;
+        background-color: #f8f9ff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid builder-container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1>🎨 Landingpage Builder - {{ deal.title }}</h1>
+                    <p class="text-muted">Erstellen Sie Ihre perfekte Landingpage mit Drag & Drop</p>
+                </div>
+                <div>
+                    <a href="{% url 'deals:dealroom_detail' deal.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Zurück zum Dealroom
+                    </a>
+                    <a href="{% url 'deals:grapesjs_editor' deal.pk %}" class="btn btn-success">
+                        <i class="bi bi-palette me-2"></i>GrapesJS Editor
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Sidebar mit Content-Blöcken und Media -->
+        <div class="col-lg-4">
+            <div class="builder-sidebar">
+                <h5 class="mb-3">
+                    <i class="bi bi-puzzle me-2"></i>Content-Blöcke
+                </h5>
+                
+                <div class="content-section">
+                    {% for block in content_blocks %}
+                    <div class="content-block" draggable="true" data-type="content" data-id="{{ block.pk }}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ block.title }}</h6>
+                                <small class="text-muted">{{ block.get_category_display }} - {{ block.get_content_type_display }}</small>
+                            </div>
+                            <span class="badge bg-primary">{{ block.get_content_type_display }}</span>
+                        </div>
+                        <p class="mb-0 mt-2">{{ block.description|truncatewords:10 }}</p>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-inbox display-4 text-muted"></i>
+                        <p class="text-muted mt-2">Keine Content-Blöcke verfügbar</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <h5 class="mb-3 mt-4">
+                    <i class="bi bi-images me-2"></i>Medien-Bibliothek
+                </h5>
+                
+                <div class="content-section">
+                    {% for item in media_items %}
+                    <div class="media-item" draggable="true" data-type="media" data-id="{{ item.pk }}">
+                        {% if item.media_type == 'image' %}
+                        <img src="{{ item.file.url }}" alt="{{ item.alt_text|default:item.title }}" class="mb-2">
+                        {% else %}
+                        <i class="bi bi-file-earmark display-4 text-muted"></i>
+                        {% endif %}
+                        <h6 class="mb-1">{{ item.title }}</h6>
+                        <small class="text-muted">{{ item.get_media_type_display }} - {{ item.get_category_display }}</small>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-images display-4 text-muted"></i>
+                        <p class="text-muted mt-2">Keine Medien verfügbar</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview-Bereich -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-eye me-2"></i>Landingpage Vorschau
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="preview-area" id="previewArea">
+                        <div class="text-center">
+                            <i class="bi bi-arrow-down-circle display-4 text-muted"></i>
+                            <h5 class="mt-3 text-muted">Ziehen Sie Content-Blöcke hierher</h5>
+                            <p class="text-muted">Oder verwenden Sie den GrapesJS Editor für erweiterte Funktionen</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const previewArea = document.getElementById('previewArea');
+    const draggableItems = document.querySelectorAll('[draggable="true"]');
+    
+    // Drag & Drop Funktionalität
+    draggableItems.forEach(item => {
+        item.addEventListener('dragstart', function(e) {
+            e.dataTransfer.setData('text/plain', JSON.stringify({
+                type: this.dataset.type,
+                id: this.dataset.id,
+                title: this.querySelector('h6').textContent
+            }));
+        });
+    });
+    
+    previewArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('dragover');
+    });
+    
+    previewArea.addEventListener('dragleave', function(e) {
+        this.classList.remove('dragover');
+    });
+    
+    previewArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+        
+        const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+        
+        // Element zur Vorschau hinzufügen
+        const previewItem = document.createElement('div');
+        previewItem.className = 'alert alert-info mb-2';
+        previewItem.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>${data.title}</strong>
+                    <small class="text-muted d-block">${data.type === 'content' ? 'Content-Block' : 'Media-Item'}</small>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.parentElement.parentElement.remove()">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `;
+        
+        // Erste Anweisung entfernen, wenn Element hinzugefügt wird
+        const instructions = this.querySelector('.text-center');
+        if (instructions) {
+            instructions.remove();
+        }
+        
+        this.appendChild(previewItem);
+    });
+});
+</script>
+{% endblock %} 

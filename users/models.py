@@ -13,6 +13,13 @@ class CustomUser(AbstractUser):
     """
     Erweiterte Benutzer-Model mit SaaS-Features
     """
+    # User Roles
+    class UserRole(models.TextChoices):
+        ADMIN = 'admin', _('Administrator')
+        MANAGER = 'manager', _('Manager')
+        EDITOR = 'editor', _('Editor')
+        VIEWER = 'viewer', _('Viewer')
+    
     # SaaS-Plan Management
     PLAN_CHOICES = [
         ('free', 'Free'),
@@ -59,6 +66,22 @@ class CustomUser(AbstractUser):
         blank=True,
         null=True,
         verbose_name=_('USt-IdNr.')
+    )
+    
+    # User Role
+    role = models.CharField(
+        max_length=20,
+        choices=UserRole.choices,
+        default=UserRole.VIEWER,
+        verbose_name=_('Benutzerrolle')
+    )
+    
+    # Company Information
+    company = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name=_('Firma')
     )
     
     # Plan Features
@@ -131,7 +154,8 @@ class CustomUser(AbstractUser):
         verbose_name_plural = _('Benutzer')
     
     def __str__(self):
-        return f"{self.get_full_name()} ({self.username})"
+        role_display = dict(self.UserRole.choices).get(self.role, 'Benutzer')
+        return f"{self.username} ({role_display})"
     
     def get_plan_info(self):
         """
@@ -228,6 +252,46 @@ class CustomUser(AbstractUser):
         """
         plan_info = self.get_plan_info()
         return plan_info.get('features', [])
+    
+    def is_admin(self):
+        """Prüft ob der Benutzer Admin-Rechte hat"""
+        return self.role == self.UserRole.ADMIN or self.is_staff
+    
+    def is_manager(self):
+        """Prüft ob der Benutzer Manager-Rechte hat"""
+        return self.role == self.UserRole.MANAGER or self.is_admin()
+    
+    def is_editor(self):
+        """Prüft ob der Benutzer Editor-Rechte hat"""
+        return self.role == self.UserRole.EDITOR or self.is_manager()
+    
+    def is_viewer(self):
+        """Prüft ob der Benutzer Viewer-Rechte hat"""
+        return self.role == self.UserRole.VIEWER or self.is_editor()
+    
+    def can_edit_deals(self):
+        """Prüft ob der Benutzer Deals bearbeiten kann"""
+        return self.is_editor() or self.is_manager() or self.is_admin()
+    
+    def can_delete_deals(self):
+        """Prüft ob der Benutzer Deals löschen kann"""
+        return self.is_manager() or self.is_admin()
+    
+    def can_view_analytics(self):
+        """Prüft ob der Benutzer Analytics sehen kann"""
+        return self.is_editor() or self.is_manager() or self.is_admin()
+    
+    def can_manage_users(self):
+        """Prüft ob der Benutzer andere Benutzer verwalten kann"""
+        return self.is_manager() or self.is_admin()
+    
+    def can_access_content_library(self):
+        """Prüft ob der Benutzer die Content-Bibliothek nutzen kann"""
+        return self.can_use_content_library or self.is_admin()
+    
+    def can_use_premium_features(self):
+        """Prüft ob der Benutzer Premium-Features nutzen kann"""
+        return self.can_use_premium_templates or self.is_admin()
 
 
 @receiver(post_save, sender=CustomUser)
@@ -240,9 +304,11 @@ def create_welcome_dealroom(sender, instance, created, **kwargs):
             from deals.models import Deal
             
             # Werbe-Dealroom für das Dealroom-Tool erstellen
+            # Eindeutigen Slug und Titel generieren
+            base_slug = f'welcome-dealshare-{instance.id}'
             welcome_deal = Deal.objects.create(
-                title='Willkommen bei DealShare',
-                slug='welcome-dealshare',
+                title=f'Willkommen bei DealShare - {instance.username}',
+                slug=base_slug,
                 company_name='DealShare',
                 description='Entdecken Sie die Möglichkeiten von DealShare - der modernsten Plattform für professionelle Dealrooms und Landingpages.',
                 hero_title='Die Zukunft der Dealroom-Erstellung',
