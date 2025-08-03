@@ -83,7 +83,7 @@ __all__ = [
 
 # Konfiguration für das Generator-System
 GENERATOR_CONFIG = {
-    'supported_templates': ['modern', 'classic', 'minimal', 'corporate'],
+    'supported_templates': ['modern', 'classic', 'minimal', 'corporate', 'creative', 'elegant', 'bold', 'tech', 'luxury', 'clean', 'professional', 'startup', 'premium'],
     'max_file_size_mb': 50,  # Maximale Dateigröße
     'supported_image_formats': ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
     'supported_video_formats': ['.mp4', '.webm', '.ogg'],
@@ -113,6 +113,51 @@ TEMPLATE_CONFIG = {
         'name': 'Corporate',
         'description': 'Professionelles Business-Design',
         'features': ['Business-Layout', 'Professionelle Farben', 'Strukturierte Inhalte'],
+    },
+    'creative': {
+        'name': 'Creative',
+        'description': 'Kreatives Design mit Animationen',
+        'features': ['Kreative Animationen', 'Farbenfrohe Gestaltung', 'Interaktive Elemente'],
+    },
+    'elegant': {
+        'name': 'Elegant',
+        'description': 'Elegantes, hochwertiges Design',
+        'features': ['Elegante Typografie', 'Hochwertige Farben', 'Sofistizierte Layouts'],
+    },
+    'bold': {
+        'name': 'Bold',
+        'description': 'Mutiges, auffälliges Design',
+        'features': ['Starke Kontraste', 'Auffällige Farben', 'Bold Typografie'],
+    },
+    'tech': {
+        'name': 'Tech',
+        'description': 'Technologie-fokussiertes Design',
+        'features': ['Tech-Ästhetik', 'Futuristische Elemente', 'Code-Inspiration'],
+    },
+    'luxury': {
+        'name': 'Luxury',
+        'description': 'Luxuriöses, exklusives Design',
+        'features': ['Premium Materialien', 'Exklusive Farben', 'Luxuriöse Details'],
+    },
+    'clean': {
+        'name': 'Clean',
+        'description': 'Sauberes, minimalistisches Design',
+        'features': ['Klare Linien', 'Viel Weißraum', 'Fokus auf Inhalt'],
+    },
+    'professional': {
+        'name': 'Professional',
+        'description': 'Professionelles Business-Design',
+        'features': ['Business-Fokus', 'Vertrauensvolle Farben', 'Strukturierte Inhalte'],
+    },
+    'startup': {
+        'name': 'Startup',
+        'description': 'Modernes Startup-Design',
+        'features': ['Innovative Elemente', 'Moderne Farben', 'Startup-Ästhetik'],
+    },
+    'premium': {
+        'name': 'Premium',
+        'description': 'Hochwertiges Premium-Design',
+        'features': ['Premium Qualität', 'Exklusive Gestaltung', 'Hochwertige Details'],
     },
 }
 

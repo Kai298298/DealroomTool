@@ -51,7 +51,7 @@ class UserViewsTest(TestCase):
             'username': 'testuser',
             'password': 'testpass123'
         })
-        self.assertRedirects(response, '/dashboard/')
+        self.assertRedirects(response, '/')
 
     def test_login_failure(self):
         """Test: Fehlgeschlagener Login"""
@@ -173,7 +173,7 @@ class UserViewsTest(TestCase):
             'username': 'admin',
             'password': 'admin123'
         })
-        self.assertRedirects(response, '/dashboard/')
+        self.assertRedirects(response, '/')
 
     def test_user_roles(self):
         """Test: Benutzerrollen funktionieren"""

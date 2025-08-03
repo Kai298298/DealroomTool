@@ -49,7 +49,7 @@
                             <label for="file_type" class="form-label">Dateityp</label>
                             <select class="form-select" id="file_type" name="file_type">
                                 <option value="">Alle Typen</option>
-                                {% for value, label in file_types %}
+                                {% for value, label in file_type_choices %}
                                     <option value="{{ value }}" {% if request.GET.file_type == value %}selected{% endif %}>
                                         {{ label }}
                                     </option>

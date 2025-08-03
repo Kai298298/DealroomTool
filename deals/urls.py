@@ -26,16 +26,11 @@ urlpatterns = [
     # Datei-Zuordnungen
     path('<int:pk>/files/assignments/', views.DealFileAssignmentListView.as_view(), name='dealroom_file_assignments'),
     
-    # Template-Editor & Smart Features
-    path('<int:deal_id>/template-editor/', views.TemplateEditorView.as_view(), name='template_editor'),
+    # Smart Features
     path('<int:deal_id>/smart-files/', views.SmartFileManagerView.as_view(), name='smart_file_manager'),
     
     # Analytics & A/B Testing
     path('<int:pk>/analytics/', views.DealAnalyticsView.as_view(), name='dealroom_analytics'),
-    path('ab-tests/', views.ABTestListView.as_view(), name='ab_test_list'),
-    path('<int:deal_id>/ab-tests/create/', views.ABTestCreateView.as_view(), name='ab_test_create'),
-    path('ab-tests/<int:pk>/', views.ABTestDetailView.as_view(), name='ab_test_detail'),
-    path('ab-tests/<int:pk>/edit/', views.ABTestUpdateView.as_view(), name='ab_test_edit'),
     
     # Datei-Management
     path('<int:pk>/files/', views.DealFileListView.as_view(), name='dealroom_file_list'),

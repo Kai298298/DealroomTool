@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ deal.title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: {{ deal.primary_color|default:'#0d6efd' }};
+            --secondary-color: {{ deal.secondary_color|default:'#6c757d' }};
+            --gradient-primary: linear-gradient(135deg, var(--primary-color), #0056b3);
+            --gradient-secondary: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .hero-section {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 120px 0 80px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.3;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+        
+        .btn-hero {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 15px 30px;
+            font-weight: 600;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .btn-hero:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .section {
+            padding: 80px 0;
+        }
+        
+        .section-alt {
+            background: var(--gradient-secondary);
+        }
+        
+        .card-modern {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .card-modern:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+        
+        .card-header-modern {
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            padding: 25px;
+        }
+        
+        .progress-modern {
+            height: 10px;
+            border-radius: 10px;
+            background: #e9ecef;
+        }
+        
+        .progress-bar-modern {
+            background: var(--gradient-primary);
+            border-radius: 10px;
+        }
+        
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--gradient-primary);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-left: 30px;
+            margin-bottom: 2rem;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 12px;
+            height: 12px;
+            background: var(--primary-color);
+            border-radius: 50%;
+        }
+        
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 12px;
+            width: 2px;
+            height: calc(100% + 1rem);
+            background: #e9ecef;
+        }
+        
+        .timeline-item:last-child::after {
+            display: none;
+        }
+        
+        .footer-modern {
+            background: #2c3e50;
+            color: white;
+            padding: 60px 0 30px;
+        }
+        
+        .social-links a {
+            color: white;
+            font-size: 1.5rem;
+            margin: 0 10px;
+            transition: color 0.3s ease;
+        }
+        
+        .social-links a:hover {
+            color: var(--primary-color);
+        }
+        
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .section {
+                padding: 60px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 hero-content">
+                    <h1 class="hero-title">{{ deal.hero_title|default:deal.title }}</h1>
+                    <p class="hero-subtitle">{{ deal.hero_subtitle|default:deal.description }}</p>
+                    {% if deal.call_to_action %}
+                    <a href="#contact" class="btn btn-hero">{{ deal.call_to_action }}</a>
+                    {% endif %}
+                </div>
+                <div class="col-lg-6">
+                    {% if deal.get_hero_images %}
+                    <img src="{{ deal.get_hero_images.0.get_file_url }}" alt="Hero Image" class="img-fluid rounded-4 shadow-lg">
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Welcome Section -->
+    {% if deal.welcome_message %}
+    <section class="section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center">
+                    <h2 class="mb-4">Willkommen</h2>
+                    <p class="lead">{{ deal.welcome_message }}</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Product Section -->
+    {% if deal.product_name %}
+    <section class="section section-alt">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h2>{{ deal.product_name }}</h2>
+                    <p class="lead">{{ deal.product_description }}</p>
+                    {% if deal.product_features %}
+                    <ul class="list-unstyled">
+                        {% for feature in deal.product_features %}
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            {{ feature }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                    {% if deal.product_price %}
+                    <div class="mt-4">
+                        <span class="h3 text-primary">{{ deal.product_price }} {{ deal.product_currency }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-lg-6">
+                    {% if deal.get_gallery_files %}
+                    <img src="{{ deal.get_gallery_files.0.get_file_url }}" alt="Product Image" class="img-fluid rounded-4 shadow-lg">
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Deal Status Section -->
+    <section class="section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="mb-0">Deal Status</h3>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h5 class="mb-2">{{ deal.get_deal_status_display }}</h5>
+                                    <div class="progress progress-modern mb-3">
+                                        <div class="progress-bar progress-bar-modern" style="width: {{ deal.deal_progress }}%"></div>
+                                    </div>
+                                    <small class="text-muted">Fortschritt: {{ deal.deal_progress }}%</small>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <div class="feature-icon mx-auto">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Documents Section -->
+    {% if deal.get_documents %}
+    <section class="section section-alt">
+        <div class="container">
+            <h2 class="text-center mb-5">Dokumente</h2>
+            <div class="row">
+                {% for document in deal.get_documents %}
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card card-modern h-100">
+                        <div class="card-body text-center">
+                            <div class="feature-icon mx-auto mb-3">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <h5>{{ document.title }}</h5>
+                            <p class="text-muted">{{ document.description }}</p>
+                            <a href="{{ document.get_file_url }}" class="btn btn-outline-primary" download>
+                                <i class="fas fa-download me-2"></i>Herunterladen
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Timeline Section -->
+    {% if deal.timeline_events %}
+    <section class="section">
+        <div class="container">
+            <h2 class="text-center mb-5">Timeline</h2>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    {% for event in deal.timeline_events %}
+                    <div class="timeline-item">
+                        <h5>{{ event.title }}</h5>
+                        <p class="text-muted">{{ event.date }}</p>
+                        <p>{{ event.description }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Contact Section -->
+    <section id="contact" class="section section-alt">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center">
+                    <h2>Kontakt</h2>
+                    {% if deal.contact_person_name %}
+                    <p class="lead">{{ deal.contact_person_name }}</p>
+                    {% endif %}
+                    <div class="row mt-4">
+                        {% if deal.contact_person_email %}
+                        <div class="col-md-4">
+                            <i class="fas fa-envelope text-primary mb-2" style="font-size: 2rem;"></i>
+                            <p>{{ deal.contact_person_email }}</p>
+                        </div>
+                        {% endif %}
+                        {% if deal.contact_person_phone %}
+                        <div class="col-md-4">
+                            <i class="fas fa-phone text-primary mb-2" style="font-size: 2rem;"></i>
+                            <p>{{ deal.contact_person_phone }}</p>
+                        </div>
+                        {% endif %}
+                        {% if deal.company_name %}
+                        <div class="col-md-4">
+                            <i class="fas fa-building text-primary mb-2" style="font-size: 2rem;"></i>
+                            <p>{{ deal.company_name }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer-modern">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6">
+                    <h5>{{ deal.title }}</h5>
+                    <p class="text-muted">{{ deal.description }}</p>
+                </div>
+                <div class="col-lg-6 text-end">
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="text-center">
+                <small class="text-muted">&copy; 2024 {{ deal.company_name|default:deal.title }}. Alle Rechte vorbehalten.</small>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

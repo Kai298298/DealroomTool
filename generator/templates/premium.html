@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ deal.title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: {{ deal.primary_color|default:'#1e293b' }};
+            --secondary-color: {{ deal.secondary_color|default:'#475569' }};
+            --accent-color: #fbbf24;
+            --gold-color: #d97706;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+            --bg-light: #f8fafc;
+            --border-color: #e2e8f0;
+            --premium-gradient: linear-gradient(135deg, #1e293b, #334155);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background: #ffffff;
+        }
+        
+        .hero-section {
+            background: var(--premium-gradient);
+            color: white;
+            padding: 140px 0 120px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="premium" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M 25 0 L 50 25 L 25 50 L 0 25 Z" fill="rgba(251,191,36,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23premium)"/></svg>');
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .hero-title {
+            font-size: 4.5rem;
+            font-weight: 800;
+            margin-bottom: 2rem;
+            line-height: 1.1;
+            background: linear-gradient(45deg, #ffffff, var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.5rem;
+            opacity: 0.9;
+            margin-bottom: 3rem;
+            max-width: 600px;
+            font-weight: 300;
+        }
+        
+        .btn-premium {
+            background: var(--accent-color);
+            border: none;
+            color: var(--text-dark);
+            padding: 20px 45px;
+            font-weight: 700;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 8px 25px rgba(251, 191, 36, 0.3);
+            font-size: 1.1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-premium::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-premium:hover::before {
+            left: 100%;
+        }
+        
+        .btn-premium:hover {
+            background: var(--gold-color);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(251, 191, 36, 0.4);
+        }
+        
+        .section {
+            padding: 120px 0;
+        }
+        
+        .section-alt {
+            background: var(--bg-light);
+        }
+        
+        .card-premium {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.1);
+            transition: all 0.4s ease;
+            height: 100%;
+            background: white;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .card-premium::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-color), var(--gold-color));
+        }
+        
+        .card-premium:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 25px 70px rgba(0,0,0,0.15);
+        }
+        
+        .card-header-premium {
+            background: var(--premium-gradient);
+            color: white;
+            padding: 3rem;
+            border: none;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 3rem;
+            margin: 4rem 0;
+        }
+        
+        .info-card {
+            background: white;
+            padding: 3.5rem 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.1);
+            text-align: center;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-color), var(--gold-color));
+        }
+        
+        .info-card h3 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        
+        .info-icon {
+            font-size: 3.5rem;
+            color: var(--accent-color);
+            margin-bottom: 2rem;
+        }
+        
+        .description-section {
+            background: white;
+            padding: 5rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.1);
+            margin: 4rem 0;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+        
+        .description-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-color), var(--gold-color));
+        }
+        
+        .description-section h2 {
+            color: var(--primary-color);
+            margin-bottom: 2.5rem;
+            font-weight: 700;
+            font-size: 2.5rem;
+        }
+        
+        .file-section {
+            background: var(--bg-light);
+            padding: 6rem 4rem;
+            border-radius: 20px;
+            margin: 4rem 0;
+        }
+        
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2.5rem;
+            margin-top: 4rem;
+        }
+        
+        .file-card {
+            background: white;
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            position: relative;
+        }
+        
+        .file-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-color), var(--gold-color));
+        }
+        
+        .file-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+        
+        .file-icon {
+            font-size: 3.5rem;
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+        }
+        
+        .contact-section {
+            background: var(--premium-gradient);
+            color: white;
+            padding: 6rem 0;
+            margin-top: 4rem;
+        }
+        
+        .contact-info {
+            background: rgba(255,255,255,0.1);
+            padding: 4rem;
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            padding: 2rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .contact-item:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(15px);
+        }
+        
+        .contact-icon {
+            color: var(--accent-color);
+            margin-right: 2.5rem;
+            width: 35px;
+            font-size: 1.8rem;
+        }
+        
+        .footer-premium {
+            background: var(--text-dark);
+            color: white;
+            text-align: center;
+            padding: 4rem 0;
+        }
+        
+        .premium-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent-color), var(--gold-color));
+            color: var(--text-dark);
+            padding: 0.75rem 2rem;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0.5rem;
+            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
+        }
+        
+        .stats-section {
+            background: white;
+            padding: 6rem 0;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+        
+        .stat-number {
+            font-size: 4.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .stat-label {
+            color: var(--text-light);
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+        
+        .premium-divider {
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-color), var(--gold-color));
+            margin: 3rem 0;
+            border-radius: 2px;
+        }
+        
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 3rem;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .file-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .section {
+                padding: 80px 0;
+            }
+            
+            .description-section {
+                padding: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <div class="hero-content">
+                        <h1 class="hero-title">{{ deal.title }}</h1>
+                        <p class="hero-subtitle">{{ deal.hero_subtitle|default:"Premium Präsentation Ihrer exklusiven Lösung" }}</p>
+                        {% if deal.call_to_action %}
+                        <a href="#contact" class="btn-premium">{{ deal.call_to_action }}</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-lg-4 text-center">
+                    <div class="hero-stats">
+                        <div class="stat-item">
+                            <div class="stat-number">{{ deal_files|length }}</div>
+                            <div class="stat-label">Premium Dokumente</div>
+                        </div>
+                        <div class="premium-badge">⭐ Premium</div>
+                        <div class="premium-badge">🏆 Exklusiv</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Deal Information -->
+    <section class="section">
+        <div class="container">
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h3>Empfänger</h3>
+                    <p>{{ deal.recipient_name|default:"Nicht angegeben" }}</p>
+                    <div class="premium-badge">👑 VIP Kontakt</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h3>Firma</h3>
+                    <p>{{ deal.company_name|default:"Nicht angegeben" }}</p>
+                    <div class="premium-badge">🏢 Unternehmen</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Projektstatus</h3>
+                    <p>{{ deal.get_status_display }}</p>
+                    <div class="premium-badge">📈 Fortschritt</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Description -->
+    {% if deal.description %}
+    <section class="section section-alt">
+        <div class="container">
+            <div class="description-section">
+                <h2><i class="fas fa-star me-3"></i>Projektübersicht</h2>
+                <p>{{ deal.description }}</p>
+                <div class="premium-divider"></div>
+                <div class="mt-4">
+                    <div class="premium-badge">⭐ Premium Qualität</div>
+                    <div class="premium-badge">🏆 Exklusiv</div>
+                    <div class="premium-badge">💎 Hochwertig</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Files Section -->
+    {% if deal_files %}
+    <section class="section">
+        <div class="container">
+            <div class="file-section">
+                <h2 class="text-center mb-5"><i class="fas fa-folder-open me-3"></i>Premium Dokumente</h2>
+                <div class="file-grid">
+                    {% for file in deal_files %}
+                    <div class="file-card">
+                        <div class="file-icon">
+                            {% if file.is_image %}
+                            <i class="fas fa-image"></i>
+                            {% elif file.is_document %}
+                            <i class="fas fa-file-alt"></i>
+                            {% else %}
+                            <i class="fas fa-file"></i>
+                            {% endif %}
+                        </div>
+                        <h4>{{ file.title }}</h4>
+                        <p class="text-muted">{{ file.description|default:"" }}</p>
+                        <a href="{{ file.get_file_url }}" class="btn btn-primary" download>
+                            <i class="fas fa-download me-2"></i>Download
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Contact Information -->
+    {% if deal.contact_person_name or deal.contact_person_email or deal.contact_person_phone %}
+    <section class="contact-section" id="contact">
+        <div class="container">
+            <div class="contact-info">
+                <h2 class="text-center mb-5"><i class="fas fa-address-book me-3"></i>Premium Kontakt</h2>
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        {% if deal.contact_person_name %}
+                        <div class="contact-item">
+                            <i class="fas fa-user contact-icon"></i>
+                            <span>{{ deal.contact_person_name }}</span>
+                        </div>
+                        {% endif %}
+                        {% if deal.contact_person_email %}
+                        <div class="contact-item">
+                            <i class="fas fa-envelope contact-icon"></i>
+                            <a href="mailto:{{ deal.contact_person_email }}" class="text-white">{{ deal.contact_person_email }}</a>
+                        </div>
+                        {% endif %}
+                        {% if deal.contact_person_phone %}
+                        <div class="contact-item">
+                            <i class="fas fa-phone contact-icon"></i>
+                            <a href="tel:{{ deal.contact_person_phone }}" class="text-white">{{ deal.contact_person_phone }}</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Footer -->
+    <footer class="footer-premium">
+        <div class="container">
+            <p>&copy; 2024 {{ deal.company_name|default:"DealShare" }}. Alle Rechte vorbehalten.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

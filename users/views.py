@@ -295,7 +295,7 @@ class CustomLoginView(TemplateView):
             if user is not None:
                 login(request, user)
                 print(f"✅ Login erfolgreich für: {username}")
-                return HttpResponseRedirect('/dashboard/')
+                return HttpResponseRedirect('/')
             else:
                 print(f"❌ Login fehlgeschlagen für: {username}")
                 messages.error(request, 'Benutzername oder Passwort ist falsch.')

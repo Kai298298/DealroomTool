@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ deal.title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: {{ deal.primary_color|default:'#1e3a8a' }};
+            --secondary-color: {{ deal.secondary_color|default:'#64748b' }};
+            --accent-color: #f59e0b;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+            --bg-light: #f8fafc;
+            --border-color: #e2e8f0;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+        }
+        
+        .navbar-corporate {
+            background: white;
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary-color) !important;
+        }
+        
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-color), #1e40af);
+            color: white;
+            padding: 100px 0 80px;
+        }
+        
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+        
+        .btn-corporate {
+            background: var(--accent-color);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            font-weight: 500;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-corporate:hover {
+            background: #d97706;
+            transform: translateY(-1px);
+            text-decoration: none;
+        }
+        
+        .section {
+            padding: 80px 0;
+        }
+        
+        .section-alt {
+            background: var(--bg-light);
+        }
+        
+        .card-corporate {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .card-corporate:hover {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .card-header-corporate {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .progress-corporate {
+            height: 8px;
+            border-radius: 4px;
+            background: var(--border-color);
+        }
+        
+        .progress-bar-corporate {
+            background: var(--accent-color);
+            border-radius: 4px;
+        }
+        
+        .feature-corporate {
+            text-align: center;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: white;
+            margin-bottom: 2rem;
+        }
+        
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--primary-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            margin: 0 auto 1rem;
+        }
+        
+        .timeline-corporate {
+            position: relative;
+            padding-left: 30px;
+        }
+        
+        .timeline-corporate::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border-color);
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+            padding-left: 30px;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 0;
+            width: 16px;
+            height: 16px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px var(--border-color);
+        }
+        
+        .footer-corporate {
+            background: var(--text-dark);
+            color: white;
+            padding: 60px 0 30px;
+        }
+        
+        .footer-corporate h5 {
+            color: white;
+            margin-bottom: 1rem;
+        }
+        
+        .footer-corporate a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+        }
+        
+        .footer-corporate a:hover {
+            color: white;
+        }
+        
+        .social-links a {
+            color: white;
+            font-size: 1.5rem;
+            margin: 0 10px;
+            transition: color 0.3s ease;
+        }
+        
+        .social-links a:hover {
+            color: var(--accent-color);
+        }
+        
+        .divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 3rem 0;
+        }
+        
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .section {
+                padding: 60px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-corporate">
+        <div class="container">
+            <a class="navbar-brand" href="#">{{ deal.company_name|default:deal.title }}</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">Über uns</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#documents">Dokumente</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact">Kontakt</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h1 class="hero-title">{{ deal.hero_title|default:deal.title }}</h1>
+                    <p class="hero-subtitle">{{ deal.hero_subtitle|default:deal.description }}</p>
+                    {% if deal.call_to_action %}
+                    <a href="#contact" class="btn btn-corporate">{{ deal.call_to_action }}</a>
+                    {% endif %}
+                </div>
+                <div class="col-lg-6">
+                    {% if deal.get_hero_images %}
+                    <img src="{{ deal.get_hero_images.0.get_file_url }}" alt="Hero Image" class="img-fluid rounded shadow">
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Welcome Section -->
+    {% if deal.welcome_message %}
+    <section id="about" class="section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center">
+                    <h2 class="mb-4">Willkommen</h2>
+                    <p class="lead">{{ deal.welcome_message }}</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Product Section -->
+    {% if deal.product_name %}
+    <section class="section section-alt">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h2>{{ deal.product_name }}</h2>
+                    <p class="lead">{{ deal.product_description }}</p>
+                    {% if deal.product_features %}
+                    <ul class="list-unstyled">
+                        {% for feature in deal.product_features %}
+                        <li class="mb-3">
+                            <i class="fas fa-check text-success me-3"></i>
+                            <strong>{{ feature }}</strong>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                    {% if deal.product_price %}
+                    <div class="mt-4">
+                        <span class="h3 text-primary">{{ deal.product_price }} {{ deal.product_currency }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-lg-6">
+                    {% if deal.get_gallery_files %}
+                    <img src="{{ deal.get_gallery_files.0.get_file_url }}" alt="Product Image" class="img-fluid rounded shadow">
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Deal Status Section -->
+    <section class="section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card card-corporate">
+                        <div class="card-header-corporate">
+                            <h3 class="mb-0">Deal Status</h3>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h5 class="mb-3">{{ deal.get_deal_status_display }}</h5>
+                                    <div class="progress progress-corporate mb-3">
+                                        <div class="progress-bar progress-bar-corporate" style="width: {{ deal.deal_progress }}%"></div>
+                                    </div>
+                                    <small class="text-muted">Fortschritt: {{ deal.deal_progress }}%</small>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <div class="feature-icon">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Documents Section -->
+    {% if deal.get_documents %}
+    <section id="documents" class="section section-alt">
+        <div class="container">
+            <h2 class="text-center mb-5">Dokumente</h2>
+            <div class="row">
+                {% for document in deal.get_documents %}
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="feature-corporate">
+                        <div class="feature-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <h5>{{ document.title }}</h5>
+                        <p class="text-muted">{{ document.description }}</p>
+                        <a href="{{ document.get_file_url }}" class="btn btn-corporate" download>
+                            <i class="fas fa-download me-2"></i>Herunterladen
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Timeline Section -->
+    {% if deal.timeline_events %}
+    <section class="section">
+        <div class="container">
+            <h2 class="text-center mb-5">Timeline</h2>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="timeline-corporate">
+                        {% for event in deal.timeline_events %}
+                        <div class="timeline-item">
+                            <h5>{{ event.title }}</h5>
+                            <p class="text-muted">{{ event.date }}</p>
+                            <p>{{ event.description }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Contact Section -->
+    <section id="contact" class="section section-alt">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center">
+                    <h2>Kontakt</h2>
+                    {% if deal.contact_person_name %}
+                    <p class="lead">{{ deal.contact_person_name }}</p>
+                    {% endif %}
+                    <div class="row mt-5">
+                        {% if deal.contact_person_email %}
+                        <div class="col-md-4">
+                            <div class="feature-corporate">
+                                <div class="feature-icon">
+                                    <i class="fas fa-envelope"></i>
+                                </div>
+                                <h6>E-Mail</h6>
+                                <p>{{ deal.contact_person_email }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if deal.contact_person_phone %}
+                        <div class="col-md-4">
+                            <div class="feature-corporate">
+                                <div class="feature-icon">
+                                    <i class="fas fa-phone"></i>
+                                </div>
+                                <h6>Telefon</h6>
+                                <p>{{ deal.contact_person_phone }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if deal.company_name %}
+                        <div class="col-md-4">
+                            <div class="feature-corporate">
+                                <div class="feature-icon">
+                                    <i class="fas fa-building"></i>
+                                </div>
+                                <h6>Unternehmen</h6>
+                                <p>{{ deal.company_name }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer-corporate">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4">
+                    <h5>{{ deal.title }}</h5>
+                    <p>{{ deal.description }}</p>
+                </div>
+                <div class="col-lg-4">
+                    <h5>Kontakt</h5>
+                    {% if deal.contact_person_email %}
+                    <p><i class="fas fa-envelope me-2"></i>{{ deal.contact_person_email }}</p>
+                    {% endif %}
+                    {% if deal.contact_person_phone %}
+                    <p><i class="fas fa-phone me-2"></i>{{ deal.contact_person_phone }}</p>
+                    {% endif %}
+                </div>
+                <div class="col-lg-4">
+                    <h5>Folgen Sie uns</h5>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="divider"></div>
+            <div class="text-center">
+                <small>&copy; 2024 {{ deal.company_name|default:deal.title }}. Alle Rechte vorbehalten.</small>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 
