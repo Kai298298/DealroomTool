@@ -73,6 +73,7 @@
                                                 </a>
                                                 <form method="post" action="{% url 'deals:dealroom_file_unassign' deal.pk %}">
                                                     {% csrf_token %}
+                                                    <input type="hidden" name="assignment_id" value="{{ assignment.pk }}">
                                                     <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Datei wirklich entfernen?')">
                                                         <i class="bi bi-trash me-1"></i>Entfernen
                                                     </button>

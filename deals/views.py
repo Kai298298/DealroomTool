@@ -12,10 +12,10 @@ from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from django.http import HttpResponse, Http404, HttpResponseRedirect, JsonResponse
 from django.utils.translation import gettext_lazy as _
-from django.db.models import Q
+from django.db.models import Q, Avg, Count
 from django.db import transaction
 from django.core.exceptions import ValidationError
-from .models import Deal, DealFile, DealFileAssignment
+from .models import Deal, DealFile, DealFileAssignment, DealAnalyticsEvent, ABTest
 from .forms import DealForm, DealFileForm, ModernDealForm
 from files.models import GlobalFile
 from .utils import (
@@ -24,7 +24,6 @@ from .utils import (
     log_website_generation, log_website_deletion
 )
 from django.utils import timezone
-from django.utils import timezone as django_timezone
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -35,7 +34,7 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import json
-from .models import Deal, DealFile, DealFileAssignment
+from .models import Deal, DealFile, DealFileAssignment, ContentBlock, MediaLibrary, CMSElement
 from .forms import DealForm
 from django.contrib.auth.hashers import check_password
 from .models import ContentBlock, MediaLibrary, CMSElement
@@ -438,7 +437,7 @@ class DealDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     """
     model = Deal
     template_name = 'deals/deal_confirm_delete.html'
-    success_url = reverse_lazy('dealrooms:dealroom_list')
+    success_url = reverse_lazy('deals:dealroom_list')
     
     def test_func(self):
         return self.request.user.is_staff
@@ -732,44 +731,41 @@ class DealFileAssignmentView(LoginRequiredMixin, UserPassesTestMixin, View):
     
     def post(self, request, pk):
         deal = get_object_or_404(Deal, pk=pk)
-        global_file_id = request.POST.get('global_file_id')
+        file_id = request.POST.get('file_id')
         role = request.POST.get('role', 'other')
         
+        if not file_id:
+            messages.error(request, _('Keine Datei ausgewählt.'))
+            return redirect('deals:dealroom_detail', pk=pk)
+        
         try:
-            global_file = GlobalFile.objects.get(pk=global_file_id)
+            global_file = get_object_or_404(GlobalFile, pk=file_id, is_public=True)
             
-            # Prüfen ob Zuordnung bereits existiert
-            assignment, created = DealFileAssignment.objects.get_or_create(
+            # Prüfen ob bereits zugeordnet
+            if DealFileAssignment.objects.filter(deal=deal, global_file=global_file).exists():
+                messages.warning(request, _('Datei ist bereits zugeordnet.'))
+                return redirect('deals:dealroom_detail', pk=pk)
+            
+            # Zuordnung erstellen
+            assignment = DealFileAssignment.objects.create(
                 deal=deal,
                 global_file=global_file,
-                defaults={
-                    'assigned_by': request.user,
-                    'role': role,
-                    'order': deal.file_assignments.count()
-                }
+                assigned_by=request.user,
+                role=role,
+                order=deal.file_assignments.count()
             )
             
-            if created:
-                messages.success(request, _('Datei erfolgreich zugeordnet.'))
-                # Änderung protokollieren
-                log_file_assignment(deal, request.user, global_file.title, role)
-            else:
-                # Rolle aktualisieren
-                old_role = assignment.role
-                assignment.role = role
-                assignment.save()
-                messages.success(request, _('Datei-Rolle aktualisiert.'))
-                # Änderung protokollieren
-                log_deal_update(deal, request.user, field_name='file_role', 
-                              old_value=f"{global_file.title} ({old_role})", 
-                              new_value=f"{global_file.title} ({role})")
+            # Änderung protokollieren
+            log_file_assignment(deal, request.user, global_file.title, role)
+            
+            messages.success(request, _('Datei erfolgreich zugeordnet.'))
             
         except GlobalFile.DoesNotExist:
-            messages.error(request, _('Datei nicht gefunden.'))
+            messages.error(request, _('Datei nicht gefunden oder nicht öffentlich.'))
         except Exception as e:
             messages.error(request, _('Fehler beim Zuordnen der Datei: {}').format(str(e)))
         
-        return redirect('dealrooms:dealroom_detail', pk=pk)
+        return redirect('deals:dealroom_detail', pk=pk)
 
 
 class DealFileUnassignmentView(LoginRequiredMixin, UserPassesTestMixin, View):
@@ -785,6 +781,10 @@ class DealFileUnassignmentView(LoginRequiredMixin, UserPassesTestMixin, View):
         deal = get_object_or_404(Deal, pk=pk)
         assignment_id = request.POST.get('assignment_id')
         
+        if not assignment_id:
+            messages.error(request, _('Keine Assignment-ID angegeben.'))
+            return redirect('deals:dealroom_detail', pk=pk)
+        
         try:
             assignment = get_object_or_404(DealFileAssignment, pk=assignment_id, deal=deal)
             
@@ -794,10 +794,12 @@ class DealFileUnassignmentView(LoginRequiredMixin, UserPassesTestMixin, View):
             assignment.delete()
             messages.success(request, _('Datei erfolgreich entfernt.'))
             
+        except DealFileAssignment.DoesNotExist:
+            messages.error(request, _('Datei-Zuordnung nicht gefunden.'))
         except Exception as e:
             messages.error(request, _('Fehler beim Entfernen der Datei: {}').format(str(e)))
         
-        return redirect('dealrooms:dealroom_detail', pk=pk)
+        return redirect('deals:dealroom_detail', pk=pk)
 
 
 class DealFileAssignmentListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
@@ -1111,7 +1113,6 @@ class HTMLPreviewView(View):
             return f"<html><body><h1>Vorschau-Fehler</h1><p>{str(e)}</p></body></html>"
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class HTMLCodeView(View):
     """API-View für HTML-Code-Operationen"""
     
@@ -1634,3 +1635,465 @@ class MediaLibraryDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView
     def get_success_url(self):
         messages.success(self.request, f'Media-Datei "{self.object.title}" wurde erfolgreich gelöscht.')
         return reverse('deals:media_library_list')
+
+
+class DealAnalyticsView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    """
+    Analytics-Dashboard für einen Dealroom
+    """
+    model = Deal
+    template_name = 'deals/analytics_dashboard.html'
+    context_object_name = 'deal'
+    
+    def test_func(self):
+        return self.request.user == self.get_object().created_by or self.request.user.is_staff
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        deal = self.get_object()
+        
+        # Analytics-Daten sammeln
+        analytics = DealAnalyticsEvent.objects.filter(deal=deal)
+        
+        # Besucher-Statistiken
+        context['total_visitors'] = analytics.filter(
+            event_type='page_view'
+        ).values('visitor_ip').distinct().count()
+        
+        context['total_page_views'] = analytics.filter(
+            event_type='page_view'
+        ).count()
+        
+        # Zeit-Statistiken
+        time_spent_events = analytics.filter(
+            event_type='time_spent'
+        ).exclude(time_spent__isnull=True)
+        
+        if time_spent_events.exists():
+            avg_time = time_spent_events.aggregate(
+                avg_time=Avg('time_spent')
+            )['avg_time']
+            context['avg_time_spent'] = avg_time
+        else:
+            context['avg_time_spent'] = None
+        
+        # Conversion-Rate
+        page_views = analytics.filter(event_type='page_view').count()
+        conversions = analytics.filter(event_type='form_submit').count()
+        context['conversion_rate'] = (conversions / page_views * 100) if page_views > 0 else 0
+        
+        # Top-Elemente (Klicks)
+        context['top_elements'] = analytics.filter(
+            event_type='click'
+        ).values('element_id').annotate(
+            click_count=Count('id')
+        ).order_by('-click_count')[:10]
+        
+        # Zeitliche Entwicklung
+        context['daily_views'] = analytics.filter(
+            event_type='page_view'
+        ).extra(
+            select={'date': 'date(timestamp)'}
+        ).values('date').annotate(
+            views=Count('id')
+        ).order_by('date')
+        
+        return context
+
+
+class ABTestListView(LoginRequiredMixin, ListView):
+    """
+    Liste aller A/B Tests
+    """
+    model = ABTest
+    template_name = 'deals/ab_test_list.html'
+    context_object_name = 'ab_tests'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        return ABTest.objects.filter(created_by=self.request.user).order_by('-created_at')
+
+
+class ABTestCreateView(LoginRequiredMixin, CreateView):
+    """
+    A/B Test erstellen
+    """
+    model = ABTest
+    template_name = 'deals/ab_test_form.html'
+    fields = ['name', 'description', 'traffic_split', 'start_date', 'end_date']
+    
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        form.instance.deal_id = self.kwargs['deal_id']
+        
+        # Aktuelle Dealroom-Daten als Variante A speichern
+        deal = Deal.objects.get(id=self.kwargs['deal_id'])
+        form.instance.variant_a = {
+            'title': deal.title,
+            'hero_title': deal.hero_title,
+            'hero_subtitle': deal.hero_subtitle,
+            'custom_html_content': deal.custom_html_content,
+            'custom_css': deal.custom_css,
+        }
+        
+        # Variante B (kann später bearbeitet werden)
+        form.instance.variant_b = form.instance.variant_a.copy()
+        
+        response = super().form_valid(form)
+        messages.success(self.request, f'A/B Test "{form.instance.name}" wurde erstellt.')
+        return response
+    
+    def get_success_url(self):
+        return reverse('deals:ab_test_detail', kwargs={'pk': self.object.pk})
+
+
+class ABTestDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    """
+    A/B Test Details
+    """
+    model = ABTest
+    template_name = 'deals/ab_test_detail.html'
+    context_object_name = 'ab_test'
+    
+    def test_func(self):
+        return self.request.user == self.get_object().created_by or self.request.user.is_staff
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        ab_test = self.get_object()
+        
+        # Testergebnisse berechnen
+        if ab_test.is_active():
+            ab_test.calculate_results()
+        
+        # Statistiken
+        context['variant_a_stats'] = {
+            'views': ab_test.analytics_events.filter(variant='A').count(),
+            'conversion_rate': ab_test.get_conversion_rate('A'),
+        }
+        
+        context['variant_b_stats'] = {
+            'views': ab_test.analytics_events.filter(variant='B').count(),
+            'conversion_rate': ab_test.get_conversion_rate('B'),
+        }
+        
+        return context
+
+
+class ABTestUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    """
+    A/B Test bearbeiten
+    """
+    model = ABTest
+    template_name = 'deals/ab_test_form.html'
+    fields = ['name', 'description', 'variant_b', 'traffic_split', 'start_date', 'end_date', 'status']
+    
+    def test_func(self):
+        return self.request.user == self.get_object().created_by or self.request.user.is_staff
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, f'A/B Test "{form.instance.name}" wurde aktualisiert.')
+        return response
+    
+    def get_success_url(self):
+        return reverse('deals:ab_test_detail', kwargs={'pk': self.object.pk})
+
+
+class TemplateEditorView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """
+    Drag & Drop Template-Editor
+    """
+    template_name = 'deals/template_editor.html'
+    
+    def test_func(self):
+        deal = Deal.objects.get(id=self.kwargs['deal_id'])
+        return self.request.user == deal.created_by or self.request.user.is_staff
+    
+    def get(self, request, deal_id):
+        deal = Deal.objects.get(id=deal_id)
+        
+        # Verfügbare Elemente
+        elements = [
+            {'id': 'heading', 'name': 'Überschrift', 'icon': 'bi-type-h1', 'category': 'text'},
+            {'id': 'text', 'name': 'Text', 'icon': 'bi-text-paragraph', 'category': 'text'},
+            {'id': 'image', 'name': 'Bild', 'icon': 'bi-image', 'category': 'media'},
+            {'id': 'button', 'name': 'Button', 'icon': 'bi-box-arrow-up-right', 'category': 'interactive'},
+            {'id': 'card', 'name': 'Karte', 'icon': 'bi-card-text', 'category': 'layout'},
+            {'id': 'gallery', 'name': 'Galerie', 'icon': 'bi-images', 'category': 'media'},
+            {'id': 'form', 'name': 'Formular', 'icon': 'bi-input-cursor-text', 'category': 'interactive'},
+            {'id': 'video', 'name': 'Video', 'icon': 'bi-play-circle', 'category': 'media'},
+            {'id': 'timeline', 'name': 'Timeline', 'icon': 'bi-clock-history', 'category': 'layout'},
+            {'id': 'stats', 'name': 'Statistiken', 'icon': 'bi-graph-up', 'category': 'business'},
+        ]
+        
+        # Kategorien
+        categories = {
+            'text': 'Text & Typografie',
+            'media': 'Medien',
+            'interactive': 'Interaktiv',
+            'layout': 'Layout',
+            'business': 'Business'
+        }
+        
+        context = {
+            'deal': deal,
+            'elements': elements,
+            'categories': categories,
+            'current_layout': self.get_current_layout(deal)
+        }
+        
+        return render(request, self.template_name, context)
+    
+    def post(self, request, deal_id):
+        """Speichert das neue Layout"""
+        deal = Deal.objects.get(id=deal_id)
+        
+        try:
+            layout_data = json.loads(request.POST.get('layout', '[]'))
+            
+            # Layout in HTML umwandeln
+            html_content = self.layout_to_html(layout_data)
+            
+            # Deal aktualisieren
+            deal.custom_html_content = html_content
+            deal.html_editor_mode = 'manual'
+            deal.last_html_edit = timezone.now()
+            deal.html_edit_count += 1
+            deal.save()
+            
+            # Website neu generieren
+            deal.regenerate_website()
+            
+            messages.success(request, 'Template wurde erfolgreich gespeichert!')
+            return JsonResponse({'success': True, 'message': 'Template gespeichert'})
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    def get_current_layout(self, deal):
+        """Konvertiert aktuelles HTML in Layout-Format"""
+        if not deal.custom_html_content:
+            return []
+        
+        # Vereinfachte Konvertierung - in Produktion würde man einen HTML-Parser verwenden
+        return [
+            {
+                'id': 'heading',
+                'content': 'Willkommen',
+                'settings': {'level': 'h1', 'align': 'center'}
+            }
+        ]
+    
+    def layout_to_html(self, layout_data):
+        """Konvertiert Layout-Daten in HTML"""
+        html_parts = []
+        
+        for element in layout_data:
+            element_id = element.get('id')
+            content = element.get('content', '')
+            settings = element.get('settings', {})
+            
+            if element_id == 'heading':
+                level = settings.get('level', 'h2')
+                align = settings.get('align', 'left')
+                html_parts.append(f'<{level} class="text-{align}">{content}</{level}>')
+                
+            elif element_id == 'text':
+                html_parts.append(f'<p class="mb-3">{content}</p>')
+                
+            elif element_id == 'image':
+                src = content or 'https://via.placeholder.com/400x300'
+                alt = settings.get('alt', 'Bild')
+                html_parts.append(f'<img src="{src}" alt="{alt}" class="img-fluid mb-3">')
+                
+            elif element_id == 'button':
+                url = settings.get('url', '#')
+                style = settings.get('style', 'primary')
+                html_parts.append(f'<a href="{url}" class="btn btn-{style} mb-3">{content}</a>')
+                
+            elif element_id == 'card':
+                html_parts.append(f'''
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">{content}</h5>
+                        <p class="card-text">{settings.get('description', '')}</p>
+                    </div>
+                </div>
+                ''')
+        
+        return '\n'.join(html_parts)
+
+
+class DealroomWizardView(LoginRequiredMixin, View):
+    """
+    Wizard für schnelle Dealroom-Erstellung
+    """
+    template_name = 'deals/dealroom_wizard.html'
+    
+    def get(self, request):
+        # Verfügbare Templates
+        templates = [
+            {'id': 'modern', 'name': 'Modern', 'description': 'Sauberes, modernes Design'},
+            {'id': 'classic', 'name': 'Klassisch', 'description': 'Traditionelles Business-Design'},
+            {'id': 'minimal', 'name': 'Minimalistisch', 'description': 'Schlicht und elegant'},
+            {'id': 'corporate', 'name': 'Corporate', 'description': 'Professionell und seriös'},
+            {'id': 'creative', 'name': 'Kreativ', 'description': 'Bunt und einfallsreich'},
+        ]
+        
+        # Content-Block-Kategorien
+        content_categories = [
+            {'id': 'welcome', 'name': 'Begrüßung', 'blocks': []},
+            {'id': 'product', 'name': 'Produkt', 'blocks': []},
+            {'id': 'contact', 'name': 'Kontakt', 'blocks': []},
+            {'id': 'cta', 'name': 'Call-to-Action', 'blocks': []},
+        ]
+        
+        context = {
+            'templates': templates,
+            'content_categories': content_categories,
+            'current_step': request.GET.get('step', 'basic_info')
+        }
+        
+        return render(request, self.template_name, context)
+    
+    def post(self, request):
+        """Erstellt Dealroom aus Wizard-Daten"""
+        try:
+            wizard_data = json.loads(request.POST.get('wizard_data', '{}'))
+            
+            # Dealroom erstellen
+            deal = Deal.objects.create(
+                title=wizard_data.get('title', 'Neuer Dealroom'),
+                slug=wizard_data.get('slug', 'neuer-dealroom'),
+                company_name=wizard_data.get('company_name', ''),
+                description=wizard_data.get('description', ''),
+                hero_title=wizard_data.get('hero_title', ''),
+                hero_subtitle=wizard_data.get('hero_subtitle', ''),
+                template_type=wizard_data.get('template', 'modern'),
+                status='draft',
+                created_by=request.user
+            )
+            
+            # Content-Blöcke zuordnen
+            for block_id in wizard_data.get('content_blocks', []):
+                try:
+                    content_block = ContentBlock.objects.get(id=block_id)
+                    # Hier würde man die Content-Blöcke dem Dealroom zuordnen
+                    pass
+                except ContentBlock.DoesNotExist:
+                    pass
+            
+            messages.success(request, f'Dealroom "{deal.title}" wurde erfolgreich erstellt!')
+            return JsonResponse({
+                'success': True,
+                'deal_id': deal.id,
+                'redirect_url': reverse('deals:dealroom_detail', kwargs={'pk': deal.id})
+            })
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+
+class SmartFileManagerView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """
+    Intelligente Dateiverwaltung
+    """
+    template_name = 'deals/smart_file_manager.html'
+    
+    def test_func(self):
+        deal = Deal.objects.get(id=self.kwargs['deal_id'])
+        return self.request.user == deal.created_by or self.request.user.is_staff
+    
+    def get(self, request, deal_id):
+        deal = Deal.objects.get(id=deal_id)
+        
+        # Dateien automatisch organisieren
+        self.auto_organize_files(deal)
+        
+        # Datei-Zuordnungsvorschläge
+        suggestions = self.get_file_suggestions(deal)
+        
+        # Datei-Statistiken
+        file_stats = {
+            'total_files': deal.files.count(),
+            'images': deal.files.filter(file_type='hero_image').count() + deal.files.filter(file_type='gallery').count(),
+            'documents': deal.files.filter(file_type='document').count(),
+            'videos': deal.files.filter(file_type='video').count(),
+            'total_size': sum(file.file.size for file in deal.files.all() if file.file)
+        }
+        
+        context = {
+            'deal': deal,
+            'suggestions': suggestions,
+            'file_stats': file_stats,
+            'files_by_type': self.group_files_by_type(deal)
+        }
+        
+        return render(request, self.template_name, context)
+    
+    def auto_organize_files(self, deal):
+        """Organisiert Dateien automatisch"""
+        for file in deal.files.all():
+            if file.file:
+                # Einfache Dateityp-Erkennung basierend auf Extension
+                extension = file.file.name.split('.')[-1].lower()
+                
+                if extension in ['jpg', 'jpeg', 'png', 'gif', 'webp']:
+                    if not file.file_type or file.file_type == 'other':
+                        file.file_type = 'gallery'
+                elif extension in ['pdf', 'doc', 'docx', 'txt']:
+                    if not file.file_type or file.file_type == 'other':
+                        file.file_type = 'document'
+                elif extension in ['mp4', 'avi', 'mov', 'webm']:
+                    if not file.file_type or file.file_type == 'other':
+                        file.file_type = 'video'
+                
+                file.save()
+    
+    def get_file_suggestions(self, deal):
+        """Gibt Datei-Zuordnungsvorschläge zurück"""
+        suggestions = []
+        
+        # Hero-Bild Vorschlag
+        hero_images = deal.files.filter(file_type='hero_image')
+        if not hero_images.exists():
+            gallery_images = deal.files.filter(file_type='gallery')
+            if gallery_images.exists():
+                suggestions.append({
+                    'file': gallery_images.first(),
+                    'suggestion': 'Als Hero-Bild verwenden',
+                    'action': 'assign_as_hero',
+                    'priority': 'high'
+                })
+        
+        # Logo Vorschlag
+        logos = deal.files.filter(file_type='logo')
+        if not logos.exists():
+            # Suche nach kleinen quadratischen Bildern
+            small_images = deal.files.filter(
+                file_type='gallery',
+                file__name__icontains='logo'
+            )
+            if small_images.exists():
+                suggestions.append({
+                    'file': small_images.first(),
+                    'suggestion': 'Als Logo verwenden',
+                    'action': 'assign_as_logo',
+                    'priority': 'medium'
+                })
+        
+        return suggestions
+    
+    def group_files_by_type(self, deal):
+        """Gruppiert Dateien nach Typ"""
+        files = deal.files.all()
+        grouped = {}
+        
+        for file in files:
+            file_type = file.file_type or 'other'
+            if file_type not in grouped:
+                grouped[file_type] = []
+            grouped[file_type].append(file)
+        
+        return grouped

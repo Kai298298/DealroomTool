@@ -1,0 +1,441 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dealroom Wizard - DealShare{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wizard-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .wizard-step {
+        display: none;
+    }
+    
+    .wizard-step.active {
+        display: block;
+    }
+    
+    .step-indicator {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 2rem;
+    }
+    
+    .step {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e9ecef;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 0.5rem;
+        font-weight: bold;
+    }
+    
+    .step.active {
+        background: #007bff;
+        color: white;
+    }
+    
+    .step.completed {
+        background: #28a745;
+        color: white;
+    }
+    
+    .template-card {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .template-card:hover {
+        border-color: #007bff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .template-card.selected {
+        border-color: #007bff;
+        background: #f8f9ff;
+    }
+    
+    .template-preview {
+        width: 100%;
+        height: 120px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+    
+    .content-block-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .content-block-card:hover {
+        border-color: #007bff;
+        background: #f8f9fa;
+    }
+    
+    .content-block-card.selected {
+        border-color: #007bff;
+        background: #e3f2fd;
+    }
+    
+    .wizard-navigation {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="wizard-container">
+                <div class="text-center mb-4">
+                    <h2 class="mb-1">
+                        <i class="bi bi-magic me-2"></i>Dealroom Wizard
+                    </h2>
+                    <p class="text-muted">Erstellen Sie Ihren Dealroom in wenigen Schritten</p>
+                </div>
+
+                <!-- Step Indicator -->
+                <div class="step-indicator">
+                    <div class="step active" data-step="1">1</div>
+                    <div class="step" data-step="2">2</div>
+                    <div class="step" data-step="3">3</div>
+                    <div class="step" data-step="4">4</div>
+                </div>
+
+                <!-- Step 1: Basic Info -->
+                <div class="wizard-step active" id="step-1">
+                    <h4 class="mb-3">Grundinformationen</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Dealroom-Titel *</label>
+                                <input type="text" class="form-control" id="deal-title" placeholder="z.B. Investment Series A">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Firmenname</label>
+                                <input type="text" class="form-control" id="company-name" placeholder="Ihre Firma">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Beschreibung</label>
+                        <textarea class="form-control" id="description" rows="3" placeholder="Kurze Beschreibung des Deals..."></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Hero-Titel</label>
+                                <input type="text" class="form-control" id="hero-title" placeholder="Hauptüberschrift">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Hero-Untertitel</label>
+                                <input type="text" class="form-control" id="hero-subtitle" placeholder="Untertitel">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Template Selection -->
+                <div class="wizard-step" id="step-2">
+                    <h4 class="mb-3">Template auswählen</h4>
+                    <div class="row">
+                        {% for template in templates %}
+                        <div class="col-md-6">
+                            <div class="template-card" data-template-id="{{ template.id }}">
+                                <div class="template-preview">
+                                    {{ template.name }}
+                                </div>
+                                <h6>{{ template.name }}</h6>
+                                <p class="text-muted mb-0">{{ template.description }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Step 3: Content Blocks -->
+                <div class="wizard-step" id="step-3">
+                    <h4 class="mb-3">Content-Blöcke auswählen</h4>
+                    {% for category in content_categories %}
+                    <div class="mb-4">
+                        <h6>{{ category.name }}</h6>
+                        <div class="content-blocks-container">
+                            {% for block in category.blocks %}
+                            <div class="content-block-card" data-block-id="{{ block.id }}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ block.title }}</strong>
+                                        <p class="text-muted mb-0">{{ block.description }}</p>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="{{ block.id }}">
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <p class="text-muted">Keine Content-Blöcke in dieser Kategorie verfügbar.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Step 4: Preview & Create -->
+                <div class="wizard-step" id="step-4">
+                    <h4 class="mb-3">Vorschau & Erstellen</h4>
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 id="preview-title">Dealroom-Titel</h5>
+                            <p id="preview-company" class="text-muted">Firmenname</p>
+                            <p id="preview-description">Beschreibung wird hier angezeigt...</p>
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <strong>Template:</strong> <span id="preview-template">Modern</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Content-Blöcke:</strong> <span id="preview-blocks">0 ausgewählt</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Hinweis:</strong> Sie können alle Einstellungen nach der Erstellung noch anpassen.
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="wizard-navigation">
+                    <button class="btn btn-outline-secondary" id="prev-btn" onclick="previousStep()" style="display: none;">
+                        <i class="bi bi-arrow-left me-2"></i>Zurück
+                    </button>
+                    <button class="btn btn-primary" id="next-btn" onclick="nextStep()">
+                        Weiter<i class="bi bi-arrow-right ms-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentStep = 1;
+let wizardData = {
+    title: '',
+    company_name: '',
+    description: '',
+    hero_title: '',
+    hero_subtitle: '',
+    template: 'modern',
+    content_blocks: []
+};
+
+// Template Selection
+document.querySelectorAll('.template-card').forEach(card => {
+    card.addEventListener('click', function() {
+        document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+        this.classList.add('selected');
+        wizardData.template = this.dataset.templateId;
+    });
+});
+
+// Content Block Selection
+document.querySelectorAll('.content-block-card').forEach(card => {
+    const checkbox = card.querySelector('.form-check-input');
+    card.addEventListener('click', function() {
+        checkbox.checked = !checkbox.checked;
+        updateContentBlocks();
+    });
+});
+
+function nextStep() {
+    if (currentStep < 4) {
+        // Validierung
+        if (currentStep === 1) {
+            const title = document.getElementById('deal-title').value.trim();
+            if (!title) {
+                alert('Bitte geben Sie einen Titel ein.');
+                return;
+            }
+            // Sammle Daten
+            wizardData.title = title;
+            wizardData.company_name = document.getElementById('company-name').value;
+            wizardData.description = document.getElementById('description').value;
+            wizardData.hero_title = document.getElementById('hero-title').value;
+            wizardData.hero_subtitle = document.getElementById('hero-subtitle').value;
+        }
+        
+        currentStep++;
+        updateStepDisplay();
+    } else {
+        // Erstelle Dealroom
+        createDealroom();
+    }
+}
+
+function previousStep() {
+    if (currentStep > 1) {
+        currentStep--;
+        updateStepDisplay();
+    }
+}
+
+function updateStepDisplay() {
+    // Verstecke alle Steps
+    document.querySelectorAll('.wizard-step').forEach(step => {
+        step.classList.remove('active');
+    });
+    
+    // Zeige aktuellen Step
+    document.getElementById(`step-${currentStep}`).classList.add('active');
+    
+    // Update Step Indicator
+    document.querySelectorAll('.step').forEach((step, index) => {
+        step.classList.remove('active', 'completed');
+        if (index + 1 === currentStep) {
+            step.classList.add('active');
+        } else if (index + 1 < currentStep) {
+            step.classList.add('completed');
+        }
+    });
+    
+    // Update Navigation
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    
+    if (currentStep === 1) {
+        prevBtn.style.display = 'none';
+    } else {
+        prevBtn.style.display = 'block';
+    }
+    
+    if (currentStep === 4) {
+        nextBtn.innerHTML = 'Dealroom erstellen<i class="bi bi-check ms-2"></i>';
+    } else {
+        nextBtn.innerHTML = 'Weiter<i class="bi bi-arrow-right ms-2"></i>';
+    }
+    
+    // Update Preview
+    if (currentStep === 4) {
+        updatePreview();
+    }
+}
+
+function updateContentBlocks() {
+    const selectedBlocks = [];
+    document.querySelectorAll('.content-block-card .form-check-input:checked').forEach(checkbox => {
+        selectedBlocks.push(checkbox.value);
+    });
+    wizardData.content_blocks = selectedBlocks;
+}
+
+function updatePreview() {
+    document.getElementById('preview-title').textContent = wizardData.title || 'Dealroom-Titel';
+    document.getElementById('preview-company').textContent = wizardData.company_name || 'Firmenname';
+    document.getElementById('preview-description').textContent = wizardData.description || 'Beschreibung wird hier angezeigt...';
+    document.getElementById('preview-template').textContent = getTemplateName(wizardData.template);
+    document.getElementById('preview-blocks').textContent = wizardData.content_blocks.length + ' ausgewählt';
+}
+
+function getTemplateName(templateId) {
+    const templates = {
+        'modern': 'Modern',
+        'classic': 'Klassisch',
+        'minimal': 'Minimalistisch',
+        'corporate': 'Corporate',
+        'creative': 'Kreativ'
+    };
+    return templates[templateId] || 'Modern';
+}
+
+function createDealroom() {
+    // Zeige Loading
+    const nextBtn = document.getElementById('next-btn');
+    const originalText = nextBtn.innerHTML;
+    nextBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Erstelle Dealroom...';
+    nextBtn.disabled = true;
+    
+    // Sammle finale Daten
+    updateContentBlocks();
+    
+    // Sende Request
+    fetch('{% url "deals:dealroom_wizard" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            wizard_data: wizardData
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Erfolg - Weiterleitung
+            window.location.href = data.redirect_url;
+        } else {
+            // Fehler
+            alert('Fehler beim Erstellen: ' + data.error);
+            nextBtn.innerHTML = originalText;
+            nextBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        alert('Fehler beim Erstellen: ' + error);
+        nextBtn.innerHTML = originalText;
+        nextBtn.disabled = false;
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %} 

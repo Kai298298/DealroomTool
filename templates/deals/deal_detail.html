@@ -15,8 +15,14 @@
                     <p class="text-muted mb-0">{{ deal.description|default:"Keine Beschreibung" }}</p>
                 </div>
                 <div>
-                    <a href="{% url 'deals:dealroom_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left me-2"></i>Zurück zur Übersicht
+                                                    <a href="{% url 'deals:dealroom_analytics' deal.pk %}" class="btn btn-outline-info">
+                                    <i class="bi bi-graph-up me-2"></i>Analytics
+                                </a>
+                                <a href="{% url 'deals:ab_test_create' deal.pk %}" class="btn btn-outline-warning">
+                                    <i class="bi bi-graph-up me-2"></i>A/B Test erstellen
+                                </a>
+                                <a href="{% url 'deals:dealroom_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>Zurück zur Übersicht
                     </a>
                 </div>
             </div>
@@ -282,11 +288,17 @@
                                 <a href="{% url 'deals:grapesjs_editor' deal.pk %}" class="btn btn-success btn-lg">
                                     <i class="bi bi-palette me-2"></i>🎨 Designer öffnen
                                 </a>
+                                <a href="{% url 'deals:template_editor' deal.pk %}" class="btn btn-outline-success">
+                                    <i class="bi bi-layout-text-window me-2"></i>Template Editor
+                                </a>
                                 <a href="{% url 'deals:dealroom_edit' deal.pk %}" class="btn btn-warning">
                                     <i class="bi bi-pencil me-2"></i>Bearbeiten
                                 </a>
                                 <a href="{% url 'deals:dealroom_file_upload' deal.pk %}" class="btn btn-primary">
                                     <i class="bi bi-upload me-2"></i>Datei hinzufügen
+                                </a>
+                                <a href="{% url 'deals:smart_file_manager' deal.pk %}" class="btn btn-outline-primary">
+                                    <i class="bi bi-folder2-open me-2"></i>Smart File Manager
                                 </a>
                                 {% endif %}
                                 

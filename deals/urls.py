@@ -13,14 +13,29 @@ urlpatterns = [
     # Dealroom-Listen
     path('', views.DealListView.as_view(), name='dealroom_list'),
     
-    # Dealroom-Details
-    path('<int:pk>/', views.DealDetailView.as_view(), name='dealroom_detail'),
-    
     # Dealroom erstellen/bearbeiten
     path('create/', views.ModernDealCreateView.as_view(), name='dealroom_create'),
+    path('wizard/', views.DealroomWizardView.as_view(), name='dealroom_wizard'),
     path('batch-create/', views.DealBatchCreateView.as_view(), name='dealroom_batch_create'),
+    
+    # Dealroom-Details
+    path('<int:pk>/', views.DealDetailView.as_view(), name='dealroom_detail'),
     path('<int:pk>/edit/', views.DealUpdateView.as_view(), name='dealroom_edit'),
     path('<int:pk>/delete/', views.DealDeleteView.as_view(), name='dealroom_delete'),
+    
+    # Datei-Zuordnungen
+    path('<int:pk>/files/assignments/', views.DealFileAssignmentListView.as_view(), name='dealroom_file_assignments'),
+    
+    # Template-Editor & Smart Features
+    path('<int:deal_id>/template-editor/', views.TemplateEditorView.as_view(), name='template_editor'),
+    path('<int:deal_id>/smart-files/', views.SmartFileManagerView.as_view(), name='smart_file_manager'),
+    
+    # Analytics & A/B Testing
+    path('<int:pk>/analytics/', views.DealAnalyticsView.as_view(), name='dealroom_analytics'),
+    path('ab-tests/', views.ABTestListView.as_view(), name='ab_test_list'),
+    path('<int:deal_id>/ab-tests/create/', views.ABTestCreateView.as_view(), name='ab_test_create'),
+    path('ab-tests/<int:pk>/', views.ABTestDetailView.as_view(), name='ab_test_detail'),
+    path('ab-tests/<int:pk>/edit/', views.ABTestUpdateView.as_view(), name='ab_test_edit'),
     
     # Datei-Management
     path('<int:pk>/files/', views.DealFileListView.as_view(), name='dealroom_file_list'),

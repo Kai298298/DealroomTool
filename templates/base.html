@@ -30,8 +30,22 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'core:home' %}">🏠 Home</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'deals:dealroom_list' %}">🎯 Dealrooms</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="dealroomsDropdown" role="button" data-bs-toggle="dropdown">
+                            🎯 Dealrooms
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'deals:dealroom_list' %}">
+                                <i class="bi bi-list"></i> Alle Dealrooms
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'deals:dealroom_wizard' %}">
+                                <i class="bi bi-magic"></i> Wizard
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'deals:ab_test_list' %}">
+                                <i class="bi bi-graph-up"></i> A/B Tests
+                            </a></li>
+                        </ul>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="resourcesDropdown" role="button" data-bs-toggle="dropdown">

@@ -587,10 +587,6 @@ class Deal(models.Model):
         """Gibt alle Galerie-Dateien zurück"""
         return self.get_assigned_files(role='gallery')
     
-    def get_hero_images(self):
-        """Gibt alle Hero-Bilder zurück"""
-        return self.get_assigned_files(role='hero_image')
-    
     def get_documents(self):
         """Gibt alle Dokumente zurück"""
         return self.get_assigned_files(role='document')
@@ -1900,28 +1896,7 @@ class LayoutTemplate(models.Model):
         self.save(update_fields=['usage_count'])
 
 
-class DealAnalyticsEvent(models.Model):
-    """
-    DSGVO-konformes Analytics-Event für Deal-Aktivitäten
-    """
-    EVENT_TYPE_CHOICES = [
-        ('created', 'Deal erstellt'),
-        ('deleted', 'Deal gelöscht'),
-        ('updated', 'Deal bearbeitet'),
-    ]
-    event_type = models.CharField(max_length=20, choices=EVENT_TYPE_CHOICES)
-    deal = models.ForeignKey('Deal', on_delete=models.CASCADE, related_name='analytics_events')
-    user = models.ForeignKey('users.CustomUser', on_delete=models.SET_NULL, null=True, blank=True)
-    timestamp = models.DateTimeField(auto_now_add=True)
-    meta = models.JSONField(blank=True, null=True)
 
-    class Meta:
-        verbose_name = 'Deal-Analytics-Event'
-        verbose_name_plural = 'Deal-Analytics-Events'
-        ordering = ['-timestamp']
-
-    def __str__(self):
-        return f"{self.get_event_type_display()} ({self.deal.title}) am {self.timestamp:%d.%m.%Y %H:%M}"
 
 
 class CMSElement(models.Model):
@@ -2143,3 +2118,282 @@ class CMSElement(models.Model):
         elif self.data_source == 'media_library':
             return MediaLibrary.objects.filter(is_active=True)
         return []
+
+
+# Erweitere das bestehende DealAnalyticsEvent Model
+class DealAnalyticsEvent(models.Model):
+    """
+    DSGVO-konformes Analytics-Event für Deal-Aktivitäten
+    """
+    EVENT_TYPE_CHOICES = [
+        ('created', 'Deal erstellt'),
+        ('deleted', 'Deal gelöscht'),
+        ('updated', 'Deal bearbeitet'),
+        ('page_view', 'Seitenaufruf'),
+        ('click', 'Klick'),
+        ('scroll', 'Scroll'),
+        ('download', 'Download'),
+        ('form_submit', 'Formular-Submit'),
+        ('time_spent', 'Zeit verbracht'),
+        ('bounce', 'Bounce'),
+    ]
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPE_CHOICES)
+    deal = models.ForeignKey('Deal', on_delete=models.CASCADE, related_name='analytics_events')
+    user = models.ForeignKey('users.CustomUser', on_delete=models.SET_NULL, null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    meta = models.JSONField(blank=True, null=True)
+    
+    # DSGVO-konforme Daten
+    visitor_ip = models.GenericIPAddressField(
+        blank=True,
+        null=True,
+        verbose_name=_('Besucher IP'),
+        help_text=_('Wird anonymisiert gespeichert')
+    )
+    
+    page_views = models.PositiveIntegerField(
+        default=1,
+        verbose_name=_('Seitenaufrufe')
+    )
+    
+    time_spent = models.DurationField(
+        null=True,
+        blank=True,
+        verbose_name=_('Verbrachte Zeit')
+    )
+    
+    referrer = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name=_('Referrer')
+    )
+    
+    user_agent = models.TextField(
+        blank=True,
+        verbose_name=_('User Agent')
+    )
+    
+    # Event-spezifische Daten
+    element_id = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name=_('Element ID')
+    )
+    
+    position_x = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name=_('X-Position')
+    )
+    
+    position_y = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name=_('Y-Position')
+    )
+    
+    # DSGVO-Compliance
+    consent_given = models.BooleanField(
+        default=False,
+        verbose_name=_('Einverständnis erteilt')
+    )
+    
+    anonymized = models.BooleanField(
+        default=True,
+        verbose_name=_('Anonymisiert')
+    )
+    
+    # Session-Tracking
+    session_id = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name=_('Session ID')
+    )
+
+    class Meta:
+        verbose_name = 'Deal-Analytics-Event'
+        verbose_name_plural = 'Deal-Analytics-Events'
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['deal', 'event_type', 'timestamp']),
+            models.Index(fields=['visitor_ip', 'timestamp']),
+        ]
+
+    def __str__(self):
+        return f"{self.get_event_type_display()} ({self.deal.title}) am {self.timestamp:%d.%m.%Y %H:%M}"
+    
+    def anonymize_ip(self):
+        """Anonymisiert IP-Adresse für DSGVO-Compliance"""
+        if self.visitor_ip:
+            ip_parts = str(self.visitor_ip).split('.')
+            if len(ip_parts) == 4:
+                return f"{ip_parts[0]}.{ip_parts[1]}.*.*"
+        return self.visitor_ip
+    
+    def save(self, *args, **kwargs):
+        """Speichert mit anonymisierter IP"""
+        if self.anonymized and self.visitor_ip:
+            self.visitor_ip = self.anonymize_ip()
+        super().save(*args, **kwargs)
+
+
+class ABTest(models.Model):
+    """
+    A/B Testing für Landingpages
+    """
+    class TestStatus(models.TextChoices):
+        DRAFT = 'draft', _('Entwurf')
+        ACTIVE = 'active', _('Aktiv')
+        PAUSED = 'paused', _('Pausiert')
+        COMPLETED = 'completed', _('Abgeschlossen')
+    
+    deal = models.ForeignKey(
+        Deal,
+        on_delete=models.CASCADE,
+        related_name='ab_tests',
+        verbose_name=_('Dealroom')
+    )
+    
+    name = models.CharField(
+        max_length=200,
+        verbose_name=_('Test-Name')
+    )
+    
+    description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_('Beschreibung')
+    )
+    
+    # Test-Varianten
+    variant_a = models.JSONField(
+        verbose_name=_('Variante A (Original)'),
+        help_text=_('Original-Version der Landingpage')
+    )
+    
+    variant_b = models.JSONField(
+        verbose_name=_('Variante B (Test)'),
+        help_text=_('Test-Version der Landingpage')
+    )
+    
+    # Traffic-Split
+    traffic_split = models.IntegerField(
+        default=50,
+        verbose_name=_('Traffic-Split (%)'),
+        help_text=_('Prozent der Besucher, die Variante B sehen')
+    )
+    
+    # Test-Zeitraum
+    start_date = models.DateTimeField(
+        verbose_name=_('Start-Datum')
+    )
+    
+    end_date = models.DateTimeField(
+        verbose_name=_('End-Datum')
+    )
+    
+    status = models.CharField(
+        max_length=20,
+        choices=TestStatus.choices,
+        default=TestStatus.DRAFT,
+        verbose_name=_('Status')
+    )
+    
+    # Ergebnisse
+    winner = models.CharField(
+        max_length=1,
+        choices=[('A', 'A'), ('B', 'B')],
+        blank=True,
+        null=True,
+        verbose_name=_('Gewinner')
+    )
+    
+    confidence_level = models.FloatField(
+        null=True,
+        blank=True,
+        verbose_name=_('Konfidenz-Level')
+    )
+    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name=_('Erstellt von')
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('Erstellt am')
+    )
+    
+    class Meta:
+        verbose_name = _('A/B Test')
+        verbose_name_plural = _('A/B Tests')
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.name} - {self.deal.title}"
+    
+    def is_active(self):
+        """Prüft ob Test aktiv ist"""
+        now = timezone.now()
+        return (
+            self.status == self.TestStatus.ACTIVE and
+            self.start_date <= now <= self.end_date
+        )
+    
+    def get_variant_for_visitor(self, visitor_ip):
+        """Gibt Variante für Besucher zurück"""
+        if not self.is_active():
+            return 'A'
+        
+        # Einfache Hash-basierte Zuordnung
+        hash_value = hash(visitor_ip) % 100
+        return 'B' if hash_value < self.traffic_split else 'A'
+    
+    def calculate_results(self):
+        """Berechnet Testergebnisse"""
+        variant_a_events = self.analytics_events.filter(
+            variant='A',
+            event_type='page_view'
+        ).count()
+        
+        variant_b_events = self.analytics_events.filter(
+            variant='B',
+            event_type='page_view'
+        ).count()
+        
+        if variant_a_events > 0 and variant_b_events > 0:
+            # Einfache Conversion-Rate Berechnung
+            a_conversion = self.get_conversion_rate('A')
+            b_conversion = self.get_conversion_rate('B')
+            
+            if b_conversion > a_conversion:
+                self.winner = 'B'
+                self.confidence_level = self.calculate_confidence(a_conversion, b_conversion)
+            else:
+                self.winner = 'A'
+                self.confidence_level = self.calculate_confidence(b_conversion, a_conversion)
+            
+            self.save()
+    
+    def get_conversion_rate(self, variant):
+        """Berechnet Conversion-Rate für Variante"""
+        total_views = self.analytics_events.filter(
+            variant=variant,
+            event_type='page_view'
+        ).count()
+        
+        conversions = self.analytics_events.filter(
+            variant=variant,
+            event_type='form_submit'
+        ).count()
+        
+        return (conversions / total_views * 100) if total_views > 0 else 0
+    
+    def calculate_confidence(self, rate_a, rate_b):
+        """Berechnet Konfidenz-Level (vereinfacht)"""
+        # Vereinfachte Berechnung - in Produktion würde man statistische Tests verwenden
+        difference = abs(rate_b - rate_a)
+        return min(difference / 10, 0.95)  # Max 95% Konfidenz
